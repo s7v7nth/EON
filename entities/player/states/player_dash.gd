@@ -1,6 +1,5 @@
 extends State
-## Dash — spends energy, grants i-frames, fixed burst velocity, then cooldown.
-## Leaves fading afterimage ghosts behind.
+## Dash — spends energy, grants i-frames (detectable for perfect dodge), then cooldown.
 
 const GHOST_INTERVAL: float = 0.035
 const GHOST_FADE_TIME: float = 0.25
@@ -33,7 +32,8 @@ func enter(_msg: Dictionary = {}) -> void:
 		_dash_dir = Vector2.RIGHT
 
 	player.facing_direction = _dash_dir
-	player.hurtbox.set_invincible(true)
+	# detect_hits=true keeps hurtbox receivable for perfect-dodge callbacks.
+	player.hurtbox.set_invincible(true, true)
 	player.velocity = Iso.apply_velocity(_dash_dir, player.stats.dash_speed)
 	_spawn_ghost()
 
@@ -55,7 +55,7 @@ func physics_update(delta: float) -> void:
 func exit() -> void:
 	if not _active:
 		return
-	player.hurtbox.set_invincible(false)
+	player.hurtbox.set_invincible(false, false)
 	if player.dash_cooldown and player.stats:
 		player.dash_cooldown.start(player.stats.dash_cooldown)
 	_active = false

@@ -4,10 +4,15 @@
 
 [resource]
 script = ExtResource("1")
-damage = 6.0
-cooldown = 0.8
+damage = 8.0
+cooldown = 0.6
 windup = 0.08
-active_duration = 0.0
-knockback_force = 60.0
-projectile_speed = 700.0
+active_duration = 0.05
+knockback_force = 80.0
+damage_type = 1
+status_chance = 0.35
+status_power = 6.0
+status_duration = 1.6
+projectile_speed = 520.0
 projectile_lifetime = 1.2
+energy_cost = 12.0

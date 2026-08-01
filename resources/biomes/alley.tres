@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="BiomeDefinition" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://resources/biomes/biome_definition.gd" id="1"]
+[ext_resource type="Resource" path="res://resources/waves/gateway_waves.tres" id="2_waves"]
+
+[resource]
+script = ExtResource("1")
+biome_id = 5
+display_name = "Megacity Alleys"
+wave_set = ExtResource("2_waves")
+floor_color = Color(0.14, 0.14, 0.16, 1)
+wall_color = Color(0.08, 0.08, 0.1, 1)
+faction_ids = Array[int]([0, 1])
+faction_weights = Array[float]([0.5, 0.5])
+element_bias = Array[int]([4, 2])
+loot_tags = PackedStringArray("bleed", "corr")
+neighbor_biomes = Array[int]([2, 3, 6])

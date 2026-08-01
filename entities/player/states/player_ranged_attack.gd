@@ -14,6 +14,9 @@ func enter(_msg: Dictionary = {}) -> void:
 	if not player.ranged_ready():
 		_return_to_locomotion()
 		return
+	if not player.try_spend_attack_energy(player.ranged_attack_data):
+		_return_to_locomotion()
+		return
 	player.stop_movement()
 	_aim = player.get_aim_direction()
 	player.facing_direction = _aim

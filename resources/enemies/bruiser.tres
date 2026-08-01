@@ -7,6 +7,7 @@
 [resource]
 script = ExtResource("1")
 display_name = "Bruiser"
+faction = 0
 stats = ExtResource("2_stats")
 melee_attack = ExtResource("3_atk")
 attack_range = 40.0
@@ -14,3 +15,9 @@ ranged_range = 0.0
 detection_radius = 300.0
 visual_color = Color(0.45, 0.18, 0.22, 1)
 prefers_kite = false
+use_resist_overrides = true
+resist_physical = 0.15
+resist_electricity = -0.1
+resist_corrosion = -0.15
+resist_fire = -0.25
+resist_bleed = -0.35

@@ -28,7 +28,9 @@ func take_damage(amount: float) -> void:
 
 
 func heal(amount: float) -> void:
-	if amount <= 0.0 or current_health <= 0.0:
+	if amount <= 0.0 or current_health <= 0.0 or stats == null:
+		return
+	if current_health >= stats.max_health:
 		return
 	current_health = minf(current_health + amount, stats.max_health)
 	health_changed.emit(current_health, stats.max_health)

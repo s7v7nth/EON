@@ -1,4 +1,4 @@
-[gd_scene load_steps=17 format=3]
+[gd_scene load_steps=18 format=3]
 
 [ext_resource type="Script" path="res://entities/enemies/dummy/enemy_dummy.gd" id="1_enemy"]
 [ext_resource type="Resource" path="res://resources/stats/enemy_dummy_stats.tres" id="2_stats"]
@@ -12,6 +12,7 @@
 [ext_resource type="Script" path="res://components/hitbox_component.gd" id="10_hit"]
 [ext_resource type="Resource" path="res://resources/attacks/enemy_dummy_attack.tres" id="11_atk"]
 [ext_resource type="Resource" path="res://resources/attacks/enemy_dummy_ranged_attack.tres" id="12_ranged_atk"]
+[ext_resource type="Script" path="res://components/status_component.gd" id="13_status"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_body"]
 radius = 12.0
@@ -60,6 +61,9 @@ script = ExtResource("7_ranged")
 [node name="HealthComponent" type="Node" parent="."]
 script = ExtResource("8_health")
 stats = ExtResource("2_stats")
+
+[node name="StatusComponent" type="Node" parent="."]
+script = ExtResource("13_status")
 
 [node name="HurtboxComponent" type="Area2D" parent="."]
 collision_layer = 16

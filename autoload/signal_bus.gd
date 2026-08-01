@@ -15,3 +15,14 @@ signal room_cleared
 signal exit_reached
 signal modifier_chosen(modifier_id: StringName)
 signal weapon_changed(weapon_name: String)
+
+## Style / skill loop
+signal style_action(action: int, points: int)
+signal perfect_dodge(source: Node)
+signal parry_success(source: Node)
+signal style_score_changed(score: int, multiplier: float, rank: String)
+signal status_applied(target: Node, status_id: StringName)
+signal architecture_changed(architecture_id: int)
+signal biome_changed(biome_id: int)
+signal upgrade_crafted(upgrade_id: StringName)
+signal player_statuses_changed(statuses: PackedStringArray)

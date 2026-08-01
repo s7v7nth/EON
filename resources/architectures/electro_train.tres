@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="ArchitectureData" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://resources/architectures/architecture_data.gd" id="1"]
+[ext_resource type="Resource" path="res://resources/weapons/plasma_blade_w.tres" id="2_blade"]
+[ext_resource type="Resource" path="res://resources/weapons/plasma_gun_w.tres" id="3_gun"]
+[ext_resource type="Resource" path="res://resources/weapons/plasma_mortar_w.tres" id="4_mortar"]
+
+[resource]
+script = ExtResource("1")
+architecture_id = 2
+display_name = "Electro-Train"
+economy_policy = 2
+primitives = Array[Resource]([ExtResource("2_blade"), ExtResource("3_gun"), ExtResource("4_mortar")])
+visual_tint = Color(0.4, 0.7, 1.0, 1)
+attack_energy_mult = 0.75
+energy_regen_mult = 0.8
+overheat_gain_per_action = 22.0
+overheat_max = 100.0
+overheat_cooldown = 1.6
+resist_physical = 0.0
+resist_electricity = 0.25
+resist_corrosion = -0.1
+resist_fire = 0.1
+resist_bleed = 0.1

@@ -13,6 +13,7 @@ const PROJECTILE_SCENE := preload("res://entities/projectiles/projectile.tscn")
 
 @onready var state_machine: StateMachine = $StateMachine
 @onready var health: HealthComponent = $HealthComponent
+@onready var status: StatusComponent = $StatusComponent
 @onready var hurtbox: HurtboxComponent = $HurtboxComponent
 @onready var hitbox: HitboxComponent = $HitboxComponent
 @onready var detection_area: Area2D = $DetectionArea
@@ -72,6 +73,9 @@ func _configure_from_stats() -> void:
 		return
 	health.apply_stats(stats)
 	hurtbox.health_component = health
+	hurtbox.status_component = status
+	if status:
+		status.health_component = health
 
 
 func apply_definition(def: EnemyDefinition) -> void:

@@ -6,8 +6,10 @@
 
 [resource]
 script = ExtResource("1")
-display_name = "Blade"
+display_name = "Energy Machete"
 primary = ExtResource("2_pri")
 secondary = ExtResource("3_sec")
 hitbox_reach = 22.0
 visual_tint = Color(0.55, 0.58, 0.62, 1)
+shape_tag = &"blade"
+element_tag = &"physical"

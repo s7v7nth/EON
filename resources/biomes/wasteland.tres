@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="BiomeDefinition" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://resources/biomes/biome_definition.gd" id="1"]
+[ext_resource type="Resource" path="res://resources/waves/landfill_waves.tres" id="2_waves"]
+
+[resource]
+script = ExtResource("1")
+biome_id = 8
+display_name = "Wasteland Camps"
+wave_set = ExtResource("2_waves")
+floor_color = Color(0.28, 0.22, 0.14, 1)
+wall_color = Color(0.2, 0.16, 0.1, 1)
+faction_ids = Array[int]([0, 3])
+faction_weights = Array[float]([0.75, 0.25])
+element_bias = Array[int]([3, 0])
+loot_tags = PackedStringArray("fire", "bleed")
+neighbor_biomes = Array[int]([0, 4, 6, 7])

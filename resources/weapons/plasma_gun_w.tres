@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="WeaponData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://resources/weapons/weapon_data.gd" id="1"]
+[ext_resource type="Resource" path="res://resources/attacks/plasma_gun.tres" id="2_sec"]
+
+[resource]
+script = ExtResource("1")
+display_name = "Plasma Gun"
+primary = ExtResource("2_sec")
+secondary = ExtResource("2_sec")
+hitbox_reach = 18.0
+visual_tint = Color(0.3, 0.6, 1.0, 1)
+shape_tag = &"gun"
+element_tag = &"electricity"

@@ -6,6 +6,8 @@ extends Node
 
 var current_energy: float = 0.0
 var regen_multiplier: float = 1.0
+## When false, Adrenaline/external systems cannot raise regen (nano swarm).
+var allow_external_regen_mult: bool = true
 
 signal energy_changed(current: float, max_value: float)
 
@@ -41,6 +43,18 @@ func try_spend(amount: float) -> bool:
 
 
 func set_regen_multiplier(mult: float) -> void:
+	if not allow_external_regen_mult:
+		return
+	regen_multiplier = maxf(mult, 0.0)
+
+
+func lock_regen(mult: float = 0.0) -> void:
+	allow_external_regen_mult = false
+	regen_multiplier = maxf(mult, 0.0)
+
+
+func unlock_regen(mult: float = 1.0) -> void:
+	allow_external_regen_mult = true
 	regen_multiplier = maxf(mult, 0.0)
 
 

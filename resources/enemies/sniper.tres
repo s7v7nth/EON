@@ -7,6 +7,7 @@
 [resource]
 script = ExtResource("1")
 display_name = "Sniper"
+faction = 2
 stats = ExtResource("2_stats")
 ranged_attack = ExtResource("3_atk")
 attack_range = 28.0
@@ -14,3 +15,9 @@ ranged_range = 320.0
 detection_radius = 400.0
 visual_color = Color(0.35, 0.55, 0.85, 1)
 prefers_kite = true
+use_resist_overrides = true
+resist_physical = 0.05
+resist_electricity = -0.4
+resist_corrosion = -0.25
+resist_fire = 0.1
+resist_bleed = 0.7

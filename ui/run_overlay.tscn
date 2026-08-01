@@ -8,10 +8,18 @@ script = ExtResource("1_script")
 
 [node name="WaveLabel" type="Label" parent="."]
 offset_left = 16.0
-offset_top = 150.0
-offset_right = 360.0
-offset_bottom = 174.0
+offset_top = 230.0
+offset_right = 420.0
+offset_bottom = 254.0
 theme_override_font_sizes/font_size = 16
+text = ""
+
+[node name="StyleBanner" type="Label" parent="."]
+offset_left = 16.0
+offset_top = 254.0
+offset_right = 420.0
+offset_bottom = 278.0
+theme_override_font_sizes/font_size = 15
 text = ""
 
 [node name="Center" type="CenterContainer" parent="."]
@@ -24,7 +32,7 @@ mouse_filter = 2
 
 [node name="Panel" type="PanelContainer" parent="Center"]
 visible = false
-custom_minimum_size = Vector2(400, 220)
+custom_minimum_size = Vector2(480, 320)
 layout_mode = 2
 
 [node name="Margin" type="MarginContainer" parent="Center/Panel"]
@@ -36,19 +44,41 @@ theme_override_constants/margin_bottom = 20
 
 [node name="VBox" type="VBoxContainer" parent="Center/Panel/Margin"]
 layout_mode = 2
-theme_override_constants/separation = 12
+theme_override_constants/separation = 10
 
 [node name="Title" type="Label" parent="Center/Panel/Margin/VBox"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 28
+theme_override_font_sizes/font_size = 26
 text = "Title"
 horizontal_alignment = 1
 
 [node name="Subtitle" type="Label" parent="Center/Panel/Margin/VBox"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 16
+theme_override_font_sizes/font_size = 15
 text = "Subtitle"
 horizontal_alignment = 1
+
+[node name="ArchPick" type="VBoxContainer" parent="Center/Panel/Margin/VBox"]
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="BtnDefault" type="Button" parent="Center/Panel/Margin/VBox/ArchPick"]
+layout_mode = 2
+text = "Default — Energy / Adrenaline / Parry"
+
+[node name="BtnNano" type="Button" parent="Center/Panel/Margin/VBox/ArchPick"]
+layout_mode = 2
+text = "Nanomachines — Regen / Infect / Hook"
+
+[node name="BtnTrain" type="Button" parent="Center/Panel/Margin/VBox/ArchPick"]
+layout_mode = 2
+text = "Electro-Train — Plasma / Overheat"
+
+[node name="Craft" type="VBoxContainer" parent="Center/Panel/Margin/VBox"]
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 6
 
 [node name="Rewards" type="VBoxContainer" parent="Center/Panel/Margin/VBox"]
 visible = false

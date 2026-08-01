@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="BiomeDefinition" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://resources/biomes/biome_definition.gd" id="1"]
+[ext_resource type="Resource" path="res://resources/waves/landfill_waves.tres" id="2_waves"]
+
+[resource]
+script = ExtResource("1")
+biome_id = 6
+display_name = "Landfill"
+wave_set = ExtResource("2_waves")
+floor_color = Color(0.22, 0.2, 0.12, 1)
+wall_color = Color(0.16, 0.14, 0.08, 1)
+faction_ids = Array[int]([0, 3, 1])
+faction_weights = Array[float]([0.4, 0.35, 0.25])
+element_bias = Array[int]([2, 4])
+loot_tags = PackedStringArray("corr", "nano", "swarm", "proximity")
+neighbor_biomes = Array[int]([9, 1, 8])

@@ -7,6 +7,7 @@
 [resource]
 script = ExtResource("1")
 display_name = "Swarm"
+faction = 0
 stats = ExtResource("2_stats")
 melee_attack = ExtResource("3_atk")
 attack_range = 30.0
@@ -14,3 +15,9 @@ ranged_range = 0.0
 detection_radius = 280.0
 visual_color = Color(0.85, 0.55, 0.2, 1)
 prefers_kite = false
+use_resist_overrides = true
+resist_physical = -0.05
+resist_electricity = 0.0
+resist_corrosion = -0.1
+resist_fire = -0.3
+resist_bleed = -0.4
