@@ -288,6 +288,14 @@ Arena (Node2D)
 - Числа в `.tres` — `player_stats`, `enemy_dummy_stats`, attack resources.
 - Debug HUD на SignalBus — HP / Energy / Adrenaline.
 
+### Пост-срез: game feel и ренж (2026-08-01, вечер)
+- Физика 120 Гц + `physics_jitter_fix = 0`, снято сглаживание камеры — резкое, отзывчивое движение без «инерции».
+- Dash оставляет затухающие блики-остаточные образы (`player_dash.gd`, спавн Polygon2D-призраков).
+- Общий снаряд `entities/projectiles/projectile.tscn` (`Projectile`): урон через Hurtbox, гибнет о стены, уважает i-frames.
+- Ренж-атака игрока: ПКМ, кулдаун 0.8s, снаряд к курсору (`player_ranged_attack.tres`, состояние `RangedAttack`).
+- Ренж-атака врага: на средней дистанции (до 260px) с виндапом 0.35s и кулдауном 2s (`enemy_dummy_ranged_attack.tres`); вблизи — по-прежнему мили. Агро-радиус поднят до 340.
+- В `AttackData` добавлены `projectile_speed` / `projectile_lifetime` (0 = мили-атака).
+
 ### Известные ограничения
 - Временные валидаторы лежат в `tools/` (не мешают запуску).
 - `levels/bootstrap.tscn` / `player_move_test.tscn` могут ещё оставаться как черновики — main уже арена.

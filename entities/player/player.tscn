@@ -1,4 +1,4 @@
-[gd_scene load_steps=14 format=3]
+[gd_scene load_steps=19 format=3]
 
 [ext_resource type="Script" path="res://entities/player/player.gd" id="1_player"]
 [ext_resource type="Resource" path="res://resources/stats/player_stats.tres" id="2_stats"]
@@ -7,12 +7,14 @@
 [ext_resource type="Script" path="res://entities/player/states/player_move.gd" id="5_move"]
 [ext_resource type="Script" path="res://entities/player/states/player_attack.gd" id="6_attack"]
 [ext_resource type="Script" path="res://entities/player/states/player_dash.gd" id="7_dash"]
-[ext_resource type="Script" path="res://components/health_component.gd" id="8_health"]
-[ext_resource type="Script" path="res://components/energy_component.gd" id="9_energy"]
-[ext_resource type="Script" path="res://components/adrenaline_component.gd" id="10_adra"]
-[ext_resource type="Script" path="res://components/hurtbox_component.gd" id="11_hurt"]
-[ext_resource type="Script" path="res://components/hitbox_component.gd" id="12_hit"]
-[ext_resource type="Resource" path="res://resources/attacks/player_basic_attack.tres" id="13_atk"]
+[ext_resource type="Script" path="res://entities/player/states/player_ranged_attack.gd" id="8_ranged"]
+[ext_resource type="Script" path="res://components/health_component.gd" id="9_health"]
+[ext_resource type="Script" path="res://components/energy_component.gd" id="10_energy"]
+[ext_resource type="Script" path="res://components/adrenaline_component.gd" id="11_adra"]
+[ext_resource type="Script" path="res://components/hurtbox_component.gd" id="12_hurt"]
+[ext_resource type="Script" path="res://components/hitbox_component.gd" id="13_hit"]
+[ext_resource type="Resource" path="res://resources/attacks/player_basic_attack.tres" id="14_atk"]
+[ext_resource type="Resource" path="res://resources/attacks/player_ranged_attack.tres" id="15_ranged_atk"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_body"]
 radius = 12.0
@@ -30,6 +32,7 @@ motion_mode = 1
 y_sort_enabled = true
 script = ExtResource("1_player")
 stats = ExtResource("2_stats")
+ranged_attack_data = ExtResource("15_ranged_atk")
 
 [node name="Visual" type="Polygon2D" parent="."]
 color = Color(0.55, 0.58, 0.62, 1)
@@ -54,26 +57,27 @@ script = ExtResource("6_attack")
 [node name="Dash" type="Node" parent="StateMachine"]
 script = ExtResource("7_dash")
 
+[node name="RangedAttack" type="Node" parent="StateMachine"]
+script = ExtResource("8_ranged")
+
 [node name="HealthComponent" type="Node" parent="."]
-script = ExtResource("8_health")
+script = ExtResource("9_health")
 stats = ExtResource("2_stats")
 
 [node name="EnergyComponent" type="Node" parent="."]
-script = ExtResource("9_energy")
+script = ExtResource("10_energy")
 stats = ExtResource("2_stats")
 
 [node name="AdrenalineComponent" type="Node" parent="."]
-script = ExtResource("10_adra")
+script = ExtResource("11_adra")
 stats = ExtResource("2_stats")
-energy_component = NodePath("../EnergyComponent")
 
 [node name="HurtboxComponent" type="Area2D" parent="."]
 collision_layer = 8
 collision_mask = 0
 monitoring = false
 monitorable = true
-script = ExtResource("11_hurt")
-health_component = NodePath("../HealthComponent")
+script = ExtResource("12_hurt")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="HurtboxComponent"]
 shape = SubResource("CircleShape2D_hurt")
@@ -86,8 +90,8 @@ collision_layer = 0
 collision_mask = 16
 monitoring = false
 monitorable = false
-script = ExtResource("12_hit")
-attack_data = ExtResource("13_atk")
+script = ExtResource("13_hit")
+attack_data = ExtResource("14_atk")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="HitboxPivot/HitboxComponent"]
 shape = SubResource("RectangleShape2D_hit")
@@ -97,4 +101,7 @@ disabled = true
 one_shot = true
 
 [node name="AttackCooldownTimer" type="Timer" parent="."]
+one_shot = true
+
+[node name="RangedCooldownTimer" type="Timer" parent="."]
 one_shot = true

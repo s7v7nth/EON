@@ -68,5 +68,3 @@ position = Vector2(-120, 40)
 position = Vector2(160, -20)
 
 [node name="Camera2D" type="Camera2D" parent="Entities/Player"]
-position_smoothing_enabled = true
-position_smoothing_speed = 8.0

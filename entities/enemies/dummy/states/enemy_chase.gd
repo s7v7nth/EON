@@ -1,5 +1,5 @@
 extends State
-## Move toward the player; attack when close enough.
+## Move toward the player; melee when close, ranged shot at mid distance.
 
 @onready var enemy: EnemyDummy = owner as EnemyDummy
 
@@ -13,5 +13,8 @@ func physics_update(_delta: float) -> void:
 			transition_to(&"Attack")
 		else:
 			enemy.stop_movement()
+		return
+	if enemy.ranged_ready():
+		transition_to(&"RangedAttack")
 		return
 	enemy.apply_chase_movement()

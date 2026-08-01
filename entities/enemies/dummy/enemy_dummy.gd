@@ -1,9 +1,13 @@
 class_name EnemyDummy
 extends CharacterBody2D
-## Simple aggro → chase → attack dummy for the vertical slice.
+## Aggro → chase → melee up close, ranged shot at mid distance.
+
+const PROJECTILE_SCENE := preload("res://entities/projectiles/projectile.tscn")
 
 @export var stats: CharacterStats
 @export var attack_range: float = 36.0
+@export var ranged_range: float = 260.0
+@export var ranged_attack_data: AttackData
 
 @onready var state_machine: StateMachine = $StateMachine
 @onready var health: HealthComponent = $HealthComponent
@@ -11,6 +15,7 @@ extends CharacterBody2D
 @onready var hitbox: HitboxComponent = $HitboxComponent
 @onready var detection_area: Area2D = $DetectionArea
 @onready var attack_cooldown: Timer = $AttackCooldownTimer
+@onready var ranged_cooldown: Timer = $RangedCooldownTimer
 
 var target: Node2D
 
@@ -78,3 +83,23 @@ func distance_to_target() -> float:
 
 func is_target_in_attack_range() -> bool:
 	return distance_to_target() <= attack_range
+
+
+func ranged_ready() -> bool:
+	if ranged_attack_data == null or target == null:
+		return false
+	if not ranged_cooldown.is_stopped():
+		return false
+	return distance_to_target() <= ranged_range
+
+
+func spawn_projectile(direction: Vector2) -> void:
+	var proj := PROJECTILE_SCENE.instantiate() as Projectile
+	proj.attack_data = ranged_attack_data
+	proj.direction = direction.normalized()
+	proj.source = self
+	# world + player_hurtbox
+	proj.collision_mask = (1 << 0) | (1 << 3)
+	proj.modulate = Color(1.0, 0.45, 0.35)
+	get_parent().add_child(proj)
+	proj.global_position = global_position + direction.normalized() * 20.0

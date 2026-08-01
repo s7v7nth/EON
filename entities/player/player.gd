@@ -2,7 +2,10 @@ class_name Player
 extends CharacterBody2D
 ## Greybox player root. Owns stats/component refs; states drive behaviour.
 
+const PROJECTILE_SCENE := preload("res://entities/projectiles/projectile.tscn")
+
 @export var stats: CharacterStats
+@export var ranged_attack_data: AttackData
 
 @onready var state_machine: StateMachine = $StateMachine
 @onready var health: HealthComponent = $HealthComponent
@@ -13,6 +16,7 @@ extends CharacterBody2D
 @onready var hitbox_pivot: Node2D = $HitboxPivot
 @onready var dash_cooldown: Timer = $DashCooldownTimer
 @onready var attack_cooldown: Timer = $AttackCooldownTimer
+@onready var ranged_cooldown: Timer = $RangedCooldownTimer
 
 ## Last non-zero move intent — used by Dash when no input held.
 var facing_direction: Vector2 = Vector2.RIGHT
@@ -68,13 +72,20 @@ func _relay_component_signals() -> void:
 	hurtbox.hit_received.connect(_on_hurtbox_hit_received)
 
 
-func _on_hurtbox_hit_received(attack_data: AttackData, _source: Node) -> void:
+func _on_hurtbox_hit_received(_attack_data: AttackData, _source: Node) -> void:
 	if stats:
 		adrenaline.add(stats.adrenaline_gain_on_hurt)
 
 
 func get_input_direction() -> Vector2:
 	return Input.get_vector("move_left", "move_right", "move_up", "move_down")
+
+
+func get_aim_direction() -> Vector2:
+	var aim := get_global_mouse_position() - global_position
+	if aim == Vector2.ZERO:
+		return facing_direction
+	return aim.normalized()
 
 
 func apply_movement(direction: Vector2) -> void:
@@ -87,3 +98,39 @@ func apply_movement(direction: Vector2) -> void:
 func stop_movement() -> void:
 	velocity = Vector2.ZERO
 	move_and_slide()
+
+
+func dash_ready() -> bool:
+	if stats == null:
+		return false
+	if dash_cooldown and not dash_cooldown.is_stopped():
+		return false
+	return energy.current_energy >= stats.dash_cost
+
+
+func attack_ready() -> bool:
+	return attack_cooldown == null or attack_cooldown.is_stopped()
+
+
+func ranged_ready() -> bool:
+	if ranged_attack_data == null:
+		return false
+	return ranged_cooldown == null or ranged_cooldown.is_stopped()
+
+
+func spawn_projectile(direction: Vector2) -> void:
+	var proj := PROJECTILE_SCENE.instantiate() as Projectile
+	proj.attack_data = ranged_attack_data
+	proj.direction = direction.normalized()
+	proj.source = self
+	# world + enemy_hurtbox
+	proj.collision_mask = (1 << 0) | (1 << 4)
+	proj.modulate = Color(0.5, 0.8, 1.0)
+	get_parent().add_child(proj)
+	proj.global_position = global_position + direction.normalized() * 20.0
+	proj.hit_landed.connect(_on_projectile_hit_landed)
+
+
+func _on_projectile_hit_landed(_target: HurtboxComponent) -> void:
+	if stats:
+		adrenaline.add(stats.adrenaline_gain_on_hit)

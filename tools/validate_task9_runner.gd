@@ -20,9 +20,10 @@ func _run() -> void:
 	await get_tree().physics_frame
 	await get_tree().physics_frame
 
-	# Detection should pick up player (within 220px).
+	# Detection should pick up player.
 	assert(enemy.target == player)
-	assert(enemy.state_machine.current_state.name == "Chase" or enemy.state_machine.current_state.name == "Attack")
+	var combat_states: Array[String] = ["Chase", "Attack", "RangedAttack"]
+	assert(enemy.state_machine.current_state.name in combat_states)
 
 	# Deal enough damage to kill (50 HP / 10 dmg = 5 hits).
 	var died_flag: Array = [false]
