@@ -8,6 +8,6 @@ damage = 6.0
 cooldown = 2.0
 windup = 0.35
 active_duration = 0.0
-knockback_force = 0.0
+knockback_force = 40.0
 projectile_speed = 380.0
 projectile_lifetime = 1.6

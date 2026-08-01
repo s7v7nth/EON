@@ -5,9 +5,11 @@ extends CharacterBody2D
 const PROJECTILE_SCENE := preload("res://entities/projectiles/projectile.tscn")
 
 @export var stats: CharacterStats
+@export var definition: EnemyDefinition
 @export var attack_range: float = 36.0
 @export var ranged_range: float = 260.0
 @export var ranged_attack_data: AttackData
+@export var prefers_kite: bool = false
 
 @onready var state_machine: StateMachine = $StateMachine
 @onready var health: HealthComponent = $HealthComponent
@@ -19,16 +21,44 @@ const PROJECTILE_SCENE := preload("res://entities/projectiles/projectile.tscn")
 
 var target: Node2D
 
+const KNOCKBACK_DURATION := 0.15
+var _kb_dir: Vector2 = Vector2.ZERO
+var _kb_force: float = 0.0
+var _kb_time: float = 0.0
+
 
 func _ready() -> void:
 	motion_mode = MOTION_MODE_FLOATING
 	y_sort_enabled = true
-	_configure_from_stats()
+	if definition != null:
+		apply_definition(definition)
+	else:
+		_configure_from_stats()
 	health.died.connect(_on_died)
 	detection_area.body_entered.connect(_on_detection_body_entered)
 	detection_area.body_exited.connect(_on_detection_body_exited)
 	# Catch bodies already overlapping on spawn.
 	call_deferred("_scan_detection_area")
+
+
+func _physics_process(delta: float) -> void:
+	if _kb_time > 0.0:
+		_kb_time = maxf(0.0, _kb_time - delta)
+
+
+func apply_knockback(direction: Vector2, force: float) -> void:
+	if direction == Vector2.ZERO or force <= 0.0:
+		return
+	_kb_dir = direction.normalized()
+	_kb_force = force
+	_kb_time = KNOCKBACK_DURATION
+
+
+func _knockback_vector() -> Vector2:
+	if _kb_time <= 0.0 or _kb_force <= 0.0:
+		return Vector2.ZERO
+	var strength := _kb_force * (_kb_time / KNOCKBACK_DURATION)
+	return Iso.apply_velocity(_kb_dir, strength)
 
 
 func _scan_detection_area() -> void:
@@ -40,8 +70,40 @@ func _configure_from_stats() -> void:
 	if stats == null:
 		push_error("EnemyDummy: CharacterStats is required")
 		return
-	health.stats = stats
+	health.apply_stats(stats)
 	hurtbox.health_component = health
+
+
+func apply_definition(def: EnemyDefinition) -> void:
+	if def == null:
+		return
+	definition = def
+	if def.stats:
+		stats = def.stats
+	attack_range = def.attack_range
+	ranged_range = def.ranged_range
+	prefers_kite = def.prefers_kite
+	ranged_attack_data = def.ranged_attack
+	if hitbox:
+		hitbox.attack_data = def.melee_attack
+	_configure_from_stats()
+	var visual := get_node_or_null("Visual") as Polygon2D
+	if visual:
+		visual.color = def.visual_color
+	var detect_shape := detection_area.get_node_or_null("CollisionShape2D") as CollisionShape2D
+	if detect_shape and detect_shape.shape is CircleShape2D:
+		(detect_shape.shape as CircleShape2D).radius = def.detection_radius
+
+
+func apply_retreat_movement() -> void:
+	if target == null or stats == null:
+		velocity = _knockback_vector()
+		move_and_slide()
+		return
+	var away := global_position.direction_to(target.global_position) * -1.0
+	velocity = Iso.apply_velocity(away, stats.move_speed)
+	velocity += _knockback_vector()
+	move_and_slide()
 
 
 func _on_detection_body_entered(body: Node2D) -> void:
@@ -62,16 +124,17 @@ func _on_died() -> void:
 
 func apply_chase_movement() -> void:
 	if target == null or stats == null:
-		velocity = Vector2.ZERO
+		velocity = _knockback_vector()
 		move_and_slide()
 		return
 	var direction := global_position.direction_to(target.global_position)
 	velocity = Iso.apply_velocity(direction, stats.move_speed)
+	velocity += _knockback_vector()
 	move_and_slide()
 
 
 func stop_movement() -> void:
-	velocity = Vector2.ZERO
+	velocity = _knockback_vector()
 	move_and_slide()
 
 

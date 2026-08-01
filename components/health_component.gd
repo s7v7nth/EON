@@ -36,3 +36,11 @@ func heal(amount: float) -> void:
 
 func get_max_health() -> float:
 	return stats.max_health if stats else 0.0
+
+
+func apply_stats(new_stats: CharacterStats) -> void:
+	stats = new_stats
+	if stats == null:
+		return
+	current_health = stats.max_health
+	health_changed.emit(current_health, stats.max_health)

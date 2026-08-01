@@ -21,8 +21,26 @@ func receive_hit(attack_data: AttackData, source: Node) -> void:
 	if health_component == null:
 		push_warning("%s: no HealthComponent assigned" % name)
 		return
-	health_component.take_damage(attack_data.damage)
+	var damage := attack_data.damage
+	if source is Player:
+		damage *= (source as Player).damage_multiplier
+	health_component.take_damage(damage)
+	_apply_knockback(attack_data, source)
 	hit_received.emit(attack_data, source)
+
+
+func _apply_knockback(attack_data: AttackData, source: Node) -> void:
+	if attack_data.knockback_force <= 0.0:
+		return
+	var body := get_parent()
+	if body == null or not body.has_method("apply_knockback"):
+		return
+	var away := Vector2.RIGHT
+	if source is Node2D and body is Node2D:
+		away = (body as Node2D).global_position - (source as Node2D).global_position
+		if away == Vector2.ZERO:
+			away = Vector2.RIGHT
+	body.call("apply_knockback", away.normalized(), attack_data.knockback_force)
 
 
 func set_invincible(on: bool) -> void:

@@ -277,7 +277,7 @@ Arena (Node2D)
 
 ## 6. Статус реализации (2026-08-01)
 
-Задачи 1–11 реализованы и прогнаны headless-смоками. Main scene: `res://levels/arena/arena.tscn`.
+Задачи 1–11 реализованы и прогнаны headless-смоками. Main scene: `res://levels/rooms/room_01.tscn`.
 
 ### Чек-лист Task 12
 - WASD + `Iso.Y_SCALE` — реализовано (`Player.apply_movement` / `Iso.apply_velocity`).
@@ -298,7 +298,14 @@ Arena (Node2D)
 
 ### Известные ограничения
 - Временные валидаторы лежат в `tools/` (не мешают запуску).
-- `levels/bootstrap.tscn` / `player_move_test.tscn` могут ещё оставаться как черновики — main уже арена.
+- `levels/bootstrap.tscn` / `player_move_test.tscn` могут ещё оставаться как черновики — main уже `room_01`.
 - NodePath-экспорты `health_component` в `.tscn` ненадёжны; компоненты связываются в `_configure_from_stats()`.
-- Смерть игрока только ставит `get_tree().paused = true` (без экрана рестарта).
-- Нет арта/анимаций — чистый серый бокс.
+- Нет арта/анимаций — чистый серый бокс (архетипы/оружие отличаются цветом).
+- Нет ветвящейся карты и мета-прогрессии между ранами — только линейный ран из 3 комнат.
+
+### Пост-срез A–E (2026-08-01, ночь)
+- **A — Arena loop:** `ArenaController` + `WaveSet`, `RunOverlay` (смерть/победа, R=restart), волны.
+- **B — Combat feel:** knockback через Hurtbox, `HitStop` autoload, `knockback_force` в `.tres`, `player_heavy_attack.tres`.
+- **C — Архетипы:** `EnemyDefinition` (bruiser / sniper / swarm), kite у sniper, микс в волнах.
+- **D — Оружие:** `WeaponData` Blade/Hammer/Bow, хоткеи 1/2/3, метка в HUD.
+- **E — Ран:** `RunState` autoload, `room_01/02/03`, exit → выбор баффа → следующая комната, финальный win. Main: `res://levels/rooms/room_01.tscn`.

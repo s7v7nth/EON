@@ -45,3 +45,8 @@ max_value = 100.0
 value = 0.0
 show_percentage = false
 modulate = Color(0.95, 0.8, 0.2, 1)
+
+[node name="WeaponLabel" type="Label" parent="Margin/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "Weapon: —"

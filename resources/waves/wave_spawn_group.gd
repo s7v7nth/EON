@@ -1,0 +1,8 @@
+class_name WaveSpawnGroup
+extends Resource
+## One spawn group inside a wave (count of a given enemy scene/definition).
+
+@export var count: int = 1
+@export var enemy_scene: PackedScene
+## Optional — when set, applied to EnemyDummy after spawn.
+@export var enemy_definition: EnemyDefinition

@@ -36,6 +36,7 @@ func _on_area_entered(area: Area2D) -> void:
 	var hurtbox := area as HurtboxComponent
 	hurtbox.receive_hit(attack_data, source)
 	hit_landed.emit(hurtbox)
+	HitStop.punch(0.2, 0.03)
 	queue_free()
 
 

@@ -1,0 +1,68 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://ui/run_overlay.gd" id="1_script"]
+
+[node name="RunOverlay" type="CanvasLayer"]
+layer = 10
+script = ExtResource("1_script")
+
+[node name="WaveLabel" type="Label" parent="."]
+offset_left = 16.0
+offset_top = 150.0
+offset_right = 360.0
+offset_bottom = 174.0
+theme_override_font_sizes/font_size = 16
+text = ""
+
+[node name="Center" type="CenterContainer" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Panel" type="PanelContainer" parent="Center"]
+visible = false
+custom_minimum_size = Vector2(400, 220)
+layout_mode = 2
+
+[node name="Margin" type="MarginContainer" parent="Center/Panel"]
+layout_mode = 2
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 24
+theme_override_constants/margin_bottom = 20
+
+[node name="VBox" type="VBoxContainer" parent="Center/Panel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Title" type="Label" parent="Center/Panel/Margin/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 28
+text = "Title"
+horizontal_alignment = 1
+
+[node name="Subtitle" type="Label" parent="Center/Panel/Margin/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+text = "Subtitle"
+horizontal_alignment = 1
+
+[node name="Rewards" type="VBoxContainer" parent="Center/Panel/Margin/VBox"]
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="BtnDamage" type="Button" parent="Center/Panel/Margin/VBox/Rewards"]
+layout_mode = 2
+text = "+20% Damage"
+
+[node name="BtnSpeed" type="Button" parent="Center/Panel/Margin/VBox/Rewards"]
+layout_mode = 2
+text = "+15% Move Speed"
+
+[node name="BtnDash" type="Button" parent="Center/Panel/Margin/VBox/Rewards"]
+layout_mode = 2
+text = "-25% Dash Cost"

@@ -15,6 +15,7 @@ func physics_update(_delta: float) -> void:
 
 
 func _check_combat_inputs() -> bool:
+	player.handle_weapon_hotkeys()
 	if Input.is_action_just_pressed("dash") and player.dash_ready():
 		transition_to(&"Dash")
 		return true

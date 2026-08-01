@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="EnemyDefinition" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://resources/enemies/enemy_definition.gd" id="1"]
+[ext_resource type="Resource" path="res://resources/stats/enemy_bruiser_stats.tres" id="2_stats"]
+[ext_resource type="Resource" path="res://resources/attacks/enemy_bruiser_attack.tres" id="3_atk"]
+
+[resource]
+script = ExtResource("1")
+display_name = "Bruiser"
+stats = ExtResource("2_stats")
+melee_attack = ExtResource("3_atk")
+attack_range = 40.0
+ranged_range = 0.0
+detection_radius = 300.0
+visual_color = Color(0.45, 0.18, 0.22, 1)
+prefers_kite = false

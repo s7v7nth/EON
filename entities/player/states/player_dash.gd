@@ -22,7 +22,7 @@ func enter(_msg: Dictionary = {}) -> void:
 		_return_to_locomotion()
 		return
 
-	if not player.energy.try_spend(player.stats.dash_cost):
+	if not player.try_spend_dash():
 		_return_to_locomotion()
 		return
 

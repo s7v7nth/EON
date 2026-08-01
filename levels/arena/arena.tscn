@@ -1,8 +1,10 @@
-[gd_scene load_steps=6 format=3]
+[gd_scene load_steps=9 format=3]
 
-[ext_resource type="PackedScene" path="res://entities/player/player.tscn" id="1_player"]
-[ext_resource type="PackedScene" path="res://entities/enemies/dummy/enemy_dummy.tscn" id="2_enemy"]
+[ext_resource type="Script" path="res://levels/arena/arena_controller.gd" id="1_ctrl"]
+[ext_resource type="PackedScene" path="res://entities/player/player.tscn" id="2_player"]
 [ext_resource type="PackedScene" path="res://ui/debug_hud.tscn" id="3_hud"]
+[ext_resource type="PackedScene" path="res://ui/run_overlay.tscn" id="4_overlay"]
+[ext_resource type="Resource" path="res://resources/waves/default_waves.tres" id="5_waves"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_wall_h"]
 size = Vector2(1280, 40)
@@ -10,9 +12,17 @@ size = Vector2(1280, 40)
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_wall_v"]
 size = Vector2(40, 720)
 
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_exit"]
+size = Vector2(56, 32)
+
 [node name="Arena" type="Node2D"]
+script = ExtResource("1_ctrl")
+wave_set = ExtResource("5_waves")
+is_final_room = true
 
 [node name="DebugHUD" parent="." instance=ExtResource("3_hud")]
+
+[node name="RunOverlay" parent="." instance=ExtResource("4_overlay")]
 
 [node name="Floor" type="Polygon2D" parent="."]
 z_index = -20
@@ -58,13 +68,39 @@ polygon = PackedVector2Array(-640, -360, -620, -360, -620, 360, -640, 360)
 color = Color(0.12, 0.13, 0.14, 1)
 polygon = PackedVector2Array(620, -360, 640, -360, 640, 360, 620, 360)
 
+[node name="SpawnPoints" type="Node2D" parent="."]
+
+[node name="Spawn1" type="Marker2D" parent="SpawnPoints"]
+position = Vector2(200, -80)
+
+[node name="Spawn2" type="Marker2D" parent="SpawnPoints"]
+position = Vector2(280, 60)
+
+[node name="Spawn3" type="Marker2D" parent="SpawnPoints"]
+position = Vector2(120, 140)
+
+[node name="Spawn4" type="Marker2D" parent="SpawnPoints"]
+position = Vector2(320, -40)
+
 [node name="Entities" type="Node2D" parent="."]
 y_sort_enabled = true
 
-[node name="Player" parent="Entities" instance=ExtResource("1_player")]
+[node name="Player" parent="Entities" instance=ExtResource("2_player")]
 position = Vector2(-120, 40)
 
-[node name="EnemyDummy" parent="Entities" instance=ExtResource("2_enemy")]
-position = Vector2(160, -20)
-
 [node name="Camera2D" type="Camera2D" parent="Entities/Player"]
+
+[node name="ExitMarker" type="Area2D" parent="."]
+position = Vector2(0, 200)
+visible = false
+monitoring = false
+monitorable = false
+collision_layer = 0
+collision_mask = 2
+
+[node name="ExitVisual" type="Polygon2D" parent="ExitMarker"]
+color = Color(0.3, 0.75, 0.45, 0.7)
+polygon = PackedVector2Array(-28, -16, 28, -16, 28, 16, -28, 16)
+
+[node name="ExitShape" type="CollisionShape2D" parent="ExitMarker"]
+shape = SubResource("RectangleShape2D_exit")

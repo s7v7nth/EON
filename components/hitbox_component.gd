@@ -40,6 +40,7 @@ func _on_area_entered(area: Area2D) -> void:
 	_hit_targets[id] = true
 	hurtbox.receive_hit(attack_data, owner)
 	hit_landed.emit(hurtbox)
+	HitStop.punch()
 
 
 func _set_shapes_disabled(disabled: bool) -> void:
