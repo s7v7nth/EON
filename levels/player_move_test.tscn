@@ -1,0 +1,15 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="PackedScene" path="res://entities/player/player.tscn" id="1_player"]
+
+[node name="PlayerMoveTest" type="Node2D"]
+
+[node name="Floor" type="Polygon2D" parent="."]
+z_index = -10
+color = Color(0.22, 0.23, 0.25, 1)
+polygon = PackedVector2Array(-640, -360, 640, -360, 640, 360, -640, 360)
+
+[node name="Player" parent="." instance=ExtResource("1_player")]
+position = Vector2(0, 0)
+
+[node name="Camera2D" type="Camera2D" parent="Player"]

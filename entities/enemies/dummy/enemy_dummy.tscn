@@ -1,0 +1,92 @@
+[gd_scene load_steps=12 format=3]
+
+[ext_resource type="Script" path="res://entities/enemies/dummy/enemy_dummy.gd" id="1_enemy"]
+[ext_resource type="Resource" path="res://resources/stats/enemy_dummy_stats.tres" id="2_stats"]
+[ext_resource type="Script" path="res://systems/state_machine/state_machine.gd" id="3_fsm"]
+[ext_resource type="Script" path="res://entities/enemies/dummy/states/enemy_idle.gd" id="4_idle"]
+[ext_resource type="Script" path="res://entities/enemies/dummy/states/enemy_chase.gd" id="5_chase"]
+[ext_resource type="Script" path="res://entities/enemies/dummy/states/enemy_attack.gd" id="6_attack"]
+[ext_resource type="Script" path="res://components/health_component.gd" id="7_health"]
+[ext_resource type="Script" path="res://components/hurtbox_component.gd" id="8_hurt"]
+[ext_resource type="Script" path="res://components/hitbox_component.gd" id="9_hit"]
+[ext_resource type="Resource" path="res://resources/attacks/enemy_dummy_attack.tres" id="10_atk"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_body"]
+radius = 12.0
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_hurt"]
+radius = 14.0
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_hit"]
+size = Vector2(28, 20)
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_detect"]
+radius = 220.0
+
+[node name="EnemyDummy" type="CharacterBody2D"]
+collision_layer = 4
+collision_mask = 1
+motion_mode = 1
+y_sort_enabled = true
+script = ExtResource("1_enemy")
+stats = ExtResource("2_stats")
+
+[node name="Visual" type="Polygon2D" parent="."]
+color = Color(0.72, 0.28, 0.28, 1)
+polygon = PackedVector2Array(-14, 0, 14, 0, 14, -48, -14, -48)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CircleShape2D_body")
+
+[node name="StateMachine" type="Node" parent="."]
+script = ExtResource("3_fsm")
+initial_state = NodePath("Idle")
+
+[node name="Idle" type="Node" parent="StateMachine"]
+script = ExtResource("4_idle")
+
+[node name="Chase" type="Node" parent="StateMachine"]
+script = ExtResource("5_chase")
+
+[node name="Attack" type="Node" parent="StateMachine"]
+script = ExtResource("6_attack")
+
+[node name="HealthComponent" type="Node" parent="."]
+script = ExtResource("7_health")
+stats = ExtResource("2_stats")
+
+[node name="HurtboxComponent" type="Area2D" parent="."]
+collision_layer = 16
+collision_mask = 0
+monitoring = false
+monitorable = true
+script = ExtResource("8_hurt")
+health_component = NodePath("../HealthComponent")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="HurtboxComponent"]
+shape = SubResource("CircleShape2D_hurt")
+
+[node name="HitboxComponent" type="Area2D" parent="."]
+position = Vector2(22, 0)
+collision_layer = 0
+collision_mask = 8
+monitoring = false
+monitorable = false
+script = ExtResource("9_hit")
+attack_data = ExtResource("10_atk")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="HitboxComponent"]
+shape = SubResource("RectangleShape2D_hit")
+disabled = true
+
+[node name="DetectionArea" type="Area2D" parent="."]
+collision_layer = 0
+collision_mask = 2
+monitoring = true
+monitorable = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="DetectionArea"]
+shape = SubResource("CircleShape2D_detect")
+
+[node name="AttackCooldownTimer" type="Timer" parent="."]
+one_shot = true
