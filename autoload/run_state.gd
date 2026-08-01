@@ -12,6 +12,8 @@ var damage_mult: float = 1.0
 var speed_mult: float = 1.0
 var dash_cost_mult: float = 1.0
 
+var _transitioning: bool = false
+
 
 func reset() -> void:
 	room_index = 0
@@ -47,14 +49,29 @@ func is_last_room() -> bool:
 
 
 func advance_to_next_room() -> void:
-	if is_last_room():
+	if is_last_room() or _transitioning:
 		return
 	room_index += 1
-	get_tree().paused = false
-	get_tree().change_scene_to_file(ROOM_SCENES[room_index])
+	_change_scene(ROOM_SCENES[room_index])
 
 
 func restart_run() -> void:
+	if _transitioning:
+		return
 	reset()
+	_change_scene(ROOM_SCENES[0])
+
+
+func _change_scene(path: String) -> void:
+	_transitioning = true
+	# Restore simulation before tearing down the current (paused) scene.
+	Engine.time_scale = 1.0
 	get_tree().paused = false
-	get_tree().change_scene_to_file(ROOM_SCENES[0])
+	# Deferred: never change_scene from a node that lives inside the old scene
+	# during _input / _unhandled_input — that can abort the game window.
+	get_tree().call_deferred("change_scene_to_file", path)
+	call_deferred("_clear_transition_flag")
+
+
+func _clear_transition_flag() -> void:
+	_transitioning = false

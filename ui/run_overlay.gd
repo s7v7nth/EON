@@ -27,11 +27,13 @@ func _ready() -> void:
 	_rewards.get_node("BtnDash").pressed.connect(_on_pick_dash)
 
 
-func _unhandled_input(event: InputEvent) -> void:
-	if _mode == Mode.DEATH or _mode == Mode.WIN:
-		if event.is_action_pressed("restart") or _is_restart_key(event):
-			RunState.restart_run()
-			get_viewport().set_input_as_handled()
+func _input(event: InputEvent) -> void:
+	if _mode != Mode.DEATH and _mode != Mode.WIN:
+		return
+	if not event.is_action_pressed("restart") and not _is_restart_key(event):
+		return
+	get_viewport().set_input_as_handled()
+	RunState.restart_run()
 
 
 func _is_restart_key(event: InputEvent) -> bool:
