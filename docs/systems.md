@@ -54,7 +54,7 @@ Skill actions feed **Adrenaline** + **Style Score** + craft tags / loot parts.
 
 | Id | Economy | Starter primitives |
 |----|---------|-------------------|
-| DEFAULT / Синтетик | `EconomyAdrenaline` | Energy machete / disc / shield-parry |
+| DEFAULT / Синтетик | `EconomyAdrenaline` | Energy blade · hold-block shield · charge-throw · combos; Q/F reserved |
 | NANOMACHINES / Улей | `EconomyBloodHarvest` | Nano blade / whip / toad |
 | ELECTRO_TRAIN / Паровоз | `EconomyOverheat` + Vent (Q) | Plasma gun / blade / mortar |
 | NEURO_HACKER | `EconomyRam` (Q = drone slot) | Smart pistol / holo blades / drones |
@@ -62,7 +62,17 @@ Skill actions feed **Adrenaline** + **Style Score** + craft tags / loot parts.
 Catalog: `resources/architectures/architecture_catalog.tres` — UI builds pick list from it.
 Runtime: `ArchitectureData.economy` (`ResourceEconomy`) is duplicated on equip; Player has no `match economy_policy`.
 
-Special input: `special` (Q) → `economy.try_special()` (reactor pulse / swarm burst / Vent).
+### Синтетик — combat contract
+
+- **LMB tap** — melee swing (combo module). **LMB hold** — charge returning blade throw.
+- **RMB hold** — energy shield (−50% damage); first **0.5s** = parry (full negate + stagger).
+- **Combos** (`systems/combat/ComboRecognizer`): LMB×3 string; LMB→RMB→LMB circle AoE.
+- **Energy** — pool ~50; spent on attacks/dash; absorbs damage before HP; ideal dash refunds cost.
+- **Adrenaline** — 0 out of combat; baseline in combat → **3 Energy/s**; rises from hits, HP damage, parry, ideal dash; decays to floor.
+- **Engagement** — `CombatEngagementComponent` (enemy aggro and/or recent exchange).
+- **Q / F** — reserved (no-op for Synthetic).
+
+Special input: `special` (Q) → `economy.try_special()` (swarm / Vent / drone; Synthetic reserved).
 
 **Upgrade rule:** one upgrade = one or more `UpgradeEffect` verbs (`systems/upgrades/`), not Player bool flags.
 Craft parts (`LootPart` in `resources/loot/`) grant tags; recipes gate on `owned_tags`.

@@ -267,6 +267,75 @@ func play_parry_end() -> void:
 		_tween.parallel().tween_property(body, "modulate", Color.WHITE, 0.12)
 
 
+func play_block_start(parry_flash: bool = true) -> void:
+	_kill_tween()
+	if parry_flash:
+		parry_shield.color = Color(1.0, 0.95, 0.45, 0.9)
+	else:
+		parry_shield.color = Color(0.45, 0.75, 1.0, 0.7)
+	parry_shield.scale = Vector2(0.75, 0.75)
+	if body:
+		body.modulate = Color(1.2, 1.15, 0.85, 1) if parry_flash else Color(0.9, 1.05, 1.2, 1)
+	_tween = create_tween()
+	_tween.tween_property(parry_shield, "scale", Vector2(1.2, 1.2), 0.08)
+	_tween.parallel().tween_property(parry_shield, "color:a", 0.95, 0.08)
+
+
+func play_block_hold() -> void:
+	_kill_tween()
+	parry_shield.color = Color(0.4, 0.7, 1.0, 0.75)
+	_tween = create_tween()
+	_tween.tween_property(parry_shield, "scale", Vector2(1.1, 1.1), 0.1)
+	if body:
+		_tween.parallel().tween_property(body, "modulate", Color(0.9, 1.05, 1.2, 1), 0.1)
+
+
+func play_block_end() -> void:
+	play_parry_end()
+
+
+func play_charge_start(aim_angle: float) -> void:
+	_kill_tween()
+	weapon.visible = true
+	weapon.rotation = aim_angle - 0.4
+	telegraph.rotation = aim_angle
+	telegraph.position = Vector2.from_angle(aim_angle) * 36.0 + Vector2(0, -10)
+	telegraph.polygon = _diamond_poly(12.0)
+	telegraph.color = Color(0.45, 0.85, 1.0, 0.0)
+	_tween = create_tween()
+	_tween.tween_property(telegraph, "color:a", 0.55, 0.12)
+
+
+func play_charge_tick(aim_angle: float, charge: float) -> void:
+	weapon.rotation = aim_angle - 0.4 - charge * 0.5
+	weapon.position = _weapon_rest_pos + Vector2.from_angle(aim_angle) * (-6.0 * charge)
+	telegraph.rotation = aim_angle
+	telegraph.position = Vector2.from_angle(aim_angle) * (36.0 + 20.0 * charge) + Vector2(0, -10)
+	telegraph.scale = Vector2.ONE * (1.0 + charge * 0.8)
+	telegraph.color.a = 0.4 + charge * 0.5
+
+
+func play_circle_slash(duration: float) -> void:
+	_kill_tween()
+	var active := maxf(duration, 0.12)
+	swing_arc.polygon = _arc_poly(78.0)
+	swing_arc.position = Vector2(0, -12)
+	swing_arc.rotation = -PI
+	swing_arc.color = Color(0.55, 0.9, 1.0, 0.85)
+	swing_arc.modulate.a = 1.0
+	weapon.visible = true
+	if body:
+		body.modulate = Color(1.2, 1.25, 1.4, 1)
+	_tween = create_tween()
+	_tween.tween_property(swing_arc, "rotation", PI, active).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	_tween.parallel().tween_property(weapon, "rotation", weapon.rotation + TAU, active)
+	_tween.parallel().tween_property(swing_arc, "modulate:a", 0.0, active)
+	if body:
+		_tween.parallel().tween_property(body, "scale", Vector2(1.15, 0.9), active * 0.4)
+		_tween.tween_property(body, "scale", Vector2.ONE, active * 0.6)
+		_tween.parallel().tween_property(body, "modulate", Color.WHITE, active)
+
+
 func play_hit_flash() -> void:
 	if body == null:
 		return

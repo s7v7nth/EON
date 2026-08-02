@@ -1,19 +1,25 @@
 class_name Projectile
 extends Area2D
-## Straight-flying projectile. Spawner sets attack_data, direction, source, mask.
+## Straight-flying projectile. Returning mode flies out then home to source.
 
 signal hit_landed(target: HurtboxComponent)
+signal returned_to_source
 
 var attack_data: AttackData
 var direction: Vector2 = Vector2.RIGHT
 var source: Node
-## Set before add_child — _ready copies this onto the polygon colors.
 var tint: Color = Color(1.0, 0.55, 0.35, 1.0)
+## Scales outbound speed / damage feel for charged throws.
+var charge: float = 1.0
 
 var _lifetime: float = 0.0
 var _trail_timer: float = 0.0
 var _visual: Polygon2D
 var _core: Polygon2D
+var _returning: bool = false
+var _hit_done: bool = false
+var _max_range: float = 420.0
+var _origin: Vector2 = Vector2.ZERO
 
 
 func _ready() -> void:
@@ -22,10 +28,13 @@ func _ready() -> void:
 	z_index = 20
 	y_sort_enabled = false
 	rotation = direction.angle()
+	_origin = global_position
 	area_entered.connect(_on_area_entered)
 	body_entered.connect(_on_body_entered)
 	_ensure_visuals()
 	_apply_visual_style()
+	if attack_data and attack_data.returning:
+		_max_range = 280.0 + 220.0 * charge
 
 
 func _physics_process(delta: float) -> void:
@@ -33,14 +42,51 @@ func _physics_process(delta: float) -> void:
 		queue_free()
 		return
 	_lifetime += delta
+	if _returning:
+		_process_return(delta)
+		return
 	if _lifetime >= attack_data.projectile_lifetime:
+		if attack_data.returning:
+			_begin_return()
+			return
 		queue_free()
 		return
-	global_position += direction * attack_data.projectile_speed * delta
+	var speed := attack_data.projectile_speed * (0.7 + 0.5 * charge)
+	global_position += direction * speed * delta
+	rotation = direction.angle()
+	if attack_data.returning and global_position.distance_to(_origin) >= _max_range:
+		_begin_return()
+		return
 	_trail_timer += delta
 	if _trail_timer >= 0.04:
 		_trail_timer = 0.0
 		_spawn_trail()
+
+
+func _process_return(delta: float) -> void:
+	if source == null or not is_instance_valid(source) or source is not Node2D:
+		queue_free()
+		return
+	var target_pos := (source as Node2D).global_position
+	var to_src := target_pos - global_position
+	var dist := to_src.length()
+	if dist <= 18.0:
+		returned_to_source.emit()
+		queue_free()
+		return
+	var speed := attack_data.projectile_speed * 1.15
+	direction = to_src / dist
+	global_position += direction * speed * delta
+	rotation = direction.angle()
+	_trail_timer += delta
+	if _trail_timer >= 0.04:
+		_trail_timer = 0.0
+		_spawn_trail()
+
+
+func _begin_return() -> void:
+	_returning = true
+	_hit_done = true
 
 
 func _ensure_visuals() -> void:
@@ -60,18 +106,17 @@ func _apply_visual_style() -> void:
 	var col := tint
 	if col.a <= 0.0 or col.r + col.g + col.b < 0.35:
 		col = Color(1.0, 0.55, 0.35, 1.0)
-	# Force strong opaque colors on the polygons themselves.
 	_visual.color = Color(col.r, col.g, col.b, 1.0)
 	_visual.modulate = Color.WHITE
 	_visual.z_index = 1
 	_visual.polygon = PackedVector2Array([
-		Vector2(18, 0), Vector2(-8, -10), Vector2(-4, 0), Vector2(-8, 10)
+		Vector2(22, 0), Vector2(-10, -8), Vector2(-4, 0), Vector2(-10, 8)
 	])
 	_core.color = Color(1, 1, 1, 0.95)
 	_core.modulate = Color.WHITE
 	_core.z_index = 2
 	_core.polygon = PackedVector2Array([
-		Vector2(10, 0), Vector2(-2, -4), Vector2(0, 0), Vector2(-2, 4)
+		Vector2(12, 0), Vector2(-2, -4), Vector2(0, 0), Vector2(-2, 4)
 	])
 	modulate = Color.WHITE
 
@@ -95,18 +140,26 @@ func _spawn_trail() -> void:
 func _on_area_entered(area: Area2D) -> void:
 	if area is not HurtboxComponent:
 		return
-	# Ignore own hurtbox / friendly fire by source ownership when possible.
 	if source != null and area.get_parent() == source:
+		return
+	if _returning or _hit_done:
 		return
 	var hurtbox := area as HurtboxComponent
 	hurtbox.receive_hit(attack_data, source)
 	hit_landed.emit(hurtbox)
 	HitStop.punch(0.2, 0.03)
-	queue_free()
+	if attack_data and attack_data.returning:
+		_begin_return()
+	else:
+		queue_free()
 
 
 func _on_body_entered(body: Node2D) -> void:
-	# Don't die on the shooter collision capsule if we overlap at spawn.
 	if source != null and body == source:
 		return
-	queue_free()
+	if _returning:
+		return
+	if attack_data and attack_data.returning:
+		_begin_return()
+	else:
+		queue_free()

@@ -18,11 +18,16 @@ extends Resource
 ## Optional next hit in a melee string (null = end of combo).
 @export var combo_next: AttackData
 @export var combo_scale: float = 1.0
+## When true, hitbox is centered on the owner as a circular AoE.
+@export var circular: bool = false
+@export var circular_radius: float = 72.0
 
 @export_group("Projectile")
 ## 0 = melee attack; > 0 = ranged, projectile flies at this speed.
 @export var projectile_speed: float = 0.0
 @export var projectile_lifetime: float = 1.2
+## When true, projectile returns to source after hit or max range.
+@export var returning: bool = false
 
 @export_group("Cost")
 ## Energy spent to perform this attack (architecture may override).

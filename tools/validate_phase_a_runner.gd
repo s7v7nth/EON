@@ -1,5 +1,5 @@
 extends Node
-## Phase A smoke: catalog, economy plugins, free basics, heat zones, vent.
+## Phase A smoke: catalog, economy plugins, Synthetic spend, heat zones, vent.
 
 
 func _ready() -> void:
@@ -25,10 +25,12 @@ func _run() -> void:
 	RunState.apply_to_player(player)
 	assert(player.active_economy != null)
 	assert(player.active_economy.policy == GameplayEnums.EconomyPolicy.ENERGY_ADRENALINE)
-	assert(player.try_spend_parry())
+	# Synthetic: F/Q reserved; dash spends energy.
+	assert(not player.parry_ready())
+	assert(not player.try_special())
+	var energy_before := player.energy.current_energy
 	assert(player.try_spend_dash())
-	# Basics must not drain energy for Synthetic.
-	assert(is_equal_approx(player.energy.current_energy, player.energy.get_max_energy()))
+	assert(player.energy.current_energy < energy_before)
 
 	RunState.choose_architecture(GameplayEnums.ArchitectureId.NANOMACHINES)
 	RunState.apply_to_player(player)

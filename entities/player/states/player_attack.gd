@@ -1,5 +1,5 @@
 extends State
-## Melee attack — can move while attacking; windup → active → optional combo buffer.
+## Melee attack — windup → active → recover; combo module feeds index / circular.
 
 @onready var player: Player = owner as Player
 
@@ -11,6 +11,7 @@ var _attack: AttackData
 var _combo_buffered: bool = false
 var _combo_index: int = 0
 var _aim_angle: float = 0.0
+var _circular: bool = false
 
 
 func enter(msg: Dictionary = {}) -> void:
@@ -18,42 +19,44 @@ func enter(msg: Dictionary = {}) -> void:
 	_phase = Phase.WINDUP
 	_combo_buffered = false
 	_combo_index = int(msg.get("combo_index", 0))
+	_circular = bool(msg.get("circular", false))
 
 	if msg.has("attack"):
 		_attack = msg["attack"] as AttackData
+		_circular = _circular or (_attack != null and _attack.circular)
 	elif player.pending_combo:
 		_attack = player.pending_combo
 		player.pending_combo = null
 	else:
-		_attack = player.hitbox.attack_data if player.combo_root == null else player.combo_root
-		if player.combo_root:
-			_attack = player.combo_root
-
-	var cursor := player.combo_root if player.combo_root else player.hitbox.attack_data
-	for _i in _combo_index:
-		if cursor and cursor.combo_next:
-			cursor = cursor.combo_next
-		else:
-			break
-	if cursor:
-		_attack = cursor
+		_attack = player.combo_root if player.combo_root else player.hitbox.attack_data
+		var cursor := _attack
+		for _i in _combo_index:
+			if cursor and cursor.combo_next:
+				cursor = cursor.combo_next
+			else:
+				break
+		if cursor:
+			_attack = cursor
 
 	if _attack == null:
 		push_warning("PlayerAttack: missing AttackData")
 		_return_to_locomotion()
 		return
-	if player.attack_cooldown and not player.attack_cooldown.is_stopped() and _combo_index == 0:
+	if player.attack_cooldown and not player.attack_cooldown.is_stopped() and _combo_index == 0 and not _circular:
 		_return_to_locomotion()
 		return
 	if not player.try_spend_attack_energy(_attack):
 		_return_to_locomotion()
 		return
 
-	player.hitbox.attack_data = _attack
+	player.configure_hitbox_for_attack(_attack)
 	_aim_hitbox_at_cursor()
 	var speed := player.get_attack_speed_multiplier()
 	if player.combat_visual:
-		player.combat_visual.play_melee_windup(_aim_angle, _attack.windup / speed)
+		if _circular:
+			player.combat_visual.play_circle_slash(_attack.active_duration / speed)
+		else:
+			player.combat_visual.play_melee_windup(_aim_angle, _attack.windup / speed)
 	if not player.hitbox.hit_landed.is_connected(_on_hit_landed):
 		player.hitbox.hit_landed.connect(_on_hit_landed)
 
@@ -67,18 +70,22 @@ func physics_update(delta: float) -> void:
 
 	var speed := player.get_attack_speed_multiplier()
 	_elapsed += delta * speed
-	# Keep aim live while swinging so movement + attacks stay readable.
-	_aim_hitbox_at_cursor()
+	if not _circular:
+		_aim_hitbox_at_cursor()
 
-	if Input.is_action_just_pressed("attack") and _attack and _attack.combo_next:
-		_combo_buffered = true
-	if Input.is_action_just_pressed("special"):
-		player.try_special()
+	if player.uses_synthetic_kit():
+		_poll_synthetic_combo()
+	else:
+		if Input.is_action_just_pressed("attack") and _attack and _attack.combo_next:
+			_combo_buffered = true
+		if Input.is_action_just_pressed("special"):
+			player.try_special()
+		if Input.is_action_just_pressed("parry") and player.parry_ready():
+			transition_to(&"Parry")
+			return
+
 	if Input.is_action_just_pressed("dash") and player.dash_ready():
 		transition_to(&"Dash")
-		return
-	if Input.is_action_just_pressed("parry") and player.parry_ready():
-		transition_to(&"Parry")
 		return
 
 	match _phase:
@@ -87,7 +94,7 @@ func physics_update(delta: float) -> void:
 				_elapsed = 0.0
 				_phase = Phase.ACTIVE
 				player.hitbox.activate()
-				if player.combat_visual:
+				if player.combat_visual and not _circular:
 					player.combat_visual.play_melee_swing(
 						_aim_angle, _attack.active_duration / speed, _attack.damage_type
 					)
@@ -96,7 +103,7 @@ func physics_update(delta: float) -> void:
 				player.hitbox.deactivate()
 				_elapsed = 0.0
 				_phase = Phase.RECOVER
-				if _combo_buffered and _attack.combo_next:
+				if _combo_buffered and _attack.combo_next and not _circular:
 					SignalBus.style_action.emit(GameplayEnums.StyleAction.COMBO, 40)
 					transition_to(&"Attack", {"combo_index": _combo_index + 1})
 					return
@@ -107,15 +114,49 @@ func physics_update(delta: float) -> void:
 			_return_to_locomotion()
 
 
+func _poll_synthetic_combo() -> void:
+	if Input.is_action_just_pressed("ranged_attack"):
+		if player.combo_expects(&"ranged_attack"):
+			player.push_combo_input(&"ranged_attack")
+		else:
+			transition_to(&"Block")
+			return
+	if Input.is_action_just_pressed("attack"):
+		player.begin_attack_hold_tracking()
+	if player.is_tracking_attack_hold():
+		if player.attack_hold_exceeded():
+			player.clear_attack_hold_tracking()
+			if not player.blade_in_flight():
+				transition_to(&"ChargeThrow")
+			return
+		if Input.is_action_just_released("attack"):
+			player.clear_attack_hold_tracking()
+			var result := player.push_combo_input(&"attack")
+			if result == &"circle_slash":
+				_combo_buffered = false
+				SignalBus.style_action.emit(GameplayEnums.StyleAction.COMBO, 60)
+				transition_to(&"Attack", {"attack": Player.CIRCLE_SLASH_ATTACK, "circular": true})
+				return
+			if result == &"melee_string" or (_attack and _attack.combo_next):
+				_combo_buffered = true
+
+
 func exit() -> void:
 	player.hitbox.deactivate()
 	if player.hitbox.hit_landed.is_connected(_on_hit_landed):
 		player.hitbox.hit_landed.disconnect(_on_hit_landed)
 	if player.combat_visual and _phase != Phase.ACTIVE:
 		player.combat_visual.reset_pose()
+	# Restore default rectangular hitbox after circular.
+	if _circular and player.combo_root:
+		player.configure_hitbox_for_attack(player.combo_root)
 
 
 func _aim_hitbox_at_cursor() -> void:
+	if _circular:
+		player.hitbox_pivot.rotation = 0.0
+		_aim_angle = player.get_aim_direction().angle()
+		return
 	var mouse := player.get_global_mouse_position()
 	var aim := mouse - player.global_position
 	if aim == Vector2.ZERO:

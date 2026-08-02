@@ -65,7 +65,7 @@ theme_override_constants/separation = 8
 
 [node name="BtnDefault" type="Button" parent="Center/Panel/Margin/VBox/ArchPick"]
 layout_mode = 2
-text = "Default — Machete/Toss/Parry · energy economy · cyan aura"
+text = "Синтетик — Blade/Block/Throw · adrenaline regen · Q/F reserved"
 
 [node name="BtnNano" type="Button" parent="Center/Panel/Margin/VBox/ArchPick"]
 layout_mode = 2

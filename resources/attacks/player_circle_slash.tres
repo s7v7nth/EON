@@ -4,14 +4,16 @@
 
 [resource]
 script = ExtResource("1")
-damage = 16.0
-cooldown = 0.55
+damage = 18.0
+cooldown = 0.7
 windup = 0.08
-active_duration = 0.18
-knockback_force = 260.0
+active_duration = 0.28
+knockback_force = 320.0
 damage_type = 0
-status_chance = 0.35
-status_power = 8.0
-status_duration = 0.55
-combo_scale = 1.25
-energy_cost = 6.0
+status_chance = 0.25
+status_power = 6.0
+status_duration = 0.45
+combo_scale = 1.0
+circular = true
+circular_radius = 78.0
+energy_cost = 12.0

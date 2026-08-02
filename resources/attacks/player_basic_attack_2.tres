@@ -16,4 +16,4 @@ status_power = 5.0
 status_duration = 0.4
 combo_next = ExtResource("2_next")
 combo_scale = 1.1
-energy_cost = 6.0
+energy_cost = 4.0
