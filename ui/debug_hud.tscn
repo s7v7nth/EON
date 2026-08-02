@@ -14,7 +14,7 @@ anchor_bottom = 0.0
 offset_left = 16.0
 offset_top = 16.0
 offset_right = 320.0
-offset_bottom = 220.0
+offset_bottom = 250.0
 grow_horizontal = 0
 grow_vertical = 0
 
@@ -70,3 +70,8 @@ text = "Arch: Default"
 layout_mode = 2
 theme_override_font_sizes/font_size = 12
 text = "Biome: —"
+
+[node name="DamageLabel" type="Label" parent="Margin/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "Dmg: —"

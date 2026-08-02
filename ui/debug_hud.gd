@@ -8,10 +8,13 @@ extends CanvasLayer
 @onready var status_label: Label = $Margin/VBox/StatusLabel
 @onready var arch_label: Label = $Margin/VBox/ArchLabel
 @onready var biome_label: Label = $Margin/VBox/BiomeLabel
+@onready var damage_label: Label = $Margin/VBox/DamageLabel
 
 var _primary_label: Label
 var _secondary_label: Label
 var _economy_drives_bars: bool = false
+var _last_damage: float = 0.0
+var _total_damage: float = 0.0
 
 
 func _ready() -> void:
@@ -38,6 +41,8 @@ func _ready() -> void:
 	SignalBus.player_statuses_changed.connect(_on_statuses_changed)
 	SignalBus.architecture_changed.connect(_on_architecture_changed)
 	SignalBus.biome_changed.connect(_on_biome_changed)
+	SignalBus.damage_dealt.connect(_on_damage_dealt)
+	_refresh_damage_label()
 
 
 func _on_health_changed(current: float, max_value: float) -> void:
@@ -101,6 +106,24 @@ func _on_biome_changed(biome_id: int) -> void:
 		biome_label.text = "Biome: %s" % _biome_name(biome_id)
 
 
+func _on_damage_dealt(amount: float, target: Node, _source: Node) -> void:
+	## Debug outgoing damage only (hits on non-player targets).
+	if target is Player or amount <= 0.0:
+		return
+	_last_damage = amount
+	_total_damage += amount
+	_refresh_damage_label()
+
+
+func _refresh_damage_label() -> void:
+	if damage_label == null:
+		return
+	if _last_damage <= 0.0 and _total_damage <= 0.0:
+		damage_label.text = "Dmg: —"
+		return
+	damage_label.text = "Dmg: %.1f  (Σ %.0f)" % [_last_damage, _total_damage]
+
+
 func _biome_name(biome_id: int) -> String:
 	match biome_id as GameplayEnums.BiomeId:
 		GameplayEnums.BiomeId.JUNGLE:
@@ -127,4 +150,7 @@ func _biome_name(biome_id: int) -> String:
 
 
 func _on_player_died() -> void:
+	_last_damage = 0.0
+	_total_damage = 0.0
+	_refresh_damage_label()
 	print("Player died")

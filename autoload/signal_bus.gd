@@ -6,6 +6,7 @@ signal player_health_changed(current: float, max_value: float)
 signal player_energy_changed(current: float, max_value: float)
 signal player_adrenaline_changed(current: float, max_value: float)
 signal player_economy_hud_changed(primary: Dictionary, secondary: Dictionary)
+signal damage_dealt(amount: float, target: Node, source: Node)
 signal entity_died(entity: Node)
 signal player_died
 signal enemy_died(enemy: Node)

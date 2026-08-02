@@ -86,6 +86,7 @@ Catalog: `resources/upgrades/upgrade_catalog.tres`.
 - `upgrade_crafted(upgrade_id)`
 - `loot_gained(summary)`
 - `player_economy_hud_changed(primary, secondary)`
+- `damage_dealt(amount, target, source)` — финальный урон через Hurtbox (debug HUD / combat log)
 - `special_triggered(source)` / `vent_triggered(source)`
 
 ## Biome package (`BiomeDefinition`)

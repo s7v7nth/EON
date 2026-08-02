@@ -49,6 +49,8 @@ func receive_hit(attack_data: AttackData, source: Node) -> bool:
 
 	var damage := _compute_damage(attack_data, source)
 	health_component.take_damage(damage)
+	if damage > 0.0:
+		SignalBus.damage_dealt.emit(damage, get_parent(), source)
 	_try_apply_status(attack_data)
 	_apply_knockback(attack_data, source)
 	hit_received.emit(attack_data, source)
