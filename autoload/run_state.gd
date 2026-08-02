@@ -180,6 +180,7 @@ func choose_route(route: ActRoute) -> void:
 		run_seed = 0
 		current_coord = Vector2i.ZERO
 	_sync_route_cursor()
+	SignalBus.route_chosen.emit(current_route.route_id if current_route else &"")
 
 
 func begin_procedural_with_seed(seed_value: int) -> void:
@@ -190,6 +191,7 @@ func begin_procedural_with_seed(seed_value: int) -> void:
 	room_index = 0
 	_begin_procedural_dungeon()
 	_sync_route_cursor()
+	SignalBus.route_chosen.emit(current_route.route_id if current_route else &"")
 
 
 func is_procedural_run() -> bool:

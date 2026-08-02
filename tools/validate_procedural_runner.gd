@@ -21,6 +21,7 @@ func _run() -> void:
 	assert(start.kind == DungeonRoom.RoomKind.START)
 	assert(start.layout_path.ends_with("room_01.tscn"))
 	assert(start.biome != null)
+	assert(not start.door_dirs().is_empty(), "start room needs at least one door")
 	var boss := RunState.dungeon.get_room(RunState.dungeon.boss_coord)
 	assert(boss != null and boss.kind == DungeonRoom.RoomKind.BOSS)
 
@@ -72,6 +73,25 @@ func _run() -> void:
 	RunState.grant_loot_for_room_rank()
 	var loot2 := RunState.loot_summary()
 	assert(loot1 == loot2, "loot stream must match for same seed + rank")
+
+	# Arena builds door areas after late route pick (the stuck-after-clear bug).
+	RunState.reset()
+	var arena_scene := load("res://levels/rooms/room_01.tscn") as PackedScene
+	var arena := arena_scene.instantiate() as ArenaController
+	add_child(arena)
+	await get_tree().process_frame
+	RunState.begin_procedural_with_seed(seed_a)
+	await get_tree().process_frame
+	var doors_root := arena.get_node_or_null("Doors")
+	assert(doors_root != null and doors_root.get_child_count() > 0, "doors must exist after procedural route pick")
+	arena.force_clear_room()
+	var visible_doors := 0
+	for child in doors_root.get_children():
+		if child is Area2D and (child as Area2D).visible:
+			visible_doors += 1
+	assert(visible_doors > 0, "doors must open after room clear")
+	arena.queue_free()
+	RunState.reset()
 
 	print("PROCEDURAL_OK seed graph + loot streams")
 	get_tree().quit(0)

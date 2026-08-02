@@ -12,7 +12,7 @@ extends Node2D
 ## When true, biome faction_weights may replace wave enemy definitions.
 @export var use_faction_weights: bool = true
 
-const DOOR_SIZE := Vector2(56, 32)
+const DOOR_SIZE := Vector2(72, 40)
 const DOOR_COLORS := {
 	Vector2i(0, -1): Color(0.35, 0.7, 0.95, 0.75),
 	Vector2i(1, 0): Color(0.35, 0.85, 0.55, 0.75),
@@ -34,11 +34,48 @@ var _door_nodes: Array[Area2D] = []
 func _ready() -> void:
 	SignalBus.enemy_died.connect(_on_enemy_died)
 	SignalBus.player_died.connect(_on_player_died)
+	SignalBus.route_chosen.connect(_on_route_chosen)
+	SignalBus.architecture_changed.connect(_on_architecture_changed)
 	_apply_biome()
 	is_final_room = RunState.is_last_room()
 	_place_player()
 	_setup_exits()
-	call_deferred("_start_first_wave")
+	call_deferred("_try_start_combat")
+
+
+func _on_route_chosen(_route_id: StringName) -> void:
+	## Route pick happens after Arena _ready — rebuild biome paint + exits.
+	_clear_live_enemies()
+	_wave_index = -1
+	_alive_enemies = 0
+	_spawning = false
+	_room_cleared = false
+	_spawn_cursor = 0
+	_apply_biome()
+	is_final_room = RunState.is_last_room()
+	_setup_exits()
+	_try_start_combat()
+
+
+func _on_architecture_changed(_architecture_id: int) -> void:
+	_try_start_combat()
+
+
+func _try_start_combat() -> void:
+	if not RunState.architecture_picked:
+		return
+	if _wave_index >= 0 or _room_cleared or _spawning:
+		return
+	_start_first_wave()
+
+
+func _clear_live_enemies() -> void:
+	if _entities == null:
+		return
+	for child in _entities.get_children():
+		if child is Player:
+			continue
+		child.queue_free()
 
 
 func _place_player() -> void:
@@ -51,28 +88,36 @@ func _place_player() -> void:
 
 
 func _setup_exits() -> void:
+	_clear_procedural_doors()
 	if exit_marker_path != NodePath() and has_node(exit_marker_path):
 		var exit_node := get_node(exit_marker_path)
 		exit_node.visible = false
 		if exit_node is Area2D:
 			(exit_node as Area2D).monitoring = false
-		if exit_node.has_signal("body_entered"):
-			# Linear route still uses the authored ExitMarker.
-			if not RunState.is_procedural_run():
-				exit_node.body_entered.connect(_on_exit_body_entered)
+			# Avoid duplicate connections across route re-picks / refresh.
+			if exit_node.body_entered.is_connected(_on_exit_body_entered):
+				exit_node.body_entered.disconnect(_on_exit_body_entered)
+		if exit_node.has_signal("body_entered") and not RunState.is_procedural_run():
+			exit_node.body_entered.connect(_on_exit_body_entered)
 	if RunState.is_procedural_run():
 		_build_procedural_doors()
+
+
+func _clear_procedural_doors() -> void:
+	_door_nodes.clear()
+	var root := get_node_or_null("Doors")
+	if root:
+		remove_child(root)
+		root.free()
 
 
 func _build_procedural_doors() -> void:
 	var room := RunState.current_dungeon_room()
 	if room == null:
 		return
-	var root := get_node_or_null("Doors") as Node2D
-	if root == null:
-		root = Node2D.new()
-		root.name = "Doors"
-		add_child(root)
+	var root := Node2D.new()
+	root.name = "Doors"
+	add_child(root)
 	for dir in room.door_dirs():
 		var door := _make_door(dir)
 		root.add_child(door)
@@ -241,17 +286,26 @@ func force_clear_room() -> void:
 
 func _show_exit() -> void:
 	if RunState.is_procedural_run():
+		# Safety: route may have been picked after Arena _ready.
+		if _door_nodes.is_empty():
+			_build_procedural_doors()
+		var any_door := false
 		for door in _door_nodes:
 			if is_instance_valid(door):
 				door.visible = true
 				door.monitoring = true
-		return
+				any_door = true
+		if any_door:
+			return
+		# Fall through to ExitMarker if graph somehow has no doors.
 	if exit_marker_path == NodePath() or not has_node(exit_marker_path):
 		return
 	var exit_node: Node2D = get_node(exit_marker_path) as Node2D
 	exit_node.visible = true
 	if exit_node is Area2D:
 		(exit_node as Area2D).monitoring = true
+		if not exit_node.body_entered.is_connected(_on_exit_body_entered):
+			exit_node.body_entered.connect(_on_exit_body_entered)
 
 
 func _on_exit_body_entered(body: Node2D) -> void:
