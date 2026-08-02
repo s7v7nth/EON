@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" path="res://resources/biomes/biome_definition.gd" id="1"]
 [ext_resource type="Resource" path="res://resources/waves/gateway_waves.tres" id="2_waves"]
-[ext_resource type="Resource" path="res://resources/biomes/landfill.tres" id="3_blend"]
+[ext_resource type="Resource" path="res://resources/biomes/data_center.tres" id="3_blend"]
 
 [resource]
 script = ExtResource("1")

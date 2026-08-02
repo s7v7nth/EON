@@ -367,12 +367,12 @@ Faction enum += `BIO_MUTANT`. Реакции на статусы (panic run, gli
 2. `LootPart` + выпадение после комнаты.
 3. Заполнить 3–4 крафта на Синтетик и Улей (магнит/биореактор как tag combos).
 
-### Phase D — Биомный маршрут
-1. Перевернуть tutorial path под бриф: Landfill → (Wasteland/Alley) → … → Data Center; layouts `room_*` оставить как геометрию.
-2. `ActRoute` для Act 1; у каждого биома — свой `wave_set` (не шарить data_center waves на mall).
-3. Включить `faction_weights` при выборе `EnemyDefinition` внутри волны (или weighted spawn table на биоме).
-4. Reward/craft и на последней комнате акта (до win), либо отдельный act-clear shop.
-5. Gateway blend между актами (визуал уже есть).
+### Phase D — Биомный маршрут ✅
+1. Tutorial path: Landfill → Wasteland → Data Center (`tutorial_route.tres`); layouts `room_*` = геометрия.
+2. `ActRoute` / `ActDefinition` + `campaign_route.tres` (Acts 1–4). У каждого биома свой `wave_set`.
+3. `faction_weights` → `EnemyCatalog.pick_for_biome` при спавне.
+4. Финальная комната: exit → reward/craft → `run_won`.
+5. Gateway blend → Data Center (переход к ядру).
 
 ### Phase E — Враги под стиль
 1. Behavior modules + BIO_MUTANT death cloud.

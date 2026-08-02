@@ -32,3 +32,25 @@ func get_wall_color() -> Color:
 	if blend_biome and blend_amount > 0.0:
 		return wall_color.lerp(blend_biome.wall_color, blend_amount)
 	return wall_color
+
+
+func has_faction_weights() -> bool:
+	return not faction_ids.is_empty() and not faction_weights.is_empty()
+
+
+func pick_faction() -> int:
+	if not has_faction_weights():
+		return -1
+	var total := 0.0
+	var n := mini(faction_ids.size(), faction_weights.size())
+	for i in n:
+		total += maxf(faction_weights[i], 0.0)
+	if total <= 0.0:
+		return faction_ids[0]
+	var roll := randf() * total
+	var acc := 0.0
+	for i in n:
+		acc += maxf(faction_weights[i], 0.0)
+		if roll <= acc:
+			return faction_ids[i]
+	return faction_ids[n - 1]

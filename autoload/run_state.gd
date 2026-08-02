@@ -1,19 +1,26 @@
 extends Node
 ## Persists across room scene changes for a single run.
 
-const ROOM_SCENES: PackedStringArray = [
+const DEFAULT_ROUTE := preload("res://resources/runs/tutorial_route.tres")
+const ARCH_CATALOG := preload("res://resources/architectures/architecture_catalog.tres")
+const UPGRADE_CATALOG := preload("res://resources/upgrades/upgrade_catalog.tres")
+const ENEMY_CATALOG := preload("res://resources/enemies/enemy_catalog.tres")
+
+## Fallback layouts when a route has none.
+const LAYOUT_SCENES: PackedStringArray = [
 	"res://levels/rooms/room_01.tscn",
 	"res://levels/rooms/room_02.tscn",
 	"res://levels/rooms/room_03.tscn",
 ]
 
-const ARCH_CATALOG := preload("res://resources/architectures/architecture_catalog.tres")
-const UPGRADE_CATALOG := preload("res://resources/upgrades/upgrade_catalog.tres")
-
 var arch_catalog: ArchitectureCatalog
 var upgrade_catalog: UpgradeCatalog
+var enemy_catalog: EnemyCatalog
+var current_route: ActRoute
 
 var room_index: int = 0
+var act_index: int = 1
+var room_in_act: int = 0
 var damage_mult: float = 1.0
 var speed_mult: float = 1.0
 var dash_cost_mult: float = 1.0
@@ -41,6 +48,9 @@ var _transitioning: bool = false
 func _ready() -> void:
 	arch_catalog = ARCH_CATALOG as ArchitectureCatalog
 	upgrade_catalog = UPGRADE_CATALOG as UpgradeCatalog
+	enemy_catalog = ENEMY_CATALOG as EnemyCatalog
+	current_route = DEFAULT_ROUTE as ActRoute
+	_sync_route_cursor()
 	if architecture == null:
 		architecture = _default_architecture()
 	if owned_tags.is_empty() and architecture:
@@ -59,6 +69,8 @@ func _process(delta: float) -> void:
 
 func reset() -> void:
 	room_index = 0
+	act_index = 1
+	room_in_act = 0
 	damage_mult = 1.0
 	speed_mult = 1.0
 	dash_cost_mult = 1.0
@@ -69,6 +81,9 @@ func reset() -> void:
 	inventory.clear()
 	last_loot.clear()
 	current_biome = null
+	if current_route == null:
+		current_route = DEFAULT_ROUTE as ActRoute
+	_sync_route_cursor()
 	style_score = 0
 	style_multiplier = 1.0
 	peak_multiplier = 1.0
@@ -245,6 +260,7 @@ func begin_room() -> void:
 	room_took_damage = false
 	peak_multiplier = maxf(peak_multiplier * 0.5, 1.0)
 	style_multiplier = maxf(style_multiplier * 0.5, 1.0)
+	_sync_route_cursor()
 	_emit_style()
 
 
@@ -254,22 +270,75 @@ func register_took_damage() -> void:
 	_on_style_action(GameplayEnums.StyleAction.TOOK_DAMAGE, 0)
 
 
+func room_count() -> int:
+	if current_route:
+		return maxi(current_route.total_rooms(), 1)
+	return LAYOUT_SCENES.size()
+
+
 func is_last_room() -> bool:
-	return room_index >= ROOM_SCENES.size() - 1
+	return room_index >= room_count() - 1
+
+
+func biome_for_current_room() -> BiomeDefinition:
+	_sync_route_cursor()
+	return current_biome
+
+
+func seek_room(index: int) -> void:
+	room_index = maxi(index, 0)
+	_sync_route_cursor()
+
+
+func layout_scene_for_current_room() -> String:
+	if current_route:
+		return current_route.layout_scene_at(room_index)
+	var idx := clampi(room_index, 0, LAYOUT_SCENES.size() - 1)
+	return LAYOUT_SCENES[idx]
+
+
+func pick_enemy_for_biome(fallback: EnemyDefinition) -> EnemyDefinition:
+	if enemy_catalog == null:
+		enemy_catalog = ENEMY_CATALOG as EnemyCatalog
+	if enemy_catalog == null or current_biome == null:
+		return fallback
+	return enemy_catalog.pick_for_biome(current_biome, fallback)
 
 
 func advance_to_next_room() -> void:
 	if is_last_room() or _transitioning:
 		return
 	room_index += 1
-	_change_scene(ROOM_SCENES[room_index])
+	_sync_route_cursor()
+	_change_scene(layout_scene_for_current_room())
+
+
+func finish_room_reward() -> void:
+	## Called after craft/boon on room clear. Wins on last room instead of advancing.
+	if is_last_room():
+		SignalBus.run_won.emit()
+		return
+	advance_to_next_room()
 
 
 func restart_run() -> void:
 	if _transitioning:
 		return
 	reset()
-	_change_scene(ROOM_SCENES[0])
+	_change_scene(layout_scene_for_current_room())
+
+
+func _sync_route_cursor() -> void:
+	if current_route == null:
+		current_route = DEFAULT_ROUTE as ActRoute
+	if current_route == null:
+		return
+	var resolved := current_route.resolve_room(room_index)
+	act_index = int(resolved.get("act_index", 1))
+	room_in_act = int(resolved.get("room_in_act", 0))
+	var biome := resolved.get("biome") as BiomeDefinition
+	if biome:
+		current_biome = biome
 
 
 func _change_scene(path: String) -> void:

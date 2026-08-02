@@ -94,6 +94,15 @@ Catalog: `resources/upgrades/upgrade_catalog.tres`.
 Gateway rooms blend two biomes for smooth transitions.
 Run order comes from `ActRoute` (Act1 outskirts → Act4 data core), not hardcoded room lists.
 
+### ActRoute (Phase D)
+
+- `resources/runs/act_route.gd` + `act_definition.gd`
+- Default playable path: `tutorial_route.tres` — Landfill → Wasteland → Data Center
+- Full campaign data: `campaign_route.tres` (Acts 1–4)
+- Room scenes (`room_01/02/03`) are **geometry templates**; `ArenaController` paints biome + swaps `wave_set` from `RunState`
+- Spawns: wave timing/counts stay; `faction_weights` remaps definitions via `EnemyCatalog`
+- Final room still opens reward/craft, then `run_won`
+
 ## Development order
 
 See Phase A–F in [`systems_extensibility_plan.md`](systems_extensibility_plan.md):

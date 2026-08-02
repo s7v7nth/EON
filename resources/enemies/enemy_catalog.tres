@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="EnemyCatalog" load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://resources/enemies/enemy_catalog.gd" id="1"]
+[ext_resource type="Resource" path="res://resources/enemies/bruiser.tres" id="2"]
+[ext_resource type="Resource" path="res://resources/enemies/swarm.tres" id="3"]
+[ext_resource type="Resource" path="res://resources/enemies/cyborg.tres" id="4"]
+[ext_resource type="Resource" path="res://resources/enemies/android.tres" id="5"]
+[ext_resource type="Resource" path="res://resources/enemies/sniper.tres" id="6"]
+[ext_resource type="Resource" path="res://resources/enemies/robo_beast.tres" id="7"]
+
+[resource]
+script = ExtResource("1")
+enemies = Array[Resource]([ExtResource("2"), ExtResource("3"), ExtResource("4"), ExtResource("5"), ExtResource("6"), ExtResource("7")])

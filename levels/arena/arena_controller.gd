@@ -7,8 +7,10 @@ extends Node2D
 @export var entities_path: NodePath = ^"Entities"
 @export var spawn_points_path: NodePath = ^"SpawnPoints"
 @export var player_path: NodePath = ^"Entities/Player"
-@export var is_final_room: bool = true
+@export var is_final_room: bool = false
 @export var exit_marker_path: NodePath = ^"ExitMarker"
+## When true, biome faction_weights may replace wave enemy definitions.
+@export var use_faction_weights: bool = true
 
 var _wave_index: int = -1
 var _alive_enemies: int = 0
@@ -24,6 +26,7 @@ func _ready() -> void:
 	SignalBus.enemy_died.connect(_on_enemy_died)
 	SignalBus.player_died.connect(_on_player_died)
 	_apply_biome()
+	is_final_room = RunState.is_last_room()
 	if exit_marker_path != NodePath() and has_node(exit_marker_path):
 		var exit_node := get_node(exit_marker_path)
 		exit_node.visible = false
@@ -33,6 +36,9 @@ func _ready() -> void:
 
 
 func _apply_biome() -> void:
+	var resolved := RunState.biome_for_current_room()
+	if resolved:
+		biome = resolved
 	if biome == null:
 		return
 	RunState.current_biome = biome
@@ -88,8 +94,11 @@ func _spawn_wave(wave: WaveDefinition) -> void:
 			var enemy := group.enemy_scene.instantiate() as Node2D
 			_entities.add_child(enemy)
 			enemy.global_position = marker.global_position
-			if group.enemy_definition != null and enemy.has_method("apply_definition"):
-				enemy.call("apply_definition", group.enemy_definition)
+			var def := group.enemy_definition
+			if use_faction_weights and biome and biome.has_faction_weights():
+				def = RunState.pick_enemy_for_biome(def)
+			if def != null and enemy.has_method("apply_definition"):
+				enemy.call("apply_definition", def)
 			_alive_enemies += 1
 
 
@@ -114,10 +123,8 @@ func _on_all_waves_cleared() -> void:
 	_room_cleared = true
 	RunState.grant_loot_for_room_rank()
 	SignalBus.room_cleared.emit()
-	if is_final_room:
-		SignalBus.run_won.emit()
-	else:
-		_show_exit()
+	# Always offer exit → reward/craft, including the final room (win after reward).
+	_show_exit()
 
 
 func force_clear_room() -> void:

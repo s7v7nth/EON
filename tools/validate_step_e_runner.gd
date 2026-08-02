@@ -1,5 +1,5 @@
 extends Node
-## Step E smoke: modifiers, room clear → reward → next room, final win.
+## Step E smoke: modifiers, room clear → reward → next room, final craft→win.
 
 
 func _ready() -> void:
@@ -38,8 +38,8 @@ func _run() -> void:
 	room1.queue_free()
 	await get_tree().process_frame
 
-	RunState.room_index = 1
-	var room2: Node = load("res://levels/rooms/room_02.tscn").instantiate()
+	RunState.seek_room(1)
+	var room2: Node = load(RunState.layout_scene_for_current_room()).instantiate()
 	add_child(room2)
 	await get_tree().process_frame
 	player = room2.get_node("Entities/Player") as Player
@@ -48,17 +48,22 @@ func _run() -> void:
 	room2.queue_free()
 	await get_tree().process_frame
 
-	# Final room: listen before load, force clear after spawn settles.
-	RunState.room_index = 2
+	# Final room: craft/reward before win.
+	RunState.seek_room(2)
 	var won_flag := {"value": false}
 	SignalBus.run_won.connect(func() -> void: won_flag.value = true)
 
-	var room3: Node = load("res://levels/rooms/room_03.tscn").instantiate()
+	var room3: Node = load(RunState.layout_scene_for_current_room()).instantiate()
 	add_child(room3)
 	await get_tree().process_frame
 	assert(room3.get("is_final_room") == true)
 
 	(room3 as ArenaController).force_clear_room()
+	await get_tree().process_frame
+	assert(not won_flag.value)
+	SignalBus.exit_reached.emit()
+	await get_tree().process_frame
+	RunState.finish_room_reward()
 	await get_tree().process_frame
 	assert(won_flag.value)
 	assert(get_tree().paused)

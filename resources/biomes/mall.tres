@@ -1,7 +1,7 @@
 [gd_resource type="Resource" script_class="BiomeDefinition" load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://resources/biomes/biome_definition.gd" id="1"]
-[ext_resource type="Resource" path="res://resources/waves/data_center_waves.tres" id="2_waves"]
+[ext_resource type="Resource" path="res://resources/waves/mall_waves.tres" id="2_waves"]
 
 [resource]
 script = ExtResource("1")
