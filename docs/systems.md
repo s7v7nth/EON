@@ -6,6 +6,9 @@ Implementation grows on top of components + `Resource` data + `SignalBus`.
 **Extensibility roadmap (how to add content without rewriting the core):**
 [`docs/systems_extensibility_plan.md`](systems_extensibility_plan.md)
 
+**External-AI architecture brainstorm context** (keep in sync on significant design changes):
+[`docs/architecture_brainstorm_prompt.md`](architecture_brainstorm_prompt.md)
+
 ## Pillars
 
 1. **Architecture** — language of actions + pluggable `ResourceEconomy`.
