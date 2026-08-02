@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="EffectShockArc" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://systems/status/effects/effect_shock_arc.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+arc_radius = 110.0
+arc_damage = 10.0
+arc_buildup = 35.0
+speed_mult = 0.7

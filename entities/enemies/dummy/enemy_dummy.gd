@@ -147,6 +147,20 @@ func stop_movement() -> void:
 	move_and_slide()
 
 
+func get_action_speed_multiplier() -> float:
+	if status:
+		return maxf(status.get_action_speed_multiplier(), 0.15)
+	return 1.0
+
+
+func interrupt_attack() -> void:
+	if state_machine and state_machine.has_method("transition_to"):
+		if target != null:
+			state_machine.transition_to(&"Chase")
+		else:
+			state_machine.transition_to(&"Idle")
+
+
 func distance_to_target() -> float:
 	if target == null:
 		return INF

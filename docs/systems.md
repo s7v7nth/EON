@@ -19,7 +19,7 @@ Skill actions feed **Adrenaline** + **Style Score** + craft tags / loot parts.
 
 | Enum | Values |
 |------|--------|
-| `DamageType` | PHYSICAL, ELECTRICITY, CORROSION, FIRE, BLEED, *(planned)* GLITCH |
+| `DamageType` | PHYSICAL, ELECTRICITY, CORROSION, FIRE, BLEED, GLITCH |
 | `Faction` | SAVAGE, CYBORG, ANDROID, ROBO_BEAST, *(planned)* BIO_MUTANT |
 | `BiomeId` | JUNGLE, DATA_CENTER, DOWNTOWN, RESIDENTIAL, TAIGA, ALLEY, LANDFILL, MALL, WASTELAND, GATEWAY |
 | `ArchitectureId` | DEFAULT (Синтетик), NANOMACHINES (Улей), ELECTRO_TRAIN (Паровоз), *(planned)* NEURO_HACKER |
@@ -30,7 +30,7 @@ Skill actions feed **Adrenaline** + **Style Score** + craft tags / loot parts.
 
 - Final damage: `raw * (1.0 - resist)` clamped to `[0.05, 2.0]` multiplier.
 - Resists live on `CharacterStats` / overrides on `EnemyDefinition` / architecture base.
-- Status application: `status_chance * (1.0 - resist*0.5)` → buildup on `StatusComponent`.
+- Status application: `status_chance * (1.0 - resist*0.5)` → `StatusComponent.add_buildup`.
 
 | Type | Status | Target behaviour |
 |------|--------|------------------|
@@ -39,9 +39,16 @@ Skill actions feed **Adrenaline** + **Style Score** + craft tags / loot parts.
 | CORROSION | Acid / armor break | +% damage taken; acid puddle on death |
 | FIRE | Burn → Panic | DoT; full buildup = chaotic flee |
 | BLEED | Rended wounds | Strong DoT while moving/attacking |
-| GLITCH | Fault | Friendly fire or robot shutdown |
+| GLITCH | Fault | Robot shutdown / organic slow |
 
-Synergies are data (`SynergyRecipe`), e.g. Acid+Shock → charged gas cloud.
+## Status / Synergy (Phase B)
+
+- Definitions: `resources/statuses/*.tres` via `StatusCatalog`
+- Effects: `systems/status/effects/*` (`StatusEffect` plugins)
+- Runtime: `StatusComponent` stores buildup + active window; **no `match` on status ids**
+- Synergies: `resources/synergies/*.tres` (`SynergyRecipe`) — e.g. Acid+Shock → Chemical Short
+- New status = `StatusDefinition` + `StatusEffect` + catalog entry
+- New synergy = one `SynergyRecipe.tres`
 
 ## Architectures
 
@@ -67,6 +74,7 @@ Craft parts are tagged `arch` / `element` / `shape`; recipes gate on owned tags.
 - `parry_success(source)`
 - `style_score_changed(score, multiplier, rank)`
 - `status_applied(target, status_id)`
+- `synergy_triggered(target, recipe_id)`
 - `architecture_changed(architecture_id)`
 - `biome_changed(biome_id)`
 - `upgrade_crafted(upgrade_id)`

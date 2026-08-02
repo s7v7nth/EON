@@ -16,6 +16,7 @@ func enter(_msg: Dictionary = {}) -> void:
 	_phase = Phase.WINDUP
 	_attack = enemy.hitbox.attack_data
 	enemy.stop_movement()
+	enemy.set_meta("is_attacking", true)
 	if _attack == null:
 		transition_to(&"Chase")
 		return
@@ -23,13 +24,15 @@ func enter(_msg: Dictionary = {}) -> void:
 		transition_to(&"Chase")
 		return
 	_face_target()
+	var speed := enemy.get_action_speed_multiplier()
 	if enemy.combat_visual:
-		enemy.combat_visual.play_melee_windup(_aim_angle, _attack.windup)
+		enemy.combat_visual.play_melee_windup(_aim_angle, _attack.windup / speed)
 
 
 func physics_update(delta: float) -> void:
 	enemy.stop_movement()
-	_elapsed += delta
+	var speed := enemy.get_action_speed_multiplier()
+	_elapsed += delta * speed
 	match _phase:
 		Phase.WINDUP:
 			if _elapsed >= _attack.windup:
@@ -38,12 +41,12 @@ func physics_update(delta: float) -> void:
 				enemy.hitbox.activate()
 				if enemy.combat_visual:
 					enemy.combat_visual.play_melee_swing(
-						_aim_angle, _attack.active_duration, _attack.damage_type
+						_aim_angle, _attack.active_duration / speed, _attack.damage_type
 					)
 		Phase.ACTIVE:
 			if _elapsed >= _attack.active_duration:
 				enemy.hitbox.deactivate()
-				enemy.attack_cooldown.start(_attack.cooldown)
+				enemy.attack_cooldown.start(_attack.cooldown / speed)
 				if enemy.combat_visual:
 					enemy.combat_visual.reset_pose()
 				if enemy.target != null:
@@ -54,6 +57,8 @@ func physics_update(delta: float) -> void:
 
 func exit() -> void:
 	enemy.hitbox.deactivate()
+	if enemy.has_meta("is_attacking"):
+		enemy.remove_meta("is_attacking")
 	if enemy.combat_visual and _phase == Phase.WINDUP:
 		enemy.combat_visual.reset_pose()
 
