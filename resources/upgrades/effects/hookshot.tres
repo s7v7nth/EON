@@ -1,0 +1,8 @@
+[gd_resource type="Resource" script_class="EffectHookshot" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://systems/upgrades/effects/effect_hookshot.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+pull_distance = 48.0
+required_shape = &"whip"

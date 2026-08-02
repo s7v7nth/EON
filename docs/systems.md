@@ -59,8 +59,9 @@ Skill actions feed **Adrenaline** + **Style Score** + craft tags / loot parts.
 | ELECTRO_TRAIN / Паровоз | OVERHEAT + Vent | Plasma gun / blade / mortar |
 | NEURO_HACKER | RAM slots | Smart pistol / holo-blades / drones |
 
-**Upgrade rule:** one upgrade = one `UpgradeEffect` verb, not flat +% only.
-Craft parts are tagged `arch` / `element` / `shape`; recipes gate on owned tags.
+**Upgrade rule:** one upgrade = one or more `UpgradeEffect` verbs (`systems/upgrades/`), not Player bool flags.
+Craft parts (`LootPart` in `resources/loot/`) grant tags; recipes gate on `owned_tags`.
+Catalog: `resources/upgrades/upgrade_catalog.tres`.
 
 ## Style score (Hotline-like)
 

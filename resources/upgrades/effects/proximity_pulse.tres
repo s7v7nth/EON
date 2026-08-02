@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="EffectProximityPulse" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://systems/upgrades/effects/effect_proximity_pulse.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+damage = 6.0
+radius = 70.0
+acid_power = 5.0
+acid_duration = 1.5

@@ -42,14 +42,8 @@ var _overheat_cd: float = 0.0
 var counter_window: float = 0.0
 var counter_damage_bonus: float = 1.0
 
-## Upgrade verbs
-var has_hookshot: bool = false
-var has_room_infect: bool = false
-var has_proximity_pulse: bool = false
-var proximity_damage: float = 0.0
-var infect_tick_damage: float = 0.0
-var _infect_timer: float = 0.0
-var _infect_ramp: float = 0.0
+## Upgrade plugins (duplicated UpgradeEffect instances)
+var active_effects: Array = []
 var _life_steal_bonus: float = 0.0
 var _hp_regen_bonus: float = 0.0
 
@@ -80,7 +74,7 @@ func _physics_process(delta: float) -> void:
 		if counter_window <= 0.0:
 			counter_damage_bonus = 1.0
 	_process_architecture_economy(delta)
-	_process_infect(delta)
+	_tick_upgrade_effects(delta)
 
 
 func apply_knockback(direction: Vector2, force: float) -> void:
@@ -164,15 +158,15 @@ func _on_hurtbox_hit_received(_attack_data: AttackData, _source: Node) -> void:
 func _on_perfect_dodged(_attack_data: AttackData, source: Node) -> void:
 	if stats:
 		adrenaline.add(stats.adrenaline_gain_on_hit * 2.0)
-	energy.current_energy = minf(energy.current_energy + 15.0, energy.get_max_energy())
-	energy.energy_changed.emit(energy.current_energy, energy.get_max_energy())
-	counter_window = 0.75
-	counter_damage_bonus = 1.35
 	HitStop.punch()
 	Engine.time_scale = 0.35
 	get_tree().create_timer(0.12, true, false, true).timeout.connect(
 		func() -> void: Engine.time_scale = 1.0
 	)
+	for effect in active_effects:
+		var fx := effect as UpgradeEffect
+		if fx:
+			fx.on_perfect_dodge(self, source)
 	SignalBus.perfect_dodge.emit(source)
 	SignalBus.style_action.emit(GameplayEnums.StyleAction.PERFECT_DODGE, 150)
 
@@ -191,6 +185,10 @@ func _on_parried(attack_data: AttackData, source: Node) -> void:
 			220.0
 		)
 	HitStop.punch()
+	for effect in active_effects:
+		var fx := effect as UpgradeEffect
+		if fx:
+			fx.on_parry(self, source)
 	SignalBus.parry_success.emit(source)
 	SignalBus.style_action.emit(GameplayEnums.StyleAction.PARRY, 200)
 	# Reflect small chip if attack had damage.
@@ -228,26 +226,27 @@ func equip_architecture(arch: ArchitectureData) -> void:
 
 
 func apply_run_upgrades(upgrades: Array[UpgradeData]) -> void:
-	has_hookshot = false
-	has_room_infect = false
-	has_proximity_pulse = false
-	proximity_damage = 0.0
-	infect_tick_damage = 0.0
+	for effect in active_effects:
+		var fx := effect as UpgradeEffect
+		if fx:
+			fx.remove(self)
+	active_effects.clear()
 	_life_steal_bonus = 0.0
 	_hp_regen_bonus = 0.0
 	for upgrade in upgrades:
 		if upgrade == null:
 			continue
-		if upgrade.enable_hookshot:
-			has_hookshot = true
-		if upgrade.enable_room_infect:
-			has_room_infect = true
-			infect_tick_damage = maxf(infect_tick_damage, upgrade.infect_tick_damage)
-		if upgrade.enable_proximity_pulse:
-			has_proximity_pulse = true
-			proximity_damage = maxf(proximity_damage, upgrade.proximity_damage)
-		_life_steal_bonus += upgrade.life_steal_bonus
-		_hp_regen_bonus += upgrade.hp_regen_bonus
+		for item in upgrade.effects:
+			var template := item as UpgradeEffect
+			if template == null:
+				continue
+			var instance := template.duplicate(true) as UpgradeEffect
+			if instance == null:
+				continue
+			active_effects.append(instance)
+			instance.apply(self)
+	if not SignalBus.enemy_died.is_connected(_on_enemy_died_for_upgrades):
+		SignalBus.enemy_died.connect(_on_enemy_died_for_upgrades)
 
 
 func get_input_direction() -> Vector2:
@@ -408,23 +407,18 @@ func _on_projectile_hit_landed(target: HurtboxComponent) -> void:
 		if ranged_attack_data:
 			dtype = ranged_attack_data.damage_type
 		HitVFX.spawn_at(get_parent(), pos, dtype, pos - global_position)
-	if has_room_infect and weapons.size() > 0:
-		var w := weapons[weapon_index]
-		if w and w.shape_tag == &"toad":
-			_infect_timer = 6.0
-			_infect_ramp = 1.0
+	for effect in active_effects:
+		var fx := effect as UpgradeEffect
+		if fx:
+			fx.on_ranged_hit(self, target)
 
 
 func on_melee_hit(target: HurtboxComponent) -> void:
 	_on_offensive_hit(target)
-	if has_hookshot and target and weapons.size() > 0:
-		var w := weapons[weapon_index]
-		if w and w.shape_tag == &"whip":
-			var body := target.get_parent()
-			if body is Node2D:
-				global_position = global_position.move_toward((body as Node2D).global_position, 48.0)
-	if has_proximity_pulse:
-		_proximity_pulse()
+	for effect in active_effects:
+		var fx := effect as UpgradeEffect
+		if fx:
+			fx.on_melee_hit(self, target)
 
 
 func _on_offensive_hit(target: HurtboxComponent) -> void:
@@ -442,7 +436,25 @@ func effective_damage_multiplier() -> float:
 	var m := damage_multiplier
 	if counter_window > 0.0:
 		m *= counter_damage_bonus
+	for effect in active_effects:
+		var fx := effect as UpgradeEffect
+		if fx:
+			m *= fx.damage_multiplier(self)
 	return m
+
+
+func _tick_upgrade_effects(delta: float) -> void:
+	for effect in active_effects:
+		var fx := effect as UpgradeEffect
+		if fx:
+			fx.tick(self, delta)
+
+
+func _on_enemy_died_for_upgrades(enemy: Node) -> void:
+	for effect in active_effects:
+		var fx := effect as UpgradeEffect
+		if fx:
+			fx.on_kill(self, enemy)
 
 
 func _process_architecture_economy(delta: float) -> void:
@@ -467,7 +479,8 @@ func _process_architecture_economy(delta: float) -> void:
 			else:
 				overheat = maxf(overheat - 12.0 * delta, 0.0)
 		_:
-			pass
+			if _hp_regen_bonus > 0.0:
+				health.heal(_hp_regen_bonus * delta)
 
 
 func _gain_overheat() -> void:
@@ -480,41 +493,3 @@ func _gain_overheat() -> void:
 		overheated = true
 		_overheat_cd = architecture.overheat_cooldown
 		overheat = architecture.overheat_max
-
-
-func _process_infect(delta: float) -> void:
-	if _infect_timer <= 0.0 or infect_tick_damage <= 0.0:
-		return
-	_infect_timer -= delta
-	_infect_ramp += delta * 0.35
-	var tick := infect_tick_damage * (1.0 + _infect_ramp)
-	var entities := get_parent()
-	if entities == null:
-		return
-	var killed := 0
-	for child in entities.get_children():
-		if child is EnemyDummy:
-			var enemy := child as EnemyDummy
-			if enemy.health:
-				var before := enemy.health.current_health
-				enemy.health.take_damage(tick * delta)
-				if before > 0.0 and enemy.health.current_health <= 0.0:
-					killed += 1
-	if killed >= 2:
-		SignalBus.style_action.emit(GameplayEnums.StyleAction.ELEMENT_CASCADE, 120)
-
-
-func _proximity_pulse() -> void:
-	if proximity_damage <= 0.0:
-		return
-	var entities := get_parent()
-	if entities == null:
-		return
-	for child in entities.get_children():
-		if child is EnemyDummy:
-			var enemy := child as EnemyDummy
-			if global_position.distance_to(enemy.global_position) <= 70.0:
-				if enemy.health:
-					enemy.health.take_damage(proximity_damage)
-				if enemy.status:
-					enemy.status.apply_status(StatusComponent.STATUS_ACID, 5.0, 1.5)

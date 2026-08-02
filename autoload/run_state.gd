@@ -10,8 +10,9 @@ const ROOM_SCENES: PackedStringArray = [
 const ARCH_DEFAULT := preload("res://resources/architectures/default.tres")
 const ARCH_NANO := preload("res://resources/architectures/nanomachines.tres")
 const ARCH_TRAIN := preload("res://resources/architectures/electro_train.tres")
+const UPGRADE_CATALOG := preload("res://resources/upgrades/upgrade_catalog.tres")
 
-var _upgrade_pool: Array[UpgradeData] = []
+var catalog: UpgradeCatalog
 
 var room_index: int = 0
 var damage_mult: float = 1.0
@@ -22,6 +23,9 @@ var architecture: ArchitectureData
 var architecture_picked: bool = false
 var owned_tags: PackedStringArray = PackedStringArray()
 var crafted_upgrades: Array[UpgradeData] = []
+var inventory: Array = []
+var last_loot: Array = []
+var current_biome: BiomeDefinition
 
 ## Style score (Hotline-like)
 var style_score: int = 0
@@ -36,11 +40,11 @@ var _transitioning: bool = false
 
 
 func _ready() -> void:
+	catalog = UPGRADE_CATALOG as UpgradeCatalog
 	if architecture == null:
 		architecture = ARCH_DEFAULT
 	if owned_tags.is_empty():
 		owned_tags = PackedStringArray(["default", "style"])
-	_ensure_upgrade_pool()
 	SignalBus.style_action.connect(_on_style_action)
 	SignalBus.enemy_died.connect(_on_enemy_died)
 	set_process(true)
@@ -53,15 +57,6 @@ func _process(delta: float) -> void:
 			_multi_kill_count = 0
 
 
-func _ensure_upgrade_pool() -> void:
-	if not _upgrade_pool.is_empty():
-		return
-	_upgrade_pool.append(load("res://resources/upgrades/default_counter.tres") as UpgradeData)
-	_upgrade_pool.append(load("res://resources/upgrades/nano_hookshot.tres") as UpgradeData)
-	_upgrade_pool.append(load("res://resources/upgrades/nano_infect.tres") as UpgradeData)
-	_upgrade_pool.append(load("res://resources/upgrades/nano_proximity.tres") as UpgradeData)
-
-
 func reset() -> void:
 	room_index = 0
 	damage_mult = 1.0
@@ -71,6 +66,9 @@ func reset() -> void:
 	architecture_picked = false
 	owned_tags = PackedStringArray(["default", "style"])
 	crafted_upgrades.clear()
+	inventory.clear()
+	last_loot.clear()
+	current_biome = null
 	style_score = 0
 	style_multiplier = 1.0
 	peak_multiplier = 1.0
@@ -122,9 +120,13 @@ func choose_modifier(modifier_id: StringName) -> void:
 
 
 func get_craftable_upgrades() -> Array[UpgradeData]:
-	_ensure_upgrade_pool()
 	var result: Array[UpgradeData] = []
-	for upgrade in _upgrade_pool:
+	if catalog == null:
+		catalog = UPGRADE_CATALOG as UpgradeCatalog
+	if catalog == null:
+		return result
+	for item in catalog.all_upgrades():
+		var upgrade := item as UpgradeData
 		if upgrade == null:
 			continue
 		if _already_crafted(upgrade.upgrade_id):
@@ -143,29 +145,65 @@ func craft_upgrade(upgrade: UpgradeData) -> bool:
 		return false
 	crafted_upgrades.append(upgrade)
 	for tag in upgrade.grant_tags:
-		if not owned_tags.has(tag):
-			owned_tags.append(tag)
+		_add_tag(String(tag))
 	SignalBus.upgrade_crafted.emit(upgrade.upgrade_id)
 	return true
 
 
 func grant_loot_for_room_rank() -> void:
+	last_loot.clear()
 	var rank := current_room_rank()
-	var biome_tags := PackedStringArray()
+	var rolls := 0
 	match rank:
 		"S":
-			_add_tag("style")
-			_add_tag("swarm")
-			_add_tag("proximity")
+			rolls = 3
 		"A":
-			_add_tag("style")
-			_add_tag("whip")
+			rolls = 2
 		"B":
-			_add_tag("style")
+			rolls = 1
 		_:
-			pass
-	for tag in biome_tags:
-		_add_tag(tag)
+			rolls = 0
+	# Always grant a soft style tag on B+ for craft pacing.
+	if rank == "B" or rank == "A" or rank == "S":
+		_add_tag("style")
+	var biome_tags := PackedStringArray()
+	if current_biome:
+		biome_tags = current_biome.loot_tags
+	if catalog == null:
+		catalog = UPGRADE_CATALOG as UpgradeCatalog
+	var pool: Array = []
+	if catalog:
+		pool = catalog.parts_for_biome_tags(biome_tags)
+	if pool.is_empty() and catalog:
+		pool = catalog.all_parts()
+	for _i in rolls:
+		if pool.is_empty():
+			break
+		var part := pool[randi() % pool.size()] as LootPart
+		if part == null:
+			continue
+		grant_part(part)
+	# Fallback: if no parts rolled but biome has tags, grant one biome tag.
+	if last_loot.is_empty() and not biome_tags.is_empty() and rank != "C":
+		_add_tag(String(biome_tags[0]))
+	if not last_loot.is_empty():
+		SignalBus.loot_gained.emit(loot_summary())
+
+
+func grant_part(part: LootPart) -> void:
+	inventory.append(part)
+	last_loot.append(part)
+	for tag in part.tags:
+		_add_tag(String(tag))
+
+
+func loot_summary() -> String:
+	var names: PackedStringArray = []
+	for item in last_loot:
+		var part := item as LootPart
+		if part:
+			names.append(part.display_name)
+	return ", ".join(names)
 
 
 func current_room_rank() -> String:
@@ -201,7 +239,6 @@ func is_last_room() -> bool:
 func advance_to_next_room() -> void:
 	if is_last_room() or _transitioning:
 		return
-	grant_loot_for_room_rank()
 	room_index += 1
 	_change_scene(ROOM_SCENES[room_index])
 
@@ -286,5 +323,6 @@ func _has_required_tags(upgrade: UpgradeData) -> bool:
 
 
 func _add_tag(tag: String) -> void:
-	if not owned_tags.has(tag):
-		owned_tags.append(tag)
+	if tag == "" or owned_tags.has(tag):
+		return
+	owned_tags.append(tag)
