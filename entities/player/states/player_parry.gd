@@ -22,9 +22,8 @@ func enter(_msg: Dictionary = {}) -> void:
 	_active = true
 	player.stop_movement()
 	player.hurtbox.set_parrying(true)
-	var visual := player.get_node_or_null("Visual") as Polygon2D
-	if visual:
-		visual.modulate = Color(1.2, 1.2, 0.7, 1.0)
+	if player.combat_visual:
+		player.combat_visual.play_parry_start()
 
 
 func physics_update(delta: float) -> void:
@@ -38,9 +37,8 @@ func physics_update(delta: float) -> void:
 
 func exit() -> void:
 	player.hurtbox.set_parrying(false)
-	var visual := player.get_node_or_null("Visual") as Polygon2D
-	if visual:
-		visual.modulate = Color(1, 1, 1, 1)
+	if player.combat_visual:
+		player.combat_visual.play_parry_end()
 	if _active and player.parry_cooldown:
 		player.parry_cooldown.start(PARRY_COOLDOWN)
 	_active = false

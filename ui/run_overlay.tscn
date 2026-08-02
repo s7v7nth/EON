@@ -65,15 +65,15 @@ theme_override_constants/separation = 8
 
 [node name="BtnDefault" type="Button" parent="Center/Panel/Margin/VBox/ArchPick"]
 layout_mode = 2
-text = "Default — Energy / Adrenaline / Parry"
+text = "Default — Machete/Toss/Parry · energy economy · cyan aura"
 
 [node name="BtnNano" type="Button" parent="Center/Panel/Margin/VBox/ArchPick"]
 layout_mode = 2
-text = "Nanomachines — Regen / Infect / Hook"
+text = "Nanomachines — Blade/Whip/Toad · HP regen · green swarm aura"
 
 [node name="BtnTrain" type="Button" parent="Center/Panel/Margin/VBox/ArchPick"]
 layout_mode = 2
-text = "Electro-Train — Plasma / Overheat"
+text = "Electro-Train — Plasma kit · overheat bursts · blue coil aura"
 
 [node name="Craft" type="VBoxContainer" parent="Center/Panel/Margin/VBox"]
 visible = false

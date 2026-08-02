@@ -16,6 +16,7 @@ const PROJECTILE_SCENE := preload("res://entities/projectiles/projectile.tscn")
 @onready var status: StatusComponent = $StatusComponent
 @onready var hurtbox: HurtboxComponent = $HurtboxComponent
 @onready var hitbox: HitboxComponent = $HitboxComponent
+@onready var combat_visual: CombatVisualComponent = $CombatVisual
 @onready var detection_area: Area2D = $DetectionArea
 @onready var attack_cooldown: Timer = $AttackCooldownTimer
 @onready var ranged_cooldown: Timer = $RangedCooldownTimer
@@ -93,7 +94,11 @@ func apply_definition(def: EnemyDefinition) -> void:
 	_configure_from_stats()
 	var visual := get_node_or_null("Visual") as Polygon2D
 	if visual:
-		visual.color = def.visual_color
+		visual.visible = true
+		visual.modulate = Color.WHITE
+		visual.color = Color(def.visual_color.r, def.visual_color.g, def.visual_color.b, 1.0)
+	if combat_visual:
+		combat_visual.apply_faction_look(def.faction, def.visual_color)
 	var detect_shape := detection_area.get_node_or_null("CollisionShape2D") as CollisionShape2D
 	if detect_shape and detect_shape.shape is CircleShape2D:
 		(detect_shape.shape as CircleShape2D).radius = def.detection_radius
@@ -167,6 +172,15 @@ func spawn_projectile(direction: Vector2) -> void:
 	proj.source = self
 	# world + player_hurtbox
 	proj.collision_mask = (1 << 0) | (1 << 3)
-	proj.modulate = Color(1.0, 0.45, 0.35)
+	if ranged_attack_data:
+		match ranged_attack_data.damage_type:
+			GameplayEnums.DamageType.ELECTRICITY:
+				proj.tint = Color(0.35, 0.85, 1.0, 1)
+			GameplayEnums.DamageType.CORROSION:
+				proj.tint = Color(0.45, 1.0, 0.3, 1)
+			_:
+				proj.tint = Color(1.0, 0.4, 0.25, 1)
+	else:
+		proj.tint = Color(1.0, 0.4, 0.25, 1)
 	get_parent().add_child(proj)
-	proj.global_position = global_position + direction.normalized() * 20.0
+	proj.global_position = global_position + direction.normalized() * 28.0

@@ -18,6 +18,7 @@ const DEFAULT_ARCH := preload("res://resources/architectures/default.tres")
 @onready var hurtbox: HurtboxComponent = $HurtboxComponent
 @onready var hitbox: HitboxComponent = $HitboxPivot/HitboxComponent
 @onready var hitbox_pivot: Node2D = $HitboxPivot
+@onready var combat_visual: CombatVisualComponent = $CombatVisual
 @onready var dash_cooldown: Timer = $DashCooldownTimer
 @onready var attack_cooldown: Timer = $AttackCooldownTimer
 @onready var ranged_cooldown: Timer = $RangedCooldownTimer
@@ -156,6 +157,8 @@ func _on_hurtbox_hit_received(_attack_data: AttackData, _source: Node) -> void:
 	if stats:
 		adrenaline.add(stats.adrenaline_gain_on_hurt)
 	RunState.register_took_damage()
+	if combat_visual:
+		combat_visual.play_hit_flash()
 
 
 func _on_perfect_dodged(_attack_data: AttackData, source: Node) -> void:
@@ -210,14 +213,16 @@ func equip_architecture(arch: ArchitectureData) -> void:
 	if arch == null:
 		return
 	architecture = arch
-	weapons = arch.primitives.duplicate()
+	# One kit per architecture: LMB primary + RMB secondary. No hotkey swapping.
+	weapons.clear()
+	if not arch.primitives.is_empty() and arch.primitives[0]:
+		weapons.append(arch.primitives[0])
 	if arch.economy_policy == GameplayEnums.EconomyPolicy.NANO_SWARM:
 		energy.lock_regen(0.0)
 	else:
 		energy.unlock_regen(arch.energy_regen_mult)
-	var visual := get_node_or_null("Visual") as Polygon2D
-	if visual:
-		visual.color = arch.visual_tint
+	if combat_visual:
+		combat_visual.apply_architecture_look(arch)
 	equip_weapon(0)
 	SignalBus.architecture_changed.emit(arch.architecture_id)
 
@@ -345,35 +350,25 @@ func equip_weapon(index: int) -> void:
 	if hitbox:
 		hitbox.attack_data = weapon.primary
 		hitbox.position = Vector2(weapon.hitbox_reach, 0.0)
+		_resize_melee_hitbox(weapon.hitbox_reach)
 	combo_root = weapon.primary
 	pending_combo = null
 	ranged_attack_data = weapon.secondary
-	var visual := get_node_or_null("Visual") as Polygon2D
-	if visual and architecture == null:
-		visual.color = weapon.visual_tint
-	elif visual and architecture:
-		visual.color = weapon.visual_tint.lerp(architecture.visual_tint, 0.35)
+	if combat_visual:
+		combat_visual.apply_weapon_look(weapon, architecture)
 	SignalBus.weapon_changed.emit(weapon.display_name)
 
 
-func current_weapon_name() -> String:
-	if weapons.is_empty() or weapon_index < 0 or weapon_index >= weapons.size():
-		return ""
-	var weapon := weapons[weapon_index]
-	return weapon.display_name if weapon else ""
-
-
-func handle_weapon_hotkeys() -> bool:
-	if Input.is_action_just_pressed("weapon_1"):
-		equip_weapon(0)
-		return true
-	if Input.is_action_just_pressed("weapon_2"):
-		equip_weapon(1)
-		return true
-	if Input.is_action_just_pressed("weapon_3"):
-		equip_weapon(2)
-		return true
-	return false
+func _resize_melee_hitbox(reach: float) -> void:
+	if hitbox == null:
+		return
+	var shape_node := hitbox.get_node_or_null("CollisionShape2D") as CollisionShape2D
+	if shape_node == null or shape_node.shape == null:
+		return
+	if shape_node.shape is RectangleShape2D:
+		var rect := (shape_node.shape as RectangleShape2D).duplicate() as RectangleShape2D
+		rect.size = Vector2(maxf(reach * 1.15, 36.0), 28.0)
+		shape_node.shape = rect
 
 
 func spawn_projectile(direction: Vector2) -> void:
@@ -382,14 +377,37 @@ func spawn_projectile(direction: Vector2) -> void:
 	proj.direction = direction.normalized()
 	proj.source = self
 	proj.collision_mask = (1 << 0) | (1 << 4)
-	proj.modulate = Color(0.5, 0.8, 1.0)
+	if ranged_attack_data:
+		proj.tint = _projectile_color(ranged_attack_data.damage_type)
 	get_parent().add_child(proj)
-	proj.global_position = global_position + direction.normalized() * 20.0
+	proj.global_position = global_position + direction.normalized() * 28.0
 	proj.hit_landed.connect(_on_projectile_hit_landed)
+
+
+func _projectile_color(damage_type: GameplayEnums.DamageType) -> Color:
+	match damage_type:
+		GameplayEnums.DamageType.ELECTRICITY:
+			return Color(0.45, 0.85, 1.0, 1)
+		GameplayEnums.DamageType.CORROSION:
+			return Color(0.4, 0.95, 0.35, 1)
+		GameplayEnums.DamageType.FIRE:
+			return Color(1.0, 0.5, 0.2, 1)
+		GameplayEnums.DamageType.BLEED:
+			return Color(0.95, 0.25, 0.3, 1)
+		_:
+			return Color(0.85, 0.9, 1.0, 1)
 
 
 func _on_projectile_hit_landed(target: HurtboxComponent) -> void:
 	_on_offensive_hit(target)
+	if target and get_parent():
+		var pos := target.global_position
+		if target.get_parent() is Node2D:
+			pos = (target.get_parent() as Node2D).global_position + Vector2(0, -22)
+		var dtype := GameplayEnums.DamageType.PHYSICAL
+		if ranged_attack_data:
+			dtype = ranged_attack_data.damage_type
+		HitVFX.spawn_at(get_parent(), pos, dtype, pos - global_position)
 	if has_room_infect and weapons.size() > 0:
 		var w := weapons[weapon_index]
 		if w and w.shape_tag == &"toad":

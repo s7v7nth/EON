@@ -1,5 +1,5 @@
 extends State
-## Melee attack — aim hitbox at cursor, windup → active → optional combo buffer.
+## Melee attack — can move while attacking; windup → active → optional combo buffer.
 
 @onready var player: Player = owner as Player
 
@@ -10,6 +10,7 @@ var _elapsed: float = 0.0
 var _attack: AttackData
 var _combo_buffered: bool = false
 var _combo_index: int = 0
+var _aim_angle: float = 0.0
 
 
 func enter(msg: Dictionary = {}) -> void:
@@ -28,7 +29,6 @@ func enter(msg: Dictionary = {}) -> void:
 		if player.combo_root:
 			_attack = player.combo_root
 
-	# Advance along combo chain by index.
 	var cursor := player.combo_root if player.combo_root else player.hitbox.attack_data
 	for _i in _combo_index:
 		if cursor and cursor.combo_next:
@@ -50,15 +50,24 @@ func enter(msg: Dictionary = {}) -> void:
 		return
 
 	player.hitbox.attack_data = _attack
-	player.stop_movement()
 	_aim_hitbox_at_cursor()
+	if player.combat_visual:
+		player.combat_visual.play_melee_windup(_aim_angle, _attack.windup)
 	if not player.hitbox.hit_landed.is_connected(_on_hit_landed):
 		player.hitbox.hit_landed.connect(_on_hit_landed)
 
 
 func physics_update(delta: float) -> void:
-	player.stop_movement()
+	var move_dir := player.get_input_direction()
+	if move_dir != Vector2.ZERO:
+		player.apply_movement(move_dir)
+	else:
+		player.stop_movement()
+
 	_elapsed += delta
+	# Keep aim live while swinging so movement + attacks stay readable.
+	_aim_hitbox_at_cursor()
+
 	if Input.is_action_just_pressed("attack") and _attack and _attack.combo_next:
 		_combo_buffered = true
 	if Input.is_action_just_pressed("dash") and player.dash_ready():
@@ -74,6 +83,10 @@ func physics_update(delta: float) -> void:
 				_elapsed = 0.0
 				_phase = Phase.ACTIVE
 				player.hitbox.activate()
+				if player.combat_visual:
+					player.combat_visual.play_melee_swing(
+						_aim_angle, _attack.active_duration, _attack.damage_type
+					)
 		Phase.ACTIVE:
 			if _elapsed >= _attack.active_duration:
 				player.hitbox.deactivate()
@@ -94,6 +107,8 @@ func exit() -> void:
 	player.hitbox.deactivate()
 	if player.hitbox.hit_landed.is_connected(_on_hit_landed):
 		player.hitbox.hit_landed.disconnect(_on_hit_landed)
+	if player.combat_visual and _phase != Phase.ACTIVE:
+		player.combat_visual.reset_pose()
 
 
 func _aim_hitbox_at_cursor() -> void:
@@ -101,15 +116,33 @@ func _aim_hitbox_at_cursor() -> void:
 	var aim := mouse - player.global_position
 	if aim == Vector2.ZERO:
 		aim = player.facing_direction
-	player.hitbox_pivot.rotation = aim.angle()
+	_aim_angle = aim.angle()
+	player.hitbox_pivot.rotation = _aim_angle
 	player.facing_direction = aim.normalized()
 
 
 func _on_hit_landed(target: HurtboxComponent) -> void:
 	player.on_melee_hit(target)
+	if target and target.get_parent() and target.get_parent().has_node("CombatVisual"):
+		var cv := target.get_parent().get_node("CombatVisual") as CombatVisualComponent
+		if cv:
+			cv.play_hit_flash()
+	_spawn_hit_vfx(target)
+
+
+func _spawn_hit_vfx(target: HurtboxComponent) -> void:
+	if target == null or player.get_parent() == null or _attack == null:
+		return
+	var pos := target.global_position
+	if target.get_parent() is Node2D:
+		pos = (target.get_parent() as Node2D).global_position + Vector2(0, -22)
+	var impact := pos - player.global_position
+	HitVFX.spawn_at(player.get_parent(), pos, _attack.damage_type, impact)
 
 
 func _return_to_locomotion() -> void:
+	if player.combat_visual:
+		player.combat_visual.reset_pose()
 	if player.get_input_direction() != Vector2.ZERO:
 		transition_to(&"Move")
 	else:

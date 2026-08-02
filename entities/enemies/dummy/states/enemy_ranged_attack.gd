@@ -6,6 +6,7 @@ extends State
 var _elapsed: float = 0.0
 var _fired: bool = false
 var _aim: Vector2 = Vector2.RIGHT
+var _aim_angle: float = 0.0
 
 
 func enter(_msg: Dictionary = {}) -> void:
@@ -16,6 +17,9 @@ func enter(_msg: Dictionary = {}) -> void:
 		transition_to(&"Idle")
 		return
 	_aim = enemy.global_position.direction_to(enemy.target.global_position)
+	_aim_angle = _aim.angle()
+	if enemy.combat_visual:
+		enemy.combat_visual.play_ranged_windup(_aim_angle, enemy.ranged_attack_data.windup)
 
 
 func physics_update(delta: float) -> void:
@@ -23,14 +27,25 @@ func physics_update(delta: float) -> void:
 	_elapsed += delta
 	if not _fired:
 		if _elapsed >= enemy.ranged_attack_data.windup:
-			# Re-aim at fire moment so the shot tracks slightly.
 			if enemy.target != null:
 				_aim = enemy.global_position.direction_to(enemy.target.global_position)
+				_aim_angle = _aim.angle()
 			enemy.spawn_projectile(_aim)
+			if enemy.combat_visual and enemy.ranged_attack_data:
+				enemy.combat_visual.play_ranged_fire(
+					_aim_angle, enemy.ranged_attack_data.damage_type
+				)
 			enemy.ranged_cooldown.start(enemy.ranged_attack_data.cooldown)
 			_fired = true
 	else:
+		if enemy.combat_visual:
+			enemy.combat_visual.reset_pose()
 		if enemy.target != null:
 			transition_to(&"Chase")
 		else:
 			transition_to(&"Idle")
+
+
+func exit() -> void:
+	if enemy.combat_visual and not _fired:
+		enemy.combat_visual.reset_pose()

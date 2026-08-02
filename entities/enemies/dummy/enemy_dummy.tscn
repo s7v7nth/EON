@@ -1,4 +1,4 @@
-[gd_scene load_steps=18 format=3]
+[gd_scene load_steps=19 format=3]
 
 [ext_resource type="Script" path="res://entities/enemies/dummy/enemy_dummy.gd" id="1_enemy"]
 [ext_resource type="Resource" path="res://resources/stats/enemy_dummy_stats.tres" id="2_stats"]
@@ -13,6 +13,7 @@
 [ext_resource type="Resource" path="res://resources/attacks/enemy_dummy_attack.tres" id="11_atk"]
 [ext_resource type="Resource" path="res://resources/attacks/enemy_dummy_ranged_attack.tres" id="12_ranged_atk"]
 [ext_resource type="Script" path="res://components/status_component.gd" id="13_status"]
+[ext_resource type="Script" path="res://components/combat_visual_component.gd" id="14_cv"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_body"]
 radius = 12.0
@@ -38,6 +39,9 @@ ranged_attack_data = ExtResource("12_ranged_atk")
 [node name="Visual" type="Polygon2D" parent="."]
 color = Color(0.72, 0.28, 0.28, 1)
 polygon = PackedVector2Array(-14, 0, 14, 0, 14, -48, -14, -48)
+
+[node name="CombatVisual" type="Node2D" parent="."]
+script = ExtResource("14_cv")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 shape = SubResource("CircleShape2D_body")
