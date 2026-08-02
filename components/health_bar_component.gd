@@ -10,6 +10,9 @@ extends Node2D
 @export var fill_color: Color = Color(0.85, 0.22, 0.22, 0.95)
 @export var background_color: Color = Color(0.08, 0.08, 0.1, 0.75)
 @export var border_color: Color = Color(0.0, 0.0, 0.0, 0.55)
+@export var label_text: String = ""
+@export var label_color: Color = Color(0.92, 0.92, 0.95, 0.95)
+@export var label_font_size: int = 11
 
 var _ratio: float = 1.0
 var _hide_timer: float = 0.0
@@ -26,6 +29,11 @@ func _ready() -> void:
 		return
 	health_component.health_changed.connect(_on_health_changed)
 	_on_health_changed(health_component.current_health, health_component.get_max_health())
+
+
+func set_label(text: String) -> void:
+	label_text = text
+	queue_redraw()
 
 
 func _process(delta: float) -> void:
@@ -59,6 +67,20 @@ func _draw() -> void:
 	draw_rect(bg.grow(1.0), border_color)
 	draw_rect(bg, background_color)
 	var fill_w := bar_size.x * _ratio
-	if fill_w <= 0.0:
+	if fill_w > 0.0:
+		draw_rect(Rect2(-half.x, -half.y, fill_w, bar_size.y), fill_color)
+	if label_text.is_empty():
 		return
-	draw_rect(Rect2(-half.x, -half.y, fill_w, bar_size.y), fill_color)
+	var font := ThemeDB.fallback_font
+	if font == null:
+		return
+	var text_pos := Vector2(-half.x, -half.y - 4.0)
+	draw_string(
+		font,
+		text_pos,
+		label_text,
+		HORIZONTAL_ALIGNMENT_LEFT,
+		-1,
+		label_font_size,
+		label_color
+	)

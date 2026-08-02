@@ -5,6 +5,22 @@
 [node name="DebugHUD" type="CanvasLayer"]
 script = ExtResource("1_hud")
 
+[node name="LocationBanner" type="Label" parent="."]
+anchors_preset = 10
+anchor_left = 0.0
+anchor_top = 0.0
+anchor_right = 1.0
+anchor_bottom = 0.0
+offset_top = 10.0
+offset_bottom = 36.0
+grow_horizontal = 2
+theme_override_colors/font_color = Color(0.92, 0.94, 0.98, 0.95)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.75)
+theme_override_constants/outline_size = 4
+theme_override_font_sizes/font_size = 18
+horizontal_alignment = 1
+text = "Location: —"
+
 [node name="Margin" type="MarginContainer" parent="."]
 anchors_preset = 1
 anchor_left = 0.0

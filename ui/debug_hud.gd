@@ -9,6 +9,7 @@ extends CanvasLayer
 @onready var arch_label: Label = $Margin/VBox/ArchLabel
 @onready var biome_label: Label = $Margin/VBox/BiomeLabel
 @onready var damage_label: Label = $Margin/VBox/DamageLabel
+@onready var location_banner: Label = $LocationBanner
 
 var _primary_label: Label
 var _secondary_label: Label
@@ -43,6 +44,7 @@ func _ready() -> void:
 	SignalBus.biome_changed.connect(_on_biome_changed)
 	SignalBus.damage_dealt.connect(_on_damage_dealt)
 	_refresh_damage_label()
+	call_deferred("_refresh_location_from_run_state")
 
 
 func _on_health_changed(current: float, max_value: float) -> void:
@@ -102,8 +104,24 @@ func _on_architecture_changed(architecture_id: int) -> void:
 
 
 func _on_biome_changed(biome_id: int) -> void:
+	var loc := _location_display_name(biome_id)
 	if biome_label:
-		biome_label.text = "Biome: %s" % _biome_name(biome_id)
+		biome_label.text = "Biome: %s" % loc
+	if location_banner:
+		location_banner.text = loc
+
+
+func _refresh_location_from_run_state() -> void:
+	if RunState.current_biome:
+		_on_biome_changed(RunState.current_biome.biome_id)
+
+
+func _location_display_name(biome_id: int) -> String:
+	if RunState.current_biome and int(RunState.current_biome.biome_id) == biome_id:
+		var named := RunState.current_biome.display_name
+		if named != "":
+			return named
+	return _biome_name(biome_id)
 
 
 func _on_damage_dealt(amount: float, target: Node, _source: Node) -> void:

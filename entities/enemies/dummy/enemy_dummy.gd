@@ -104,6 +104,9 @@ func apply_definition(def: EnemyDefinition) -> void:
 		visual.color = Color(def.visual_color.r, def.visual_color.g, def.visual_color.b, 1.0)
 	if combat_visual:
 		combat_visual.apply_faction_look(def.faction, def.visual_color)
+	var hp_bar := get_node_or_null("HealthBar") as HealthBarComponent
+	if hp_bar:
+		hp_bar.set_label(def.display_name if def.display_name != "" else "Enemy")
 	var detect_shape := detection_area.get_node_or_null("CollisionShape2D") as CollisionShape2D
 	if detect_shape and detect_shape.shape is CircleShape2D:
 		(detect_shape.shape as CircleShape2D).radius = def.detection_radius
