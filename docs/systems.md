@@ -3,50 +3,57 @@
 Design contracts for biomes, elements, enemies, architectures, and skill loop.
 Implementation grows on top of components + `Resource` data + `SignalBus`.
 
+**Extensibility roadmap (how to add content without rewriting the core):**
+[`docs/systems_extensibility_plan.md`](systems_extensibility_plan.md)
+
 ## Pillars
 
-1. **Architecture** — language of actions + resource economy policy.
-2. **Elements** — how damage behaves (type + status), not just a tint.
-3. **Faction** — enemy identity (resists + preferred behaviours).
-4. **Biome** — pressure pack (enemy weights, element bias, loot tags, palette).
+1. **Architecture** — language of actions + pluggable `ResourceEconomy`.
+2. **Elements** — buildup statuses + synergy recipes, not just a tint.
+3. **Faction** — enemy identity (resists + behavior modules).
+4. **Biome** — pressure pack (enemy weights, element bias, loot tags, palette) inside an `ActRoute`.
 
-Skill actions feed **Adrenaline** + **Style Score** + optional craft tokens.
+Skill actions feed **Adrenaline** + **Style Score** + craft tags / loot parts.
 
 ## Enums (`GameplayEnums`)
 
 | Enum | Values |
 |------|--------|
-| `DamageType` | PHYSICAL, ELECTRICITY, CORROSION, FIRE, BLEED |
-| `Faction` | SAVAGE, CYBORG, ANDROID, ROBO_BEAST |
+| `DamageType` | PHYSICAL, ELECTRICITY, CORROSION, FIRE, BLEED, *(planned)* GLITCH |
+| `Faction` | SAVAGE, CYBORG, ANDROID, ROBO_BEAST, *(planned)* BIO_MUTANT |
 | `BiomeId` | JUNGLE, DATA_CENTER, DOWNTOWN, RESIDENTIAL, TAIGA, ALLEY, LANDFILL, MALL, WASTELAND, GATEWAY |
-| `ArchitectureId` | DEFAULT, NANOMACHINES, ELECTRO_TRAIN |
-| `EconomyPolicy` | ENERGY_ADRENALINE, NANO_SWARM, OVERHEAT |
+| `ArchitectureId` | DEFAULT (Синтетик), NANOMACHINES (Улей), ELECTRO_TRAIN (Паровоз), *(planned)* NEURO_HACKER |
+| `EconomyPolicy` | ENERGY_ADRENALINE, NANO_SWARM → Blood Harvest, OVERHEAT, *(planned)* RAM_COMPUTE |
 | `StyleAction` | HIT, KILL, PERFECT_DODGE, PARRY, COMBO, MULTI_KILL, ELEMENT_CASCADE, TOOK_DAMAGE |
 
 ## Damage & resists
 
 - Final damage: `raw * (1.0 - resist)` clamped to `[0.05, 2.0]` multiplier.
 - Resists live on `CharacterStats` / overrides on `EnemyDefinition` / architecture base.
-- Status application: `status_chance * (1.0 - resist*0.5)` → `StatusComponent`.
+- Status application: `status_chance * (1.0 - resist*0.5)` → buildup on `StatusComponent`.
 
-| Type | Status | Notes |
-|------|--------|-------|
-| PHYSICAL | Stagger (short) | Armor-break flavour |
-| ELECTRICITY | Shock | Slow actions; arc chance later |
-| CORROSION | Acid | DoT + resist shred |
-| FIRE | Burn | Strong DoT |
-| BLEED | Bleed | DoT scaled by target movement |
+| Type | Status | Target behaviour |
+|------|--------|------------------|
+| PHYSICAL | Stagger gauge | Interrupt + crit window on next hit |
+| ELECTRICITY | Shock | Chain lightning at full buildup |
+| CORROSION | Acid / armor break | +% damage taken; acid puddle on death |
+| FIRE | Burn → Panic | DoT; full buildup = chaotic flee |
+| BLEED | Rended wounds | Strong DoT while moving/attacking |
+| GLITCH | Fault | Friendly fire or robot shutdown |
+
+Synergies are data (`SynergyRecipe`), e.g. Acid+Shock → charged gas cloud.
 
 ## Architectures
 
 | Id | Economy | Starter primitives |
 |----|---------|-------------------|
-| DEFAULT | ENERGY_ADRENALINE | Machete / Toss / Shield-parry |
-| NANOMACHINES | NANO_SWARM | Blade / Whip / Toad |
-| ELECTRO_TRAIN | OVERHEAT | Plasma gun / blade / mortar (skeleton) |
+| DEFAULT / Синтетик | ENERGY_ADRENALINE | Energy machete / disc / shield-parry |
+| NANOMACHINES / Улей | Blood Harvest (HP) | Nano blade / whip / toad |
+| ELECTRO_TRAIN / Паровоз | OVERHEAT + Vent | Plasma gun / blade / mortar |
+| NEURO_HACKER | RAM slots | Smart pistol / holo-blades / drones |
 
-**Upgrade rule:** one upgrade = one new verb or rule, not flat +% only.
-Craft parts are tagged `arch` / `element` / `shape`.
+**Upgrade rule:** one upgrade = one `UpgradeEffect` verb, not flat +% only.
+Craft parts are tagged `arch` / `element` / `shape`; recipes gate on owned tags.
 
 ## Style score (Hotline-like)
 
@@ -68,8 +75,9 @@ Craft parts are tagged `arch` / `element` / `shape`.
 
 `id`, palette, `wave_set`, faction weights, element bias, loot tags, neighbors.
 Gateway rooms blend two biomes for smooth transitions.
+Run order comes from `ActRoute` (Act1 outskirts → Act4 data core), not hardcoded room lists.
 
 ## Development order
 
-0 Contracts → 1 Elements → 2 Skill (dodge/parry/combo/score) → 3 Architecture Default →
-4 Two biomes + gateway → 5 Nanomachines + craft → 6 Content volume / Electro-Train skeleton.
+See Phase A–F in [`systems_extensibility_plan.md`](systems_extensibility_plan.md):
+Economies → Status/Synergy → UpgradeEffects/Loot → ActRoute → Enemy behaviors → Neuro-hacker + content volume.
