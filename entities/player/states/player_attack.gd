@@ -51,8 +51,9 @@ func enter(msg: Dictionary = {}) -> void:
 
 	player.hitbox.attack_data = _attack
 	_aim_hitbox_at_cursor()
+	var speed := player.get_attack_speed_multiplier()
 	if player.combat_visual:
-		player.combat_visual.play_melee_windup(_aim_angle, _attack.windup)
+		player.combat_visual.play_melee_windup(_aim_angle, _attack.windup / speed)
 	if not player.hitbox.hit_landed.is_connected(_on_hit_landed):
 		player.hitbox.hit_landed.connect(_on_hit_landed)
 
@@ -64,12 +65,15 @@ func physics_update(delta: float) -> void:
 	else:
 		player.stop_movement()
 
-	_elapsed += delta
+	var speed := player.get_attack_speed_multiplier()
+	_elapsed += delta * speed
 	# Keep aim live while swinging so movement + attacks stay readable.
 	_aim_hitbox_at_cursor()
 
 	if Input.is_action_just_pressed("attack") and _attack and _attack.combo_next:
 		_combo_buffered = true
+	if Input.is_action_just_pressed("special"):
+		player.try_special()
 	if Input.is_action_just_pressed("dash") and player.dash_ready():
 		transition_to(&"Dash")
 		return
@@ -85,7 +89,7 @@ func physics_update(delta: float) -> void:
 				player.hitbox.activate()
 				if player.combat_visual:
 					player.combat_visual.play_melee_swing(
-						_aim_angle, _attack.active_duration, _attack.damage_type
+						_aim_angle, _attack.active_duration / speed, _attack.damage_type
 					)
 		Phase.ACTIVE:
 			if _elapsed >= _attack.active_duration:
@@ -97,7 +101,7 @@ func physics_update(delta: float) -> void:
 					transition_to(&"Attack", {"combo_index": _combo_index + 1})
 					return
 				if player.attack_cooldown:
-					player.attack_cooldown.start(_attack.cooldown)
+					player.attack_cooldown.start(_attack.cooldown / speed)
 				_return_to_locomotion()
 		Phase.RECOVER:
 			_return_to_locomotion()

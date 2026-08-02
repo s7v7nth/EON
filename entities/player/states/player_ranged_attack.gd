@@ -21,8 +21,9 @@ func enter(_msg: Dictionary = {}) -> void:
 	_aim = player.get_aim_direction()
 	_aim_angle = _aim.angle()
 	player.facing_direction = _aim
+	var speed := player.get_attack_speed_multiplier()
 	if player.combat_visual and player.ranged_attack_data:
-		player.combat_visual.play_ranged_windup(_aim_angle, player.ranged_attack_data.windup)
+		player.combat_visual.play_ranged_windup(_aim_angle, player.ranged_attack_data.windup / speed)
 
 
 func physics_update(delta: float) -> void:
@@ -32,7 +33,8 @@ func physics_update(delta: float) -> void:
 	else:
 		player.stop_movement()
 
-	_elapsed += delta
+	var speed := player.get_attack_speed_multiplier()
+	_elapsed += delta * speed
 	_aim = player.get_aim_direction()
 	_aim_angle = _aim.angle()
 	player.facing_direction = _aim
@@ -44,7 +46,7 @@ func physics_update(delta: float) -> void:
 				player.combat_visual.play_ranged_fire(
 					_aim_angle, player.ranged_attack_data.damage_type
 				)
-			player.ranged_cooldown.start(player.ranged_attack_data.cooldown)
+			player.ranged_cooldown.start(player.ranged_attack_data.cooldown / speed)
 			_fired = true
 			_return_to_locomotion()
 	else:

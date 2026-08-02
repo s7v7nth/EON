@@ -36,9 +36,7 @@ var combo_root: AttackData
 var pending_combo: AttackData
 
 ## Architecture runtime
-var overheat: float = 0.0
-var overheated: bool = false
-var _overheat_cd: float = 0.0
+var active_economy: ResourceEconomy
 var counter_window: float = 0.0
 var counter_damage_bonus: float = 1.0
 
@@ -70,6 +68,8 @@ func _ready() -> void:
 	call_deferred("_emit_initial_bus_values")
 	RunState.apply_to_player(self)
 	RunState.begin_room()
+	if not SignalBus.enemy_died.is_connected(_on_enemy_died_for_economy):
+		SignalBus.enemy_died.connect(_on_enemy_died_for_economy)
 
 
 func _physics_process(delta: float) -> void:
@@ -212,19 +212,24 @@ func get_resist(damage_type: GameplayEnums.DamageType) -> float:
 func equip_architecture(arch: ArchitectureData) -> void:
 	if arch == null:
 		return
+	if active_economy:
+		active_economy.on_unequip(self)
 	architecture = arch
+	# Duplicate so heat / runtime fields are not shared across runs.
+	active_economy = arch.economy.duplicate(true) as ResourceEconomy if arch.economy else null
 	# One kit per architecture: LMB primary + RMB secondary. No hotkey swapping.
 	weapons.clear()
 	if not arch.primitives.is_empty() and arch.primitives[0]:
 		weapons.append(arch.primitives[0])
-	if arch.economy_policy == GameplayEnums.EconomyPolicy.NANO_SWARM:
-		energy.lock_regen(0.0)
-	else:
-		energy.unlock_regen(arch.energy_regen_mult)
+	if active_economy:
+		active_economy.on_equip(self)
+	elif energy:
+		energy.unlock_regen(1.0)
 	if combat_visual:
 		combat_visual.apply_architecture_look(arch)
 	equip_weapon(0)
 	SignalBus.architecture_changed.emit(arch.architecture_id)
+	_emit_economy_hud()
 
 
 func apply_run_upgrades(upgrades: Array[UpgradeData]) -> void:
@@ -275,42 +280,43 @@ func stop_movement() -> void:
 
 
 func dash_ready() -> bool:
-	if stats == null or overheated:
+	if stats == null:
+		return false
+	if active_economy and active_economy.is_action_locked(self):
 		return false
 	if dash_cooldown and not dash_cooldown.is_stopped():
 		return false
+	if active_economy:
+		return active_economy.can_afford(self, &"dash", stats.dash_cost * dash_cost_multiplier)
 	return energy.current_energy >= stats.dash_cost * dash_cost_multiplier
 
 
 func try_spend_dash() -> bool:
 	if stats == null:
 		return false
-	var ok := energy.try_spend(stats.dash_cost * dash_cost_multiplier)
-	if ok:
-		_gain_overheat()
-	return ok
+	if active_economy:
+		return active_economy.spend(self, &"dash", stats.dash_cost * dash_cost_multiplier)
+	return energy.try_spend(stats.dash_cost * dash_cost_multiplier)
 
 
 func parry_ready() -> bool:
-	if overheated:
+	if active_economy and active_economy.is_action_locked(self):
 		return false
 	if parry_cooldown and not parry_cooldown.is_stopped():
 		return false
-	if architecture and architecture.economy_policy == GameplayEnums.EconomyPolicy.ENERGY_ADRENALINE:
-		return energy.current_energy >= 10.0
+	if active_economy:
+		return active_economy.can_afford(self, &"parry", 0.0)
 	return true
 
 
 func try_spend_parry() -> bool:
-	if architecture and architecture.economy_policy == GameplayEnums.EconomyPolicy.ENERGY_ADRENALINE:
-		if not energy.try_spend(10.0):
-			return false
-	_gain_overheat()
+	if active_economy:
+		return active_economy.spend(self, &"parry", 0.0)
 	return true
 
 
 func attack_ready() -> bool:
-	if overheated:
+	if active_economy and active_economy.is_action_locked(self):
 		return false
 	if hitbox == null or hitbox.attack_data == null:
 		return false
@@ -318,7 +324,7 @@ func attack_ready() -> bool:
 
 
 func ranged_ready() -> bool:
-	if overheated:
+	if active_economy and active_economy.is_action_locked(self):
 		return false
 	if ranged_attack_data == null:
 		return false
@@ -328,16 +334,32 @@ func ranged_ready() -> bool:
 func try_spend_attack_energy(attack: AttackData) -> bool:
 	if attack == null:
 		return false
-	if architecture == null:
-		return true
-	var cost := attack.energy_cost * architecture.attack_energy_mult
+	var action := &"attack"
+	if attack == ranged_attack_data:
+		action = &"ranged"
+	var cost := attack.energy_cost
+	if active_economy:
+		return active_economy.spend(self, action, cost)
 	if cost <= 0.0:
-		_gain_overheat()
 		return true
-	if not energy.try_spend(cost):
+	return energy.try_spend(cost)
+
+
+func try_special() -> bool:
+	if active_economy == null:
 		return false
-	_gain_overheat()
-	return true
+	if active_economy.is_action_locked(self):
+		return false
+	return active_economy.try_special(self)
+
+
+func get_attack_speed_multiplier() -> float:
+	var m := 1.0
+	if status:
+		m *= status.get_action_speed_multiplier()
+	if active_economy:
+		m *= active_economy.attack_speed_multiplier(self)
+	return maxf(m, 0.2)
 
 
 func equip_weapon(index: int) -> void:
@@ -431,55 +453,42 @@ func _on_offensive_hit(target: HurtboxComponent) -> void:
 	if stats:
 		adrenaline.add(stats.adrenaline_gain_on_hit)
 	SignalBus.style_action.emit(GameplayEnums.StyleAction.HIT, 20)
-	var steal := 0.0
-	if architecture:
-		steal = architecture.life_steal + _life_steal_bonus
-	if steal > 0.0:
-		health.heal(4.0 * steal * 10.0)
+	if active_economy:
+		active_economy.on_hit(self, target)
+	if _life_steal_bonus > 0.0:
+		health.heal(4.0 * _life_steal_bonus * 10.0)
 
 
 func effective_damage_multiplier() -> float:
 	var m := damage_multiplier
 	if counter_window > 0.0:
 		m *= counter_damage_bonus
+	if active_economy:
+		m *= active_economy.damage_multiplier(self)
 	return m
 
 
 func _process_architecture_economy(delta: float) -> void:
-	if architecture == null:
-		return
-	match architecture.economy_policy:
-		GameplayEnums.EconomyPolicy.NANO_SWARM:
-			if energy.current_energy > 0.0:
-				energy.current_energy = maxf(
-					energy.current_energy - architecture.swarm_energy_drain * delta, 0.0
-				)
-				energy.energy_changed.emit(energy.current_energy, energy.get_max_energy())
-			var regen := architecture.hp_regen_rate + _hp_regen_bonus
-			if regen > 0.0:
-				health.heal(regen * delta)
-		GameplayEnums.EconomyPolicy.OVERHEAT:
-			if overheated:
-				_overheat_cd -= delta
-				if _overheat_cd <= 0.0:
-					overheated = false
-					overheat = 0.0
-			else:
-				overheat = maxf(overheat - 12.0 * delta, 0.0)
-		_:
-			pass
+	if active_economy:
+		active_economy.tick(self, delta)
+		if _hp_regen_bonus > 0.0 and health:
+			health.heal(_hp_regen_bonus * delta)
+	_emit_economy_hud()
 
 
-func _gain_overheat() -> void:
-	if architecture == null:
+func _emit_economy_hud() -> void:
+	if active_economy == null:
 		return
-	if architecture.economy_policy != GameplayEnums.EconomyPolicy.OVERHEAT:
-		return
-	overheat += architecture.overheat_gain_per_action
-	if overheat >= architecture.overheat_max:
-		overheated = true
-		_overheat_cd = architecture.overheat_cooldown
-		overheat = architecture.overheat_max
+	var vals := active_economy.get_hud_values(self)
+	SignalBus.player_economy_hud_changed.emit(
+		vals.get("primary", {}),
+		vals.get("secondary", {})
+	)
+
+
+func _on_enemy_died_for_economy(enemy: Node) -> void:
+	if active_economy:
+		active_economy.on_kill(self, enemy)
 
 
 func _process_infect(delta: float) -> void:

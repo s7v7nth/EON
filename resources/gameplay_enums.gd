@@ -38,11 +38,11 @@ enum ArchitectureId {
 }
 
 enum EconomyPolicy {
-	## Spend energy on non-move actions; adrenaline boosts regen.
+	## Basics free; adrenaline fuels regen + attack speed; specials spend Energy.
 	ENERGY_ADRENALINE,
-	## Energy feeds the swarm (drain); HP regenerates / vamp.
-	NANO_SWARM,
-	## Burst window then overheat cooldown.
+	## No energy — HP drain / spend; vamp on hits and kills.
+	BLOOD_HARVEST,
+	## Heat gauge with yellow/red zones + Vent dump.
 	OVERHEAT,
 }
 
@@ -76,9 +76,9 @@ static func damage_type_name(t: DamageType) -> String:
 static func architecture_name(a: ArchitectureId) -> String:
 	match a:
 		ArchitectureId.DEFAULT:
-			return "Default"
+			return "Синтетик"
 		ArchitectureId.NANOMACHINES:
-			return "Nanomachines"
+			return "Улей"
 		ArchitectureId.ELECTRO_TRAIN:
-			return "Electro-Train"
+			return "Паровоз"
 	return "Unknown"

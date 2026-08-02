@@ -5,6 +5,7 @@ extends Node
 signal player_health_changed(current: float, max_value: float)
 signal player_energy_changed(current: float, max_value: float)
 signal player_adrenaline_changed(current: float, max_value: float)
+signal player_economy_hud_changed(primary: Dictionary, secondary: Dictionary)
 signal entity_died(entity: Node)
 signal player_died
 signal enemy_died(enemy: Node)
@@ -26,3 +27,5 @@ signal architecture_changed(architecture_id: int)
 signal biome_changed(biome_id: int)
 signal upgrade_crafted(upgrade_id: StringName)
 signal player_statuses_changed(statuses: PackedStringArray)
+signal special_triggered(source: Node)
+signal vent_triggered(source: Node)

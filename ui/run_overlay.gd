@@ -5,6 +5,7 @@ enum Mode { HIDDEN, DEATH, WAVE_BANNER, WIN, REWARD, ARCH_PICK }
 
 var _mode: Mode = Mode.HIDDEN
 var _craft_nodes: Array[Node] = []
+var _arch_nodes: Array[Node] = []
 
 @onready var _panel: PanelContainer = $Center/Panel
 @onready var _title: Label = $Center/Panel/Margin/VBox/Title
@@ -34,9 +35,6 @@ func _ready() -> void:
 	_rewards.get_node("BtnDamage").pressed.connect(_on_pick_damage)
 	_rewards.get_node("BtnSpeed").pressed.connect(_on_pick_speed)
 	_rewards.get_node("BtnDash").pressed.connect(_on_pick_dash)
-	_arch.get_node("BtnDefault").pressed.connect(_on_arch_default)
-	_arch.get_node("BtnNano").pressed.connect(_on_arch_nano)
-	_arch.get_node("BtnTrain").pressed.connect(_on_arch_train)
 	# Offer architecture pick at run start once.
 	if RunState.room_index == 0 and not RunState.architecture_picked:
 		call_deferred("_show_arch_pick")
@@ -97,32 +95,37 @@ func _on_style_changed(score: int, multiplier: float, rank: String) -> void:
 
 
 func _show_arch_pick() -> void:
-	_show(Mode.ARCH_PICK, "Choose Architecture", "Defines your combat language")
+	_populate_arch_pick()
+	_show(Mode.ARCH_PICK, "Choose Architecture", "Defines your combat language — Q = special")
 	_arch.visible = true
 	_rewards.visible = false
 	_craft.visible = false
 	get_tree().paused = true
 
 
-func _on_arch_default() -> void:
-	_pick_arch(GameplayEnums.ArchitectureId.DEFAULT)
+func _populate_arch_pick() -> void:
+	for node in _arch_nodes:
+		if is_instance_valid(node):
+			node.queue_free()
+	_arch_nodes.clear()
+	# Hide legacy static buttons if present.
+	for child in _arch.get_children():
+		child.visible = false
+	for arch in RunState.get_architectures():
+		var btn := Button.new()
+		var desc := arch.description if arch.description != "" else arch.display_name
+		btn.text = "%s — %s" % [arch.display_name, desc]
+		btn.pressed.connect(_on_arch_pressed.bind(arch))
+		_arch.add_child(btn)
+		_arch_nodes.append(btn)
 
 
-func _on_arch_nano() -> void:
-	_pick_arch(GameplayEnums.ArchitectureId.NANOMACHINES)
-
-
-func _on_arch_train() -> void:
-	_pick_arch(GameplayEnums.ArchitectureId.ELECTRO_TRAIN)
-
-
-func _pick_arch(arch_id: GameplayEnums.ArchitectureId) -> void:
+func _on_arch_pressed(arch: ArchitectureData) -> void:
 	if _mode != Mode.ARCH_PICK:
 		return
-	RunState.choose_architecture(arch_id)
+	RunState.choose_architecture_data(arch)
 	var player := get_tree().get_first_node_in_group("player") as Player
 	if player == null:
-		# Player may not be in a group — find in scene.
 		player = _find_player()
 	if player:
 		RunState.apply_to_player(player)

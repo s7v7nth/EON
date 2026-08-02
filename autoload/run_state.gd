@@ -7,11 +7,10 @@ const ROOM_SCENES: PackedStringArray = [
 	"res://levels/rooms/room_03.tscn",
 ]
 
-const ARCH_DEFAULT := preload("res://resources/architectures/default.tres")
-const ARCH_NANO := preload("res://resources/architectures/nanomachines.tres")
-const ARCH_TRAIN := preload("res://resources/architectures/electro_train.tres")
+const ARCH_CATALOG := preload("res://resources/architectures/architecture_catalog.tres")
 
 var _upgrade_pool: Array[UpgradeData] = []
+var catalog: ArchitectureCatalog
 
 var room_index: int = 0
 var damage_mult: float = 1.0
@@ -36,10 +35,11 @@ var _transitioning: bool = false
 
 
 func _ready() -> void:
+	catalog = ARCH_CATALOG as ArchitectureCatalog
 	if architecture == null:
-		architecture = ARCH_DEFAULT
-	if owned_tags.is_empty():
-		owned_tags = PackedStringArray(["default", "style"])
+		architecture = _default_architecture()
+	if owned_tags.is_empty() and architecture:
+		owned_tags = architecture.starting_tags.duplicate()
 	_ensure_upgrade_pool()
 	SignalBus.style_action.connect(_on_style_action)
 	SignalBus.enemy_died.connect(_on_enemy_died)
@@ -67,9 +67,9 @@ func reset() -> void:
 	damage_mult = 1.0
 	speed_mult = 1.0
 	dash_cost_mult = 1.0
-	architecture = ARCH_DEFAULT
+	architecture = _default_architecture()
 	architecture_picked = false
-	owned_tags = PackedStringArray(["default", "style"])
+	owned_tags = architecture.starting_tags.duplicate() if architecture else PackedStringArray(["default", "style"])
 	crafted_upgrades.clear()
 	style_score = 0
 	style_multiplier = 1.0
@@ -92,19 +92,41 @@ func apply_to_player(player: Player) -> void:
 	player.apply_run_upgrades(crafted_upgrades)
 
 
+func get_architectures() -> Array[ArchitectureData]:
+	if catalog == null:
+		catalog = ARCH_CATALOG as ArchitectureCatalog
+	if catalog == null:
+		return []
+	return catalog.all()
+
+
 func choose_architecture(arch_id: GameplayEnums.ArchitectureId) -> void:
-	match arch_id:
-		GameplayEnums.ArchitectureId.NANOMACHINES:
-			architecture = ARCH_NANO
-			owned_tags = PackedStringArray(["nano", "whip", "toad", "swarm", "proximity"])
-		GameplayEnums.ArchitectureId.ELECTRO_TRAIN:
-			architecture = ARCH_TRAIN
-			owned_tags = PackedStringArray(["train", "plasma"])
-		_:
-			architecture = ARCH_DEFAULT
-			owned_tags = PackedStringArray(["default", "style"])
+	var arch := _find_architecture(arch_id)
+	choose_architecture_data(arch)
+
+
+func choose_architecture_data(arch: ArchitectureData) -> void:
+	if arch == null:
+		arch = _default_architecture()
+	architecture = arch
+	owned_tags = arch.starting_tags.duplicate()
 	architecture_picked = true
 	SignalBus.architecture_changed.emit(architecture.architecture_id)
+
+
+func _default_architecture() -> ArchitectureData:
+	var arch := _find_architecture(GameplayEnums.ArchitectureId.DEFAULT)
+	if arch:
+		return arch
+	return load("res://resources/architectures/default.tres") as ArchitectureData
+
+
+func _find_architecture(arch_id: GameplayEnums.ArchitectureId) -> ArchitectureData:
+	if catalog == null:
+		catalog = ARCH_CATALOG as ArchitectureCatalog
+	if catalog:
+		return catalog.find_by_id(arch_id)
+	return null
 
 
 func choose_modifier(modifier_id: StringName) -> void:

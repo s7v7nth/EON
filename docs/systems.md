@@ -23,7 +23,7 @@ Skill actions feed **Adrenaline** + **Style Score** + craft tags / loot parts.
 | `Faction` | SAVAGE, CYBORG, ANDROID, ROBO_BEAST, *(planned)* BIO_MUTANT |
 | `BiomeId` | JUNGLE, DATA_CENTER, DOWNTOWN, RESIDENTIAL, TAIGA, ALLEY, LANDFILL, MALL, WASTELAND, GATEWAY |
 | `ArchitectureId` | DEFAULT (Синтетик), NANOMACHINES (Улей), ELECTRO_TRAIN (Паровоз), *(planned)* NEURO_HACKER |
-| `EconomyPolicy` | ENERGY_ADRENALINE, NANO_SWARM → Blood Harvest, OVERHEAT, *(planned)* RAM_COMPUTE |
+| `EconomyPolicy` | ENERGY_ADRENALINE, BLOOD_HARVEST, OVERHEAT, *(planned)* RAM_COMPUTE |
 | `StyleAction` | HIT, KILL, PERFECT_DODGE, PARRY, COMBO, MULTI_KILL, ELEMENT_CASCADE, TOOK_DAMAGE |
 
 ## Damage & resists
@@ -47,10 +47,15 @@ Synergies are data (`SynergyRecipe`), e.g. Acid+Shock → charged gas cloud.
 
 | Id | Economy | Starter primitives |
 |----|---------|-------------------|
-| DEFAULT / Синтетик | ENERGY_ADRENALINE | Energy machete / disc / shield-parry |
-| NANOMACHINES / Улей | Blood Harvest (HP) | Nano blade / whip / toad |
-| ELECTRO_TRAIN / Паровоз | OVERHEAT + Vent | Plasma gun / blade / mortar |
-| NEURO_HACKER | RAM slots | Smart pistol / holo-blades / drones |
+| DEFAULT / Синтетик | `EconomyAdrenaline` | Energy machete / disc / shield-parry |
+| NANOMACHINES / Улей | `EconomyBloodHarvest` | Nano blade / whip / toad |
+| ELECTRO_TRAIN / Паровоз | `EconomyOverheat` + Vent (Q) | Plasma gun / blade / mortar |
+| NEURO_HACKER | RAM slots *(planned)* | Smart pistol / holo-blades / drones |
+
+Catalog: `resources/architectures/architecture_catalog.tres` — UI builds pick list from it.
+Runtime: `ArchitectureData.economy` (`ResourceEconomy`) is duplicated on equip; Player has no `match economy_policy`.
+
+Special input: `special` (Q) → `economy.try_special()` (reactor pulse / swarm burst / Vent).
 
 **Upgrade rule:** one upgrade = one `UpgradeEffect` verb, not flat +% only.
 Craft parts are tagged `arch` / `element` / `shape`; recipes gate on owned tags.
@@ -70,6 +75,8 @@ Craft parts are tagged `arch` / `element` / `shape`; recipes gate on owned tags.
 - `architecture_changed(architecture_id)`
 - `biome_changed(biome_id)`
 - `upgrade_crafted(upgrade_id)`
+- `player_economy_hud_changed(primary, secondary)`
+- `special_triggered(source)` / `vent_triggered(source)`
 
 ## Biome package (`BiomeDefinition`)
 
