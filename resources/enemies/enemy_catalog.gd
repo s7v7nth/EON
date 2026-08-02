@@ -21,13 +21,18 @@ func for_faction(faction: int) -> Array[EnemyDefinition]:
 	return result
 
 
-func pick_for_biome(biome: BiomeDefinition, fallback: EnemyDefinition = null) -> EnemyDefinition:
+func pick_for_biome(
+	biome: BiomeDefinition,
+	fallback: EnemyDefinition = null,
+	rng: RandomNumberGenerator = null
+) -> EnemyDefinition:
 	if biome == null:
 		return fallback
-	var faction := biome.pick_faction()
+	var faction := biome.pick_faction(rng)
 	if faction < 0:
 		return fallback
 	var pool := for_faction(faction)
 	if pool.is_empty():
 		return fallback
-	return pool[randi() % pool.size()]
+	var idx := (rng.randi() if rng else randi()) % pool.size()
+	return pool[idx]

@@ -16,6 +16,7 @@ var _secondary_label: Label
 var _economy_drives_bars: bool = false
 var _last_damage: float = 0.0
 var _total_damage: float = 0.0
+var _seed_label: Label
 
 
 func _ready() -> void:
@@ -33,6 +34,10 @@ func _ready() -> void:
 	_secondary_label.text = "Adrenaline"
 	adrenaline_bar.get_parent().add_child(_secondary_label)
 	adrenaline_bar.get_parent().move_child(_secondary_label, adrenaline_bar.get_index())
+	_seed_label = Label.new()
+	_seed_label.add_theme_font_size_override("font_size", 11)
+	_seed_label.text = "Seed: —"
+	$Margin/VBox.add_child(_seed_label)
 	SignalBus.player_health_changed.connect(_on_health_changed)
 	SignalBus.player_energy_changed.connect(_on_energy_changed)
 	SignalBus.player_adrenaline_changed.connect(_on_adrenaline_changed)
@@ -45,6 +50,17 @@ func _ready() -> void:
 	SignalBus.damage_dealt.connect(_on_damage_dealt)
 	_refresh_damage_label()
 	call_deferred("_refresh_location_from_run_state")
+	call_deferred("_refresh_seed_label")
+
+
+func _refresh_seed_label() -> void:
+	if _seed_label == null:
+		return
+	if RunState.is_procedural_run() and RunState.run_seed != 0:
+		var coord := RunState.current_coord
+		_seed_label.text = "Seed: %d  @%d,%d" % [RunState.run_seed, coord.x, coord.y]
+	else:
+		_seed_label.text = "Seed: —"
 
 
 func _on_health_changed(current: float, max_value: float) -> void:
@@ -109,6 +125,7 @@ func _on_biome_changed(biome_id: int) -> void:
 		biome_label.text = "Biome: %s" % loc
 	if location_banner:
 		location_banner.text = loc
+	_refresh_seed_label()
 
 
 func _refresh_location_from_run_state() -> void:

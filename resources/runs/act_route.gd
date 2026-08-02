@@ -1,10 +1,14 @@
 class_name ActRoute
 extends Resource
 ## Linear run path: acts → biomes. Room layouts stay separate geometry templates.
+## Procedural routes ignore acts and generate a dungeon graph at run start.
 
 @export var route_id: StringName = &"tutorial"
 @export var display_name: String = "Tutorial Route"
 @export var acts: Array[ActDefinition] = []
+## When true, RunState builds an Isaac-style room graph from run_seed.
+@export var is_procedural: bool = false
+@export var procedural_room_count: int = 12
 ## Geometry templates cycled by global room index.
 @export var layout_scenes: PackedStringArray = PackedStringArray([
 	"res://levels/rooms/room_01.tscn",
@@ -14,6 +18,8 @@ extends Resource
 
 
 func total_rooms() -> int:
+	if is_procedural:
+		return maxi(procedural_room_count, 1)
 	var total := 0
 	for act in acts:
 		if act:

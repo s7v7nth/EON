@@ -3,6 +3,7 @@ extends Node
 
 const TUTORIAL_ROUTE := preload("res://resources/runs/tutorial_route.tres")
 const CAMPAIGN_ROUTE := preload("res://resources/runs/campaign_route.tres")
+const PROCEDURAL_ROUTE := preload("res://resources/runs/procedural_route.tres")
 const DEFAULT_ROUTE := TUTORIAL_ROUTE
 const ARCH_CATALOG := preload("res://resources/architectures/architecture_catalog.tres")
 const UPGRADE_CATALOG := preload("res://resources/upgrades/upgrade_catalog.tres")
@@ -14,6 +15,9 @@ const LAYOUT_SCENES: PackedStringArray = [
 	"res://levels/rooms/room_02.tscn",
 	"res://levels/rooms/room_03.tscn",
 ]
+
+## Arena half-extents used for door / entry spawn placement.
+const ARENA_DOOR_OFFSET := Vector2(720, 390)
 
 var arch_catalog: ArchitectureCatalog
 var upgrade_catalog: UpgradeCatalog
@@ -35,6 +39,15 @@ var crafted_upgrades: Array[UpgradeData] = []
 var inventory: Array = []
 var last_loot: Array = []
 var current_biome: BiomeDefinition
+
+## Procedural dungeon (null on linear routes).
+var run_seed: int = 0
+var rng: RunRng
+var dungeon: DungeonGraph
+var current_coord: Vector2i = Vector2i.ZERO
+var pending_exit_dir: Vector2i = Vector2i.ZERO
+## Direction traveled into the current room (ZERO = run start).
+var entry_travel_dir: Vector2i = Vector2i.ZERO
 
 ## Style score (Hotline-like)
 var style_score: int = 0
@@ -86,6 +99,12 @@ func reset() -> void:
 	last_loot.clear()
 	current_biome = null
 	current_route = DEFAULT_ROUTE as ActRoute
+	run_seed = 0
+	rng = null
+	dungeon = null
+	current_coord = Vector2i.ZERO
+	pending_exit_dir = Vector2i.ZERO
+	entry_travel_dir = Vector2i.ZERO
 	_sync_route_cursor()
 	style_score = 0
 	style_multiplier = 1.0
@@ -134,10 +153,13 @@ func get_available_routes() -> Array[ActRoute]:
 	var routes: Array[ActRoute] = []
 	var tutorial := TUTORIAL_ROUTE as ActRoute
 	var campaign := CAMPAIGN_ROUTE as ActRoute
+	var procedural := PROCEDURAL_ROUTE as ActRoute
 	if tutorial:
 		routes.append(tutorial)
 	if campaign:
 		routes.append(campaign)
+	if procedural:
+		routes.append(procedural)
 	return routes
 
 
@@ -147,7 +169,71 @@ func choose_route(route: ActRoute) -> void:
 	current_route = route
 	route_picked = true
 	room_index = 0
+	pending_exit_dir = Vector2i.ZERO
+	entry_travel_dir = Vector2i.ZERO
+	if current_route and current_route.is_procedural:
+		run_seed = 0
+		_begin_procedural_dungeon()
+	else:
+		dungeon = null
+		rng = null
+		run_seed = 0
+		current_coord = Vector2i.ZERO
 	_sync_route_cursor()
+
+
+func begin_procedural_with_seed(seed_value: int) -> void:
+	## Test / future seed-entry hook.
+	run_seed = seed_value
+	current_route = PROCEDURAL_ROUTE as ActRoute
+	route_picked = true
+	room_index = 0
+	_begin_procedural_dungeon()
+	_sync_route_cursor()
+
+
+func is_procedural_run() -> bool:
+	return current_route != null and current_route.is_procedural and dungeon != null
+
+
+func current_dungeon_room() -> DungeonRoom:
+	if dungeon == null:
+		return null
+	return dungeon.get_room(current_coord)
+
+
+func set_pending_exit_dir(dir: Vector2i) -> void:
+	pending_exit_dir = dir
+
+
+func player_spawn_position() -> Vector2:
+	if entry_travel_dir == Vector2i.ZERO:
+		return Vector2(-150, 50)
+	# Travelled into this room along entry_travel_dir → appear at opposite wall.
+	var wall := -entry_travel_dir
+	return Vector2(float(wall.x) * ARENA_DOOR_OFFSET.x, float(wall.y) * ARENA_DOOR_OFFSET.y)
+
+
+func _begin_procedural_dungeon() -> void:
+	if run_seed == 0:
+		run_seed = _fresh_seed()
+	rng = RunRng.new(run_seed)
+	var count := 12
+	if current_route:
+		count = current_route.procedural_room_count
+	dungeon = DungeonGenerator.generate(rng, count)
+	current_coord = dungeon.start_coord if dungeon else Vector2i.ZERO
+	pending_exit_dir = Vector2i.ZERO
+	entry_travel_dir = Vector2i.ZERO
+
+
+func _fresh_seed() -> int:
+	var roller := RandomNumberGenerator.new()
+	roller.randomize()
+	var value := roller.randi()
+	if value == 0:
+		value = 1
+	return value
 
 
 func _default_architecture() -> ArchitectureData:
@@ -239,7 +325,7 @@ func grant_loot_for_room_rank() -> void:
 	for _i in rolls:
 		if pool.is_empty():
 			break
-		var part := pool[randi() % pool.size()] as LootPart
+		var part := pool[_loot_index(pool.size())] as LootPart
 		if part == null:
 			continue
 		grant_part(part)
@@ -294,12 +380,17 @@ func register_took_damage() -> void:
 
 
 func room_count() -> int:
+	if is_procedural_run():
+		return dungeon.room_count()
 	if current_route:
 		return maxi(current_route.total_rooms(), 1)
 	return LAYOUT_SCENES.size()
 
 
 func is_last_room() -> bool:
+	if is_procedural_run():
+		var room := current_dungeon_room()
+		return room != null and room.kind == DungeonRoom.RoomKind.BOSS
 	return room_index >= room_count() - 1
 
 
@@ -314,6 +405,10 @@ func seek_room(index: int) -> void:
 
 
 func layout_scene_for_current_room() -> String:
+	if is_procedural_run():
+		var room := current_dungeon_room()
+		if room and room.layout_path != "":
+			return room.layout_path
 	if current_route:
 		return current_route.layout_scene_at(room_index)
 	var idx := clampi(room_index, 0, LAYOUT_SCENES.size() - 1)
@@ -325,11 +420,17 @@ func pick_enemy_for_biome(fallback: EnemyDefinition) -> EnemyDefinition:
 		enemy_catalog = ENEMY_CATALOG as EnemyCatalog
 	if enemy_catalog == null or current_biome == null:
 		return fallback
-	return enemy_catalog.pick_for_biome(current_biome, fallback)
+	var spawn_rng: RandomNumberGenerator = rng.spawn if rng else null
+	return enemy_catalog.pick_for_biome(current_biome, fallback, spawn_rng)
 
 
 func advance_to_next_room() -> void:
 	if is_last_room() or _transitioning:
+		return
+	if is_procedural_run():
+		if pending_exit_dir == Vector2i.ZERO:
+			return
+		_advance_through_door(pending_exit_dir)
 		return
 	room_index += 1
 	_sync_route_cursor()
@@ -338,10 +439,35 @@ func advance_to_next_room() -> void:
 
 func finish_room_reward() -> void:
 	## Called after craft/boon on room clear. Wins on last room instead of advancing.
+	if is_procedural_run():
+		var room := current_dungeon_room()
+		if room:
+			room.cleared = true
+		if room and room.kind == DungeonRoom.RoomKind.BOSS:
+			SignalBus.run_won.emit()
+			return
+		if pending_exit_dir == Vector2i.ZERO or _transitioning:
+			return
+		_advance_through_door(pending_exit_dir)
+		return
 	if is_last_room():
 		SignalBus.run_won.emit()
 		return
 	advance_to_next_room()
+
+
+func _advance_through_door(dir: Vector2i) -> void:
+	if dungeon == null or _transitioning:
+		return
+	var next := current_coord + dir
+	if dungeon.get_room(next) == null:
+		return
+	entry_travel_dir = dir
+	current_coord = next
+	pending_exit_dir = Vector2i.ZERO
+	room_index += 1
+	_sync_route_cursor()
+	_change_scene(layout_scene_for_current_room())
 
 
 func restart_run() -> void:
@@ -356,12 +482,33 @@ func _sync_route_cursor() -> void:
 		current_route = DEFAULT_ROUTE as ActRoute
 	if current_route == null:
 		return
+	if is_procedural_run():
+		var room := current_dungeon_room()
+		act_index = 1
+		room_in_act = room_index
+		if room and room.biome:
+			current_biome = room.biome
+		return
 	var resolved := current_route.resolve_room(room_index)
 	act_index = int(resolved.get("act_index", 1))
 	room_in_act = int(resolved.get("room_in_act", 0))
 	var biome := resolved.get("biome") as BiomeDefinition
 	if biome:
 		current_biome = biome
+
+
+func _loot_index(pool_size: int) -> int:
+	if pool_size <= 0:
+		return 0
+	if rng:
+		return rng.loot.randi() % pool_size
+	return randi() % pool_size
+
+
+func spawn_roll() -> float:
+	if rng:
+		return rng.spawn.randf()
+	return randf()
 
 
 func _change_scene(path: String) -> void:

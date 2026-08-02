@@ -12,11 +12,20 @@ extends Node2D
 ## When true, biome faction_weights may replace wave enemy definitions.
 @export var use_faction_weights: bool = true
 
+const DOOR_SIZE := Vector2(56, 32)
+const DOOR_COLORS := {
+	Vector2i(0, -1): Color(0.35, 0.7, 0.95, 0.75),
+	Vector2i(1, 0): Color(0.35, 0.85, 0.55, 0.75),
+	Vector2i(0, 1): Color(0.3, 0.75, 0.45, 0.75),
+	Vector2i(-1, 0): Color(0.9, 0.7, 0.35, 0.75),
+}
+
 var _wave_index: int = -1
 var _alive_enemies: int = 0
 var _spawning: bool = false
 var _room_cleared: bool = false
 var _spawn_cursor: int = 0
+var _door_nodes: Array[Area2D] = []
 
 @onready var _entities: Node2D = get_node(entities_path)
 @onready var _spawn_points: Node2D = get_node(spawn_points_path)
@@ -27,12 +36,77 @@ func _ready() -> void:
 	SignalBus.player_died.connect(_on_player_died)
 	_apply_biome()
 	is_final_room = RunState.is_last_room()
+	_place_player()
+	_setup_exits()
+	call_deferred("_start_first_wave")
+
+
+func _place_player() -> void:
+	if player_path == NodePath() or not has_node(player_path):
+		return
+	var player := get_node(player_path) as Node2D
+	if player == null:
+		return
+	player.position = RunState.player_spawn_position()
+
+
+func _setup_exits() -> void:
 	if exit_marker_path != NodePath() and has_node(exit_marker_path):
 		var exit_node := get_node(exit_marker_path)
 		exit_node.visible = false
+		if exit_node is Area2D:
+			(exit_node as Area2D).monitoring = false
 		if exit_node.has_signal("body_entered"):
-			exit_node.body_entered.connect(_on_exit_body_entered)
-	call_deferred("_start_first_wave")
+			# Linear route still uses the authored ExitMarker.
+			if not RunState.is_procedural_run():
+				exit_node.body_entered.connect(_on_exit_body_entered)
+	if RunState.is_procedural_run():
+		_build_procedural_doors()
+
+
+func _build_procedural_doors() -> void:
+	var room := RunState.current_dungeon_room()
+	if room == null:
+		return
+	var root := get_node_or_null("Doors") as Node2D
+	if root == null:
+		root = Node2D.new()
+		root.name = "Doors"
+		add_child(root)
+	for dir in room.door_dirs():
+		var door := _make_door(dir)
+		root.add_child(door)
+		_door_nodes.append(door)
+
+
+func _make_door(dir: Vector2i) -> Area2D:
+	var door := Area2D.new()
+	door.name = "Door_%d_%d" % [dir.x, dir.y]
+	door.monitoring = false
+	door.monitorable = false
+	door.collision_layer = 0
+	door.collision_mask = 2
+	door.visible = false
+	door.position = Vector2(float(dir.x) * RunState.ARENA_DOOR_OFFSET.x, float(dir.y) * RunState.ARENA_DOOR_OFFSET.y)
+	door.set_meta("dir", dir)
+	var shape := CollisionShape2D.new()
+	var rect := RectangleShape2D.new()
+	rect.size = DOOR_SIZE if dir.x == 0 else Vector2(DOOR_SIZE.y, DOOR_SIZE.x)
+	shape.shape = rect
+	door.add_child(shape)
+	var visual := Polygon2D.new()
+	visual.name = "DoorVisual"
+	var half := rect.size * 0.5
+	visual.polygon = PackedVector2Array([
+		Vector2(-half.x, -half.y),
+		Vector2(half.x, -half.y),
+		Vector2(half.x, half.y),
+		Vector2(-half.x, half.y),
+	])
+	visual.color = DOOR_COLORS.get(dir, Color(0.3, 0.75, 0.45, 0.7))
+	door.add_child(visual)
+	door.body_entered.connect(_on_door_body_entered.bind(dir))
+	return door
 
 
 func _apply_biome() -> void:
@@ -127,7 +201,7 @@ func _spawn_wave(wave: WaveDefinition) -> void:
 			enemy.global_position = marker.global_position
 			var def := group.enemy_definition
 			# Soft remix: keep authored defs most of the time, pressure via weights sometimes.
-			if use_faction_weights and biome and biome.has_faction_weights() and randf() < 0.4:
+			if use_faction_weights and biome and biome.has_faction_weights() and RunState.spawn_roll() < 0.4:
 				def = RunState.pick_enemy_for_biome(def)
 			if def != null and enemy.has_method("apply_definition"):
 				enemy.call("apply_definition", def)
@@ -166,6 +240,12 @@ func force_clear_room() -> void:
 
 
 func _show_exit() -> void:
+	if RunState.is_procedural_run():
+		for door in _door_nodes:
+			if is_instance_valid(door):
+				door.visible = true
+				door.monitoring = true
+		return
 	if exit_marker_path == NodePath() or not has_node(exit_marker_path):
 		return
 	var exit_node: Node2D = get_node(exit_marker_path) as Node2D
@@ -178,6 +258,15 @@ func _on_exit_body_entered(body: Node2D) -> void:
 	if not _room_cleared:
 		return
 	if body is Player:
+		RunState.set_pending_exit_dir(Vector2i.ZERO)
+		SignalBus.exit_reached.emit()
+
+
+func _on_door_body_entered(body: Node2D, dir: Vector2i) -> void:
+	if not _room_cleared:
+		return
+	if body is Player:
+		RunState.set_pending_exit_dir(dir)
 		SignalBus.exit_reached.emit()
 
 

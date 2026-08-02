@@ -47,7 +47,7 @@ func has_faction_weights() -> bool:
 	return not faction_ids.is_empty() and not faction_weights.is_empty()
 
 
-func pick_faction() -> int:
+func pick_faction(rng: RandomNumberGenerator = null) -> int:
 	if not has_faction_weights():
 		return -1
 	var total := 0.0
@@ -56,7 +56,7 @@ func pick_faction() -> int:
 		total += maxf(faction_weights[i], 0.0)
 	if total <= 0.0:
 		return faction_ids[0]
-	var roll := randf() * total
+	var roll := (rng.randf() if rng else randf()) * total
 	var acc := 0.0
 	for i in n:
 		acc += maxf(faction_weights[i], 0.0)

@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="ActRoute" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/runs/act_route.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+route_id = &"procedural"
+display_name = "Procedural"
+is_procedural = true
+procedural_room_count = 12
+layout_scenes = PackedStringArray("res://levels/rooms/room_01.tscn", "res://levels/rooms/room_02.tscn", "res://levels/rooms/room_03.tscn")

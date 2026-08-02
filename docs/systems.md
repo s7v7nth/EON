@@ -110,7 +110,9 @@ Run order comes from `ActRoute` (Act1 outskirts → Act4 data core), not hardcod
 - `resources/runs/act_route.gd` + `act_definition.gd`
 - Default playable path: `tutorial_route.tres` — Landfill → Wasteland → Data Center
 - Full campaign data: `campaign_route.tres` (Acts 1–4)
-- Room scenes (`room_01/02/03`) are **geometry templates**; `ArenaController` paints biome + swaps `wave_set` from `RunState`
+- Procedural: `procedural_route.tres` → `DungeonGenerator` builds an Isaac-style grid from `run_seed` (`systems/worldgen/`); doors N/E/S/W; biomes follow `neighbor_biomes` + blend; win on boss room after craft
+- Seed streams: `RunRng` map / spawn / loot (VFX stays on global rand)
+- Room scenes (`room_01/02/03`) are **geometry templates** (pool for procedural picks); `ArenaController` paints biome + swaps `wave_set` from `RunState`
 - Spawns: wave timing/counts stay; `faction_weights` remaps definitions via `EnemyCatalog`
 - Final room still opens reward/craft, then `run_won`
 
@@ -121,7 +123,7 @@ Run order comes from `ActRoute` (Act1 outskirts → Act4 data core), not hardcod
 - `status_vulnerabilities` scales buildup (savages↔burn, beasts↔bleed, androids↔shock, cyborgs↔glitch)
 - `BIO_MUTANT` + death cloud; Neuro-hacker `EconomyRam` + ally drone + RAM crafts
 - Signal: `ram_slots_changed(used, max_slots)`
-- Route pick: `tutorial_route` / `campaign_route` (Acts 1–4)
+- Route pick: `tutorial_route` / `campaign_route` / `procedural_route`
 - Synergies: Chemical Short, Napalm Rend, System Crash, Concussive Ignition
 - Biome traps: `BiomeDefinition.trap_*` → `BiomeTrap` props in arena
 
