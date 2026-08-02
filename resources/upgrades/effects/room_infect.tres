@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="EffectRoomInfect" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://systems/upgrades/effects/effect_room_infect.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+tick_damage = 2.5
+duration = 6.0
+required_shape = &"toad"

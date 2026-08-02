@@ -82,7 +82,10 @@ func _on_exit_reached() -> void:
 	if RunState.is_last_room():
 		return
 	_populate_craft()
-	_show(Mode.REWARD, "Room Cleared — Rank %s" % RunState.current_room_rank(), "Craft or take a boon")
+	var loot_line := "Craft or take a boon"
+	if not RunState.last_loot.is_empty():
+		loot_line = "Loot: %s — craft or take a boon" % RunState.loot_summary()
+	_show(Mode.REWARD, "Room Cleared — Rank %s" % RunState.current_room_rank(), loot_line)
 	_rewards.visible = true
 	_craft.visible = true
 	_arch.visible = false

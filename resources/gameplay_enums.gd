@@ -9,6 +9,7 @@ enum DamageType {
 	CORROSION,
 	FIRE,
 	BLEED,
+	GLITCH,
 }
 
 enum Faction {
@@ -70,6 +71,8 @@ static func damage_type_name(t: DamageType) -> String:
 			return "Fire"
 		DamageType.BLEED:
 			return "Bleed"
+		DamageType.GLITCH:
+			return "Glitch"
 	return "Unknown"
 
 

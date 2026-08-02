@@ -1,0 +1,7 @@
+[gd_resource type="Resource" script_class="EffectAdrenalineOnParry" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://systems/upgrades/effects/effect_adrenaline_on_parry.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+adrenaline_bonus = 18.0

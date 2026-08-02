@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="LootPart" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/loot/loot_part.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+part_id = &"scrap_code"
+display_name = "Scrap Code"
+description = "Fragmented routines that teach new combos."
+tags = PackedStringArray("code", "style")
+rarity = 0
+drop_tags = PackedStringArray("default", "style", "nano", "elec")

@@ -32,6 +32,7 @@ extends Resource
 @export_range(-1.0, 0.9, 0.01) var resist_corrosion: float = 0.0
 @export_range(-1.0, 0.9, 0.01) var resist_fire: float = 0.0
 @export_range(-1.0, 0.9, 0.01) var resist_bleed: float = 0.0
+@export_range(-1.0, 0.9, 0.01) var resist_glitch: float = 0.0
 
 
 func get_resist(damage_type: GameplayEnums.DamageType) -> float:
@@ -46,4 +47,6 @@ func get_resist(damage_type: GameplayEnums.DamageType) -> float:
 			return resist_fire
 		GameplayEnums.DamageType.BLEED:
 			return resist_bleed
+		GameplayEnums.DamageType.GLITCH:
+			return resist_glitch
 	return 0.0

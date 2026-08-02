@@ -1,14 +1,14 @@
-[gd_resource type="Resource" script_class="UpgradeData" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="UpgradeData" load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://resources/upgrades/upgrade_data.gd" id="1"]
+[ext_resource type="Resource" path="res://resources/upgrades/effects/proximity_pulse.tres" id="2"]
 
 [resource]
 script = ExtResource("1")
 upgrade_id = &"nano_proximity"
 display_name = "Proximity Bloom"
-description = "After hook or melee, pulse corrosion damage around you."
+description = "After melee, pulse corrosion damage around you."
 architecture_id = 1
 required_tags = PackedStringArray("nano", "proximity")
 grant_tags = PackedStringArray("proximity")
-enable_proximity_pulse = true
-proximity_damage = 6.0
+effects = [ExtResource("2")]

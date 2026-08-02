@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="StatusDefinition" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://systems/status/status_definition.gd" id="1"]
+[ext_resource type="Resource" path="res://resources/statuses/effects/stagger_effect.tres" id="2"]
+
+[resource]
+script = ExtResource("1")
+status_id = &"stagger"
+display_name = "Stagger"
+damage_type = 0
+max_buildup = 100.0
+decay_per_sec = 12.0
+tick_interval = 0.5
+active_duration = 1.4
+on_proc = ExtResource("2")
+while_active = ExtResource("2")

@@ -68,7 +68,22 @@ func _compute_damage(attack_data: AttackData, source: Node) -> float:
 				mult *= 1.25
 		GameplayEnums.DamageType.BLEED:
 			mult *= 0.85
-	return damage * mult
+		GameplayEnums.DamageType.GLITCH:
+			if _is_android_like():
+				mult *= 1.3
+	damage *= mult
+	# Stagger crit window on this hurtbox owner.
+	var owner_node := get_parent()
+	if owner_node and owner_node.has_meta("stagger_crit_until"):
+		var until := float(owner_node.get_meta("stagger_crit_until"))
+		if Time.get_ticks_msec() / 1000.0 <= until:
+			damage *= float(owner_node.get_meta("stagger_crit_bonus", 1.35))
+			owner_node.remove_meta("stagger_crit_until")
+			if owner_node.has_meta("stagger_crit_bonus"):
+				owner_node.remove_meta("stagger_crit_bonus")
+	if status_component:
+		damage = status_component.modify_incoming_damage(damage, int(attack_data.damage_type))
+	return damage
 
 
 func _resolve_resist(damage_type: GameplayEnums.DamageType) -> float:
@@ -107,10 +122,17 @@ func _try_apply_status(attack_data: AttackData) -> void:
 	var status_id := _status_for_type(attack_data.damage_type)
 	if status_id == StringName():
 		return
-	status_component.apply_status(status_id, attack_data.status_power, attack_data.status_duration)
+	# Power maps into buildup; high-power hits can proc in 1–2 strikes.
+	var buildup := attack_data.status_power * 12.0
+	status_component.add_buildup(status_id, buildup, attack_data.status_power)
 
 
 func _status_for_type(damage_type: GameplayEnums.DamageType) -> StringName:
+	var catalog := StatusComponent.CATALOG as StatusCatalog
+	if catalog:
+		var from_catalog := catalog.status_id_for_damage_type(damage_type)
+		if from_catalog != StringName():
+			return from_catalog
 	match damage_type:
 		GameplayEnums.DamageType.FIRE:
 			return StatusComponent.STATUS_BURN
@@ -122,6 +144,8 @@ func _status_for_type(damage_type: GameplayEnums.DamageType) -> StringName:
 			return StatusComponent.STATUS_SHOCK
 		GameplayEnums.DamageType.PHYSICAL:
 			return StatusComponent.STATUS_STAGGER
+		GameplayEnums.DamageType.GLITCH:
+			return StatusComponent.STATUS_GLITCH
 	return StringName()
 
 

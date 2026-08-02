@@ -35,6 +35,7 @@ func _ready() -> void:
 func _apply_biome() -> void:
 	if biome == null:
 		return
+	RunState.current_biome = biome
 	if biome.wave_set:
 		wave_set = biome.wave_set
 	var floor_poly := get_node_or_null("Floor") as Polygon2D
@@ -45,10 +46,6 @@ func _apply_biome() -> void:
 		for child in wall_visuals.get_children():
 			if child is Polygon2D:
 				(child as Polygon2D).color = biome.get_wall_color()
-	for tag in biome.loot_tags:
-		if not RunState.owned_tags.has(tag):
-			# Soft hint tags available in biome; actual grant on clear still rank-gated.
-			pass
 	SignalBus.biome_changed.emit(biome.biome_id)
 
 
@@ -115,10 +112,7 @@ func _on_wave_cleared() -> void:
 
 func _on_all_waves_cleared() -> void:
 	_room_cleared = true
-	if biome:
-		for tag in biome.loot_tags:
-			if not RunState.owned_tags.has(tag):
-				RunState.owned_tags.append(tag)
+	RunState.grant_loot_for_room_rank()
 	SignalBus.room_cleared.emit()
 	if is_final_room:
 		SignalBus.run_won.emit()

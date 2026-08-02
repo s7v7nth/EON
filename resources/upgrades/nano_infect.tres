@@ -1,6 +1,7 @@
-[gd_resource type="Resource" script_class="UpgradeData" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="UpgradeData" load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://resources/upgrades/upgrade_data.gd" id="1"]
+[ext_resource type="Resource" path="res://resources/upgrades/effects/room_infect.tres" id="2"]
 
 [resource]
 script = ExtResource("1")
@@ -10,5 +11,4 @@ description = "Venom toad infects the room; tick damage ramps and can cascade."
 architecture_id = 1
 required_tags = PackedStringArray("nano", "toad", "swarm")
 grant_tags = PackedStringArray("infect")
-enable_room_infect = true
-infect_tick_damage = 2.5
+effects = [ExtResource("2")]
