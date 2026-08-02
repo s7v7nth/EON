@@ -32,3 +32,22 @@ extends Resource
 @export_group("Cost")
 ## Energy spent to perform this attack (architecture may override).
 @export var energy_cost: float = 0.0
+
+@export_group("Feel")
+## Endlag after active when the string does not continue.
+@export var recovery: float = 0.0
+## Locomotion multiplier during windup / active / recover (1 = full speed).
+@export_range(0.0, 1.0, 0.01) var move_mult: float = 1.0
+## Self-impulse toward aim when the hitbox activates.
+@export var lunge_force: float = 0.0
+## Engine.time_scale during HitStop.punch (lower = heavier).
+@export var hit_stop_scale: float = 0.12
+@export var hit_stop_duration: float = 0.045
+## How long knockback fades on the target.
+@export var knockback_duration: float = 0.15
+## Camera shake amount on connect (0 = none).
+@export var camera_trauma: float = 0.0
+## Poise damage applied to enemies on hit (flinch breaker).
+@export var poise_damage: float = 10.0
+## Multiplier for HitVFX burst density / size.
+@export var impact_scale: float = 1.0

@@ -6,15 +6,9 @@ signal combo_resolved(result_id: StringName, attack_data: AttackData)
 signal sequence_updated(steps: PackedStringArray)
 
 @export var recipes: Array[ComboRecipe] = []
-@export var step_window: float = 0.55
+@export var step_window: float = 0.8
 
 var _buffer: Array[Dictionary] = []  # {action: StringName, time: float}
-var _clock: float = 0.0
-
-
-func _process(delta: float) -> void:
-	_clock += delta
-	_prune()
 
 
 func clear() -> void:
@@ -25,7 +19,7 @@ func clear() -> void:
 func push(action: StringName) -> StringName:
 	## Returns matched result_id, or empty if only a prefix / no match.
 	_prune()
-	_buffer.append({"action": action, "time": _clock})
+	_buffer.append({"action": action, "time": _now()})
 	sequence_updated.emit(get_sequence())
 	var matched := _try_match()
 	if matched != StringName():
@@ -66,6 +60,11 @@ func get_sequence() -> PackedStringArray:
 	return _current_sequence()
 
 
+func _now() -> float:
+	# Wall-clock seconds — immune to HitStop time_scale.
+	return Time.get_ticks_msec() / 1000.0
+
+
 func _try_match() -> StringName:
 	var current := _current_sequence()
 	var best: ComboRecipe = null
@@ -85,7 +84,8 @@ func _try_match() -> StringName:
 func _prune() -> void:
 	if _buffer.is_empty():
 		return
-	var cutoff := _clock - step_window
+	var now := _now()
+	var cutoff := now - step_window
 	while not _buffer.is_empty() and float(_buffer[0]["time"]) < cutoff:
 		_buffer.pop_front()
 	# Also drop if gap between last two steps exceeded window.

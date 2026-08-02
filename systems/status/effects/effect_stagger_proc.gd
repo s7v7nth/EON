@@ -12,16 +12,12 @@ func on_proc(target: Node, _ctx: Dictionary) -> void:
 		return
 	target.set_meta("stagger_crit_until", Time.get_ticks_msec() / 1000.0 + crit_window)
 	target.set_meta("stagger_crit_bonus", crit_bonus)
-	if target.has_method("interrupt_attack"):
+	if target.has_method("apply_hard_stun"):
+		target.call("apply_hard_stun", maxf(crit_window * 0.55, 0.7))
+	elif target.has_method("interrupt_attack"):
 		target.call("interrupt_attack")
-	elif target.has_node("StateMachine"):
-		var sm = target.get_node("StateMachine")
-		if sm and sm.has_method("transition_to"):
-			# Soft interrupt into Idle when available.
-			if sm.has_method("has_state") and sm.call("has_state", &"Idle"):
-				sm.call("transition_to", &"Idle")
-			elif sm.get("current_state") != null:
-				pass
+		if target.get("combat_visual") is CombatVisualComponent:
+			(target.get("combat_visual") as CombatVisualComponent).play_stun_stars(maxf(crit_window * 0.55, 0.7))
 
 
 func get_action_speed_multiplier(_target: Node) -> float:

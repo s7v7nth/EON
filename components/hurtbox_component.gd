@@ -55,6 +55,7 @@ func receive_hit(attack_data: AttackData, source: Node) -> bool:
 		push_warning("%s: no HealthComponent assigned" % name)
 		return false
 
+	var was_crit := _is_stagger_crit_window()
 	var damage := _compute_damage(attack_data, source)
 	if _blocking and damage > 0.0:
 		var before := damage
@@ -68,8 +69,11 @@ func receive_hit(attack_data: AttackData, source: Node) -> bool:
 	if hp_damage > 0.0:
 		health_component.take_damage(hp_damage)
 		SignalBus.damage_dealt.emit(hp_damage, get_parent(), source)
+		_spawn_damage_pop(hp_damage, was_crit)
+		_apply_impact_juice(hp_damage, attack_data)
 	_try_apply_status(attack_data)
-	_apply_knockback(attack_data, source)
+	_apply_knockback(attack_data, source, hp_damage)
+	_apply_poise(attack_data, source)
 	hit_received.emit(attack_data, source, hp_damage)
 	return true
 
@@ -96,16 +100,30 @@ func _compute_damage(attack_data: AttackData, source: Node) -> float:
 				mult *= 1.3
 	damage *= mult
 	var owner_node := get_parent()
-	if owner_node and owner_node.has_meta("stagger_crit_until"):
-		var until := float(owner_node.get_meta("stagger_crit_until"))
-		if Time.get_ticks_msec() / 1000.0 <= until:
-			damage *= float(owner_node.get_meta("stagger_crit_bonus", 1.35))
-			owner_node.remove_meta("stagger_crit_until")
-			if owner_node.has_meta("stagger_crit_bonus"):
-				owner_node.remove_meta("stagger_crit_bonus")
+	if _consume_stagger_crit(owner_node):
+		damage *= float(owner_node.get_meta("stagger_crit_bonus", 1.35))
+		if owner_node.has_meta("stagger_crit_bonus"):
+			owner_node.remove_meta("stagger_crit_bonus")
 	if status_component:
 		damage = status_component.modify_incoming_damage(damage, int(attack_data.damage_type))
 	return damage
+
+
+func _is_stagger_crit_window() -> bool:
+	var owner_node := get_parent()
+	if owner_node == null or not owner_node.has_meta("stagger_crit_until"):
+		return false
+	return Time.get_ticks_msec() / 1000.0 <= float(owner_node.get_meta("stagger_crit_until"))
+
+
+func _consume_stagger_crit(owner_node: Node) -> bool:
+	if owner_node == null or not owner_node.has_meta("stagger_crit_until"):
+		return false
+	var until := float(owner_node.get_meta("stagger_crit_until"))
+	if Time.get_ticks_msec() / 1000.0 > until:
+		return false
+	owner_node.remove_meta("stagger_crit_until")
+	return true
 
 
 func _resolve_resist(damage_type: GameplayEnums.DamageType) -> float:
@@ -175,7 +193,7 @@ func _status_for_type(damage_type: GameplayEnums.DamageType) -> StringName:
 	return StringName()
 
 
-func _apply_knockback(attack_data: AttackData, source: Node) -> void:
+func _apply_knockback(attack_data: AttackData, source: Node, hp_damage: float = 0.0) -> void:
 	if attack_data.knockback_force <= 0.0:
 		return
 	var body := get_parent()
@@ -186,7 +204,40 @@ func _apply_knockback(attack_data: AttackData, source: Node) -> void:
 		away = (body as Node2D).global_position - (source as Node2D).global_position
 		if away == Vector2.ZERO:
 			away = Vector2.RIGHT
-	body.call("apply_knockback", away.normalized(), attack_data.knockback_force)
+	var max_hp: float = health_component.get_max_health() if health_component else 100.0
+	var frac: float = CombatImpact.hp_frac(hp_damage, max_hp)
+	var kb_mult: float = CombatImpact.knockback_scale(frac)
+	body.call(
+		"apply_knockback",
+		away.normalized(),
+		attack_data.knockback_force * kb_mult,
+		maxf(attack_data.knockback_duration * lerpf(0.85, 1.55, clampf(frac, 0.0, 1.0)), 0.05)
+	)
+
+
+func _apply_impact_juice(hp_damage: float, attack_data: AttackData) -> void:
+	var max_hp: float = health_component.get_max_health() if health_component else 100.0
+	CombatImpact.apply_hit_juice(hp_damage, max_hp, attack_data)
+	var body := get_parent()
+	if body and body.get("combat_visual") is CombatVisualComponent:
+		(body.get("combat_visual") as CombatVisualComponent).play_hit_flash()
+
+
+func _apply_poise(attack_data: AttackData, _source: Node) -> void:
+	var body := get_parent()
+	if body == null or not body.has_method("apply_poise_hit"):
+		return
+	body.call("apply_poise_hit", attack_data.poise_damage)
+
+
+func _spawn_damage_pop(amount: float, is_crit: bool) -> void:
+	var body := get_parent()
+	if body == null or body.get_parent() == null:
+		return
+	if body is not Node2D:
+		return
+	var pos: Vector2 = (body as Node2D).global_position + Vector2(0, -28)
+	DamagePop.spawn_at(body.get_parent(), pos, amount, is_crit)
 
 
 func set_invincible(on: bool, detect_hits: bool = false) -> void:

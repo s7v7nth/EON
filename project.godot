@@ -21,6 +21,7 @@ config/icon="res://icon.svg"
 SignalBus="*res://autoload/signal_bus.gd"
 Iso="*res://autoload/iso.gd"
 HitStop="*res://autoload/hit_stop.gd"
+CameraFx="*res://autoload/camera_fx.gd"
 RunState="*res://autoload/run_state.gd"
 
 [display]

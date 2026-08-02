@@ -31,6 +31,8 @@ func enter(_msg: Dictionary = {}) -> void:
 
 func physics_update(delta: float) -> void:
 	enemy.stop_movement()
+	if enemy.is_stunned() or enemy.is_flinching():
+		return
 	var speed := enemy.get_action_speed_multiplier()
 	_elapsed += delta * speed
 	match _phase:

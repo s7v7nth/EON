@@ -9,6 +9,9 @@ Implementation grows on top of components + `Resource` data + `SignalBus`.
 **External-AI architecture brainstorm context** (keep in sync on significant design changes):
 [`docs/architecture_brainstorm_prompt.md`](architecture_brainstorm_prompt.md)
 
+**Combat feel contract** (weight / impact / poise-flinch; not encounter design):
+[`docs/combat_feel.md`](combat_feel.md)
+
 ## Pillars
 
 1. **Architecture** — language of actions + pluggable `ResourceEconomy`.

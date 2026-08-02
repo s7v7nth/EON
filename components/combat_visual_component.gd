@@ -344,15 +344,17 @@ func play_block_start(parry_flash: bool = true) -> void:
 	if telegraph:
 		telegraph.color.a = 0.0
 	if parry_flash:
-		parry_shield.color = Color(1.0, 0.95, 0.45, 0.9)
+		parry_shield.color = Color(1.0, 0.95, 0.45, 0.95)
 	else:
-		parry_shield.color = Color(0.45, 0.75, 1.0, 0.7)
-	parry_shield.scale = Vector2(0.75, 0.75)
+		parry_shield.color = Color(0.45, 0.75, 1.0, 0.85)
+	# Snap shield up immediately — no long "raise" feel.
+	parry_shield.scale = Vector2(1.15, 1.15)
+	parry_shield.color.a = 0.95
 	if body:
-		body.modulate = Color(1.2, 1.15, 0.85, 1) if parry_flash else Color(0.9, 1.05, 1.2, 1)
+		body.modulate = Color(1.25, 1.2, 0.9, 1) if parry_flash else Color(0.9, 1.05, 1.2, 1)
 	_tween = create_tween()
-	_tween.tween_property(parry_shield, "scale", Vector2(1.2, 1.2), 0.08)
-	_tween.parallel().tween_property(parry_shield, "color:a", 0.95, 0.08)
+	_tween.tween_property(parry_shield, "scale", Vector2(1.25, 1.25), 0.04).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	_tween.tween_property(parry_shield, "scale", Vector2(1.12, 1.12), 0.06)
 
 
 func play_block_hold() -> void:
@@ -416,6 +418,51 @@ func play_hit_flash() -> void:
 	var t := create_tween()
 	t.tween_property(body, "modulate", Color(2.0, 2.0, 2.0, 1), 0.04)
 	t.tween_property(body, "modulate", Color.WHITE, 0.1)
+
+
+func play_flinch() -> void:
+	if body == null:
+		return
+	play_hit_flash()
+	var t := create_tween()
+	t.tween_property(body, "scale", Vector2(1.2, 0.75), 0.05).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	t.tween_property(body, "scale", Vector2.ONE, 0.12).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+
+func play_stun_stars(duration: float = 1.0) -> void:
+	## Tom & Jerry style stars spinning above the head while stunned/staggered.
+	var existing := get_node_or_null("StunStars")
+	if existing:
+		existing.queue_free()
+	var stars_script: Script = load("res://components/stun_stars_runtime.gd") as Script
+	var holder := Node2D.new()
+	holder.name = "StunStars"
+	holder.set_script(stars_script)
+	holder.set("duration", maxf(duration, 0.2))
+	holder.position = Vector2(0, -52)
+	add_child(holder)
+
+
+func play_parry_impact() -> void:
+	## Big golden "BAM" ring for God-of-War style parries.
+	_ensure_nodes()
+	if parry_shield:
+		parry_shield.color = Color(1.0, 0.95, 0.35, 1.0)
+		parry_shield.scale = Vector2(1.4, 1.4)
+	var ring := Polygon2D.new()
+	ring.polygon = _ring_poly(10.0, 18.0)
+	ring.color = Color(1.0, 0.9, 0.3, 0.95)
+	ring.z_index = 30
+	ring.position = Vector2(8, -22)
+	add_child(ring)
+	var t := create_tween()
+	t.tween_property(ring, "scale", Vector2(4.5, 4.5), 0.18).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	t.parallel().tween_property(ring, "modulate:a", 0.0, 0.18)
+	t.tween_callback(ring.queue_free)
+	if body:
+		var bt := create_tween()
+		bt.tween_property(body, "modulate", Color(2.0, 1.8, 0.8, 1), 0.05)
+		bt.tween_property(body, "modulate", Color.WHITE, 0.15)
 
 
 func reset_pose() -> void:

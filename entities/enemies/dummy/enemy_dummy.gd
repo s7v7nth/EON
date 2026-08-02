@@ -29,6 +29,10 @@ const KNOCKBACK_DURATION := 0.15
 var _kb_dir: Vector2 = Vector2.ZERO
 var _kb_force: float = 0.0
 var _kb_time: float = 0.0
+var _kb_duration: float = KNOCKBACK_DURATION
+var _poise: float = 40.0
+var _flinch_time: float = 0.0
+var _stun_time: float = 0.0
 
 
 func _ready() -> void:
@@ -66,24 +70,77 @@ func _fit_combat_shapes() -> void:
 func _physics_process(delta: float) -> void:
 	if _kb_time > 0.0:
 		_kb_time = maxf(0.0, _kb_time - delta)
+	if _stun_time > 0.0:
+		_stun_time = maxf(0.0, _stun_time - delta)
+	if _flinch_time > 0.0:
+		_flinch_time = maxf(0.0, _flinch_time - delta)
+	elif _stun_time <= 0.0 and _poise < get_max_poise():
+		_poise = minf(get_max_poise(), _poise + get_poise_regen() * delta)
 	for behavior in _behaviors:
 		if behavior:
 			behavior.tick(self, delta)
 
 
-func apply_knockback(direction: Vector2, force: float) -> void:
+func apply_knockback(direction: Vector2, force: float, duration: float = KNOCKBACK_DURATION) -> void:
 	if direction == Vector2.ZERO or force <= 0.0:
 		return
 	_kb_dir = direction.normalized()
 	_kb_force = force
-	_kb_time = KNOCKBACK_DURATION
+	_kb_duration = maxf(duration, 0.01)
+	_kb_time = _kb_duration
 
 
 func _knockback_vector() -> Vector2:
 	if _kb_time <= 0.0 or _kb_force <= 0.0:
 		return Vector2.ZERO
-	var strength := _kb_force * (_kb_time / KNOCKBACK_DURATION)
+	var strength := _kb_force * (_kb_time / _kb_duration)
 	return Iso.apply_velocity(_kb_dir, strength)
+
+
+func get_max_poise() -> float:
+	if definition:
+		return maxf(definition.max_poise, 1.0)
+	return 40.0
+
+
+func get_poise_regen() -> float:
+	if definition:
+		return maxf(definition.poise_regen, 0.0)
+	return 18.0
+
+
+func is_flinching() -> bool:
+	return _flinch_time > 0.0
+
+
+func is_stunned() -> bool:
+	return _stun_time > 0.0
+
+
+func apply_hard_stun(duration: float = 1.0) -> void:
+	## Full combat stun (parry / heavy stagger) — interrupt + stars.
+	_stun_time = maxf(_stun_time, maxf(duration, 0.15))
+	_flinch_time = maxf(_flinch_time, 0.12)
+	interrupt_attack()
+	stop_movement()
+	if combat_visual:
+		combat_visual.play_hit_flash()
+		combat_visual.play_stun_stars(_stun_time)
+
+
+func apply_poise_hit(poise_damage: float) -> bool:
+	if poise_damage <= 0.0:
+		return false
+	_poise -= poise_damage
+	if _poise > 0.0:
+		return false
+	_poise = get_max_poise()
+	_flinch_time = clampf(0.08 + poise_damage * 0.0035, 0.08, 0.22)
+	interrupt_attack()
+	stop_movement()
+	if combat_visual:
+		combat_visual.play_flinch()
+	return true
 
 
 func _scan_detection_area() -> void:
@@ -123,6 +180,8 @@ func apply_definition(def: EnemyDefinition) -> void:
 		visual.color = Color(def.visual_color.r, def.visual_color.g, def.visual_color.b, 1.0)
 	if combat_visual:
 		combat_visual.apply_faction_look(def.faction, def.visual_color)
+	_poise = get_max_poise()
+	_flinch_time = 0.0
 	var hp_bar := get_node_or_null("HealthBar") as HealthBarComponent
 	if hp_bar:
 		hp_bar.set_label(def.display_name if def.display_name != "" else "Enemy")
@@ -235,6 +294,15 @@ func _on_died() -> void:
 			behavior.on_death(self)
 	if definition and definition.on_death_effect:
 		definition.on_death_effect.on_proc(self, {"power": 1.0})
+	var world := get_parent()
+	var col := Color(0.7, 0.2, 0.25, 1)
+	if definition:
+		col = definition.visual_color
+	elif combat_visual and combat_visual.body:
+		col = combat_visual.body.color
+	DeathDebris.burst(world, global_position + Vector2(0, -8), col, 14)
+	CameraFx.add_trauma(0.32)
+	HitStop.punch(0.07, 0.07)
 	SignalBus.enemy_died.emit(self)
 	SignalBus.entity_died.emit(self)
 	queue_free()

@@ -32,6 +32,8 @@ const HOLD_THRESHOLD := 0.25
 @onready var ranged_cooldown: Timer = $RangedCooldownTimer
 @onready var parry_cooldown: Timer = $ParryCooldownTimer
 
+var input_buffer: InputBuffer = InputBuffer.new()
+
 ## Last non-zero move intent — used by Dash when no input held.
 var facing_direction: Vector2 = Vector2.RIGHT
 var weapon_index: int = 0
@@ -58,6 +60,7 @@ const KNOCKBACK_DURATION := 0.15
 var _kb_dir: Vector2 = Vector2.ZERO
 var _kb_force: float = 0.0
 var _kb_time: float = 0.0
+var _kb_duration: float = KNOCKBACK_DURATION
 
 var _blade_in_flight: bool = false
 var _last_dash_cost: float = 0.0
@@ -67,6 +70,9 @@ var _attack_hold_time: float = -1.0
 func _ready() -> void:
 	motion_mode = MOTION_MODE_FLOATING
 	y_sort_enabled = true
+	if input_buffer.get_parent() == null:
+		input_buffer.name = "InputBuffer"
+		add_child(input_buffer)
 	_configure_from_stats()
 	_setup_combo_recipes()
 	_relay_component_signals()
@@ -113,18 +119,19 @@ func blade_in_flight() -> bool:
 	return _blade_in_flight
 
 
-func apply_knockback(direction: Vector2, force: float) -> void:
+func apply_knockback(direction: Vector2, force: float, duration: float = KNOCKBACK_DURATION) -> void:
 	if direction == Vector2.ZERO or force <= 0.0:
 		return
 	_kb_dir = direction.normalized()
 	_kb_force = force
-	_kb_time = KNOCKBACK_DURATION
+	_kb_duration = maxf(duration, 0.01)
+	_kb_time = _kb_duration
 
 
 func _knockback_vector() -> Vector2:
 	if _kb_time <= 0.0 or _kb_force <= 0.0:
 		return Vector2.ZERO
-	var strength := _kb_force * (_kb_time / KNOCKBACK_DURATION)
+	var strength := _kb_force * (_kb_time / _kb_duration)
 	return Iso.apply_velocity(_kb_dir, strength)
 
 
@@ -210,11 +217,8 @@ func _on_perfect_dodged(_attack_data: AttackData, source: Node) -> void:
 	if _last_dash_cost > 0.0 and energy:
 		energy.restore(_last_dash_cost)
 		_last_dash_cost = 0.0
-	HitStop.punch()
-	Engine.time_scale = 0.35
-	get_tree().create_timer(0.12, true, false, true).timeout.connect(
-		func() -> void: Engine.time_scale = 1.0
-	)
+	HitStop.punch(0.1, 0.1)
+	CameraFx.add_trauma(0.28)
 	for effect in active_effects:
 		var fx := effect as UpgradeEffect
 		if fx:
@@ -228,25 +232,30 @@ func _on_parried(attack_data: AttackData, source: Node) -> void:
 		adrenaline.add(stats.adrenaline_gain_on_hit * 1.5)
 	if energy:
 		energy.restore(8.0)
+	# God-of-War style "BAM": deep freeze, flash, heavy knock + hard stun.
+	HitStop.punch(0.04, 0.18)
+	CameraFx.add_trauma(0.72)
+	CameraFx.flash(Color(1.0, 0.95, 0.55, 0.65), 0.1)
+	if combat_visual:
+		combat_visual.play_parry_impact()
 	if source is EnemyDummy:
 		var enemy := source as EnemyDummy
 		if enemy.status:
-			enemy.status.apply_status(StatusComponent.STATUS_STAGGER, 8.0, 0.7)
+			enemy.status.apply_status(StatusComponent.STATUS_STAGGER, 10.0, 1.0)
+		enemy.apply_hard_stun(1.15)
 		enemy.apply_knockback(
 			(enemy.global_position - global_position).normalized(),
-			220.0
+			460.0,
+			0.38
 		)
-	HitStop.punch()
+		if enemy.health and attack_data:
+			enemy.health.take_damage(attack_data.damage * 0.45)
 	for effect in active_effects:
 		var fx := effect as UpgradeEffect
 		if fx:
 			fx.on_parry(self, source)
 	SignalBus.parry_success.emit(source)
 	SignalBus.style_action.emit(GameplayEnums.StyleAction.PARRY, 200)
-	if source is EnemyDummy and attack_data:
-		var eh := (source as EnemyDummy).health
-		if eh:
-			eh.take_damage(attack_data.damage * 0.35)
 
 
 func get_resist(damage_type: GameplayEnums.DamageType) -> float:
@@ -380,6 +389,9 @@ func attack_ready() -> bool:
 		return false
 	if hitbox == null or hitbox.attack_data == null:
 		return false
+	# Allow combo follow-ups (LMB×3 / LMB→RMB→LMB) through attack cooldown.
+	if combo and combo.has_open_prefix():
+		return true
 	return attack_cooldown == null or attack_cooldown.is_stopped()
 
 
@@ -530,7 +542,7 @@ func _projectile_color(damage_type: GameplayEnums.DamageType) -> Color:
 func _on_projectile_hit_landed(target: HurtboxComponent) -> void:
 	_on_offensive_hit(target)
 	if target and get_parent():
-		var pos := target.global_position
+		var pos: Vector2 = target.global_position
 		if target.get_parent() is Node2D:
 			pos = (target.get_parent() as Node2D).global_position + Vector2(0, -22)
 		var dtype := GameplayEnums.DamageType.PHYSICAL
@@ -657,6 +669,30 @@ func push_combo_input(action: StringName) -> StringName:
 
 func combo_expects(action: StringName) -> bool:
 	return combo != null and combo.expects(action)
+
+
+func buffer_combat_input(action: StringName) -> void:
+	if input_buffer:
+		input_buffer.buffer(action)
+
+
+func consume_buffered(action: StringName) -> bool:
+	return input_buffer != null and input_buffer.consume(action)
+
+
+func capture_bufferable_inputs() -> void:
+	if input_buffer == null:
+		return
+	var actions: Array[StringName] = [&"attack", &"ranged_attack", &"dash"]
+	input_buffer.capture_just_pressed(actions)
+
+
+func pressed_or_buffered(action: StringName) -> bool:
+	if Input.is_action_just_pressed(action):
+		if input_buffer:
+			input_buffer.clear(action)
+		return true
+	return consume_buffered(action)
 
 
 func _on_combo_resolved(result_id: StringName, attack_data: AttackData) -> void:

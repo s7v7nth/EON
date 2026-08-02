@@ -16,8 +16,10 @@
 ═══════════════════════════════════════
 - Жанр: isometric action-roguelike / run-based arena combat.
 - Референсы ощущения: Hades (изометрия, «ноги на полу», Y-sort) + Hotline Miami (style score / ранг комнаты).
+- Combat feel (P0): вес удара через move_mult/recovery/lunge, per-attack HitStop + camera trauma, poise→flinch на врагах (отдельно от stagger crit-окна). Энкаунтеры/элиты/боссы — отдельный слой, не feel.
 - Стек: Godot 4, GDScript. Контент data-driven (.tres + плагины эффектов).
 - Стадия: playable vertical slice; каркас расширяемости уже есть (Phase A–F).
+- Feel-тюнинг: `levels/feel_arena.tscn` + `docs/combat_feel.md`.
 
 ФИЛОСОФИЯ ДИЗАЙНА (4 столпа)
 1. Architecture — язык действий игрока + своя ResourceEconomy.

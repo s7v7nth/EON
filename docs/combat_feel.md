@@ -1,0 +1,49 @@
+# EON — Combat Feel Contract
+
+Контракт **feel-слоя** боя. Не описывает дизайн энкаунтеров (волны, элиты, боссы) — это отдельный слой.
+
+## Цель
+
+Удары должны ощущаться **весомыми и разными**, как в Hades (commitment + impact) с читаемым Diablo-impact (shake, pops, реакция тела). Greybox-арт OK. «Пластик» = нет: скольжение на полной скорости, нулевой endlag, одинаковый микро-hitstop, враг-скользящий hitbox без flinch.
+
+**Гипотеза тюнинга:** если 30 секунд на dummy-арене «мясные» — тот же feel переносится на любой контент. Давление арены / паттерны / элиты **не** переносятся сами и делаются позже.
+
+## Пиллары
+
+1. **Weight (commitment)** — свинг сажает движение (`move_mult`), есть `recovery` на конце строки, lunge в прицел. Dash-cancel остаётся (Hades-escape).
+2. **Impact** — per-attack HitStop + knockback duration + camera trauma + VFX scale. Сильный удар может **заменить** слабый busy HitStop.
+3. **Reaction (poise / flinch)** — враг «съедает» хит: короткий interrupt AI + поза. Stagger gauge = большое crit-окно, не замена flinch.
+4. **Readability** — telegraphs уже есть; floating damage pops; finisher/parry/perfect dodge заметно сильнее light.
+
+## Тюнинг-тиры (ориентиры)
+
+| Tier | Примеры | move_mult | recovery | hit_stop (scale / dur) | trauma | kb_duration | poise_damage |
+|------|---------|-----------|----------|------------------------|--------|-------------|--------------|
+| Soft / light | basic 1 | ~0.45 | 0.08–0.12 | 0.15 / 0.04 | 0.08 | 0.12 | ~12 |
+| Mid | basic 2 | ~0.40 | ~0.10 | 0.12 / 0.05 | 0.12 | 0.14 | ~18 |
+| Hard / finisher | basic 3, circle | 0.20–0.25 | 0.18–0.25 | 0.08 / 0.08 | 0.28–0.35 | 0.18–0.22 | 35–45 |
+| Parry | on success | — | — | hard | ~0.30 | — | — |
+| Perfect dodge | on success | — | — | hard (+ slow-mo) | ~0.22 | — | — |
+
+Между хитами комбо-строки recovery **пропускается** (chain сразу); endlag играет на конце строки / whiff.
+
+## Poise vs Stagger
+
+| | Poise / Flinch | Stagger status |
+|--|----------------|----------------|
+| Роль | микро-реакция на каждый «пробитый» хит | punish window + crit |
+| Длительность | ~0.08–0.22 с | ~1.2–1.4 с active |
+| Interrupt | да (сброс windup/атаки) | да + slow actions |
+| Порог | `max_poise` на `EnemyDefinition`; bruiser высокий, swarm низкий | buildup 100 (status) |
+
+Лёгкий тычок не трясёт bruiser; swarm flinch почти всегда. Finisher ломает poise чаще.
+
+## Out of scope (Feel P0)
+
+- Дизайн волн, плотность spawn, элиты/аффиксы, boss AI / encounter scripts
+- Новые скелетные анимации / финальный арт
+- **SFX / rumble** — Feel P2 (аудиостека ещё нет)
+
+## Критерий готовности
+
+На `levels/feel_arena.tscn`: light ≠ heavy на руках; whiff чувствуется; tank не дёргается от тычка, swarm — дёргается; finisher даёт заметный hitstop + shake; dash спасает, но свинг не «коньки».

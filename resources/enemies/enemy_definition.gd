@@ -30,6 +30,12 @@ extends Resource
 @export_range(-1.0, 0.9, 0.01) var resist_bleed: float = 0.0
 @export_range(-1.0, 0.9, 0.01) var resist_glitch: float = 0.0
 
+@export_group("Poise")
+## Hit poise pool — depleted by AttackData.poise_damage → brief flinch.
+@export var max_poise: float = 40.0
+## Poise restored per second while not flinching.
+@export var poise_regen: float = 18.0
+
 
 func get_resist(damage_type: GameplayEnums.DamageType) -> float:
 	if use_resist_overrides:

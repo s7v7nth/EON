@@ -30,3 +30,5 @@ resist_corrosion = 0.35
 resist_fire = -0.35
 resist_bleed = 0.15
 resist_glitch = 0.4
+max_poise = 22.0
+poise_regen = 20.0

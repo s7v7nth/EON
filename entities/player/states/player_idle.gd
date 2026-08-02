@@ -38,21 +38,23 @@ func _check_legacy_inputs() -> bool:
 
 
 func _check_synthetic_inputs() -> bool:
-	if Input.is_action_just_pressed("dash") and player.dash_ready():
+	if player.pressed_or_buffered(&"dash") and player.dash_ready():
 		transition_to(&"Dash")
 		return true
 
-	# RMB: combo step if expected, otherwise hold-block.
-	if Input.is_action_just_pressed("ranged_attack"):
+	# RMB: always raise shield. Also register combo step if the circle path expects it.
+	if player.pressed_or_buffered(&"ranged_attack"):
 		if player.combo_expects(&"ranged_attack"):
 			player.push_combo_input(&"ranged_attack")
-			return true
 		transition_to(&"Block")
 		return true
 
 	# LMB hold → charge; tap → combo/melee.
 	if Input.is_action_just_pressed("attack") and player.attack_ready():
 		player.begin_attack_hold_tracking()
+	elif player.consume_buffered(&"attack") and player.attack_ready():
+		_resolve_attack_tap()
+		return true
 
 	if player.is_tracking_attack_hold():
 		if player.attack_hold_exceeded():

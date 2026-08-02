@@ -6,6 +6,9 @@ extends State
 
 
 func physics_update(_delta: float) -> void:
+	if enemy.is_stunned() or enemy.is_flinching():
+		enemy.stop_movement()
+		return
 	if enemy.target == null:
 		transition_to(&"Idle")
 		return

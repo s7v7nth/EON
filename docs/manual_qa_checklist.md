@@ -75,7 +75,26 @@
 - [ ] Robo-beast догоняет агрессивнее
 - [ ] Bio-mutant при смерти взрывается кислотным облаком
 
+## Combat feel
+- [ ] На `levels/feel_arena.tscn`: light / mid / finisher ощущаются разным весом (hitstop + shake)
+- [ ] Во время свинга движение заметно замедлено; после конца строки есть короткий endlag (recovery)
+- [ ] Dash всё ещё отменяет атаку
+- [ ] Floating damage numbers всплывают на хит; stagger-crit заметно желтее/крупнее
+- [ ] Glass (Swarm) flinch почти от каждого удара; Tank (Bruiser) не дёргается от light 1
+- [ ] Finisher / circle slash даёт заметный camera shake и жирнее VFX
+- [ ] Parry / perfect dodge дают усиленный freeze + shake
+- [ ] **Parry** — жёсткий «BAM»: длинный hitstop, flash, сильный отброс, стан со **звёздами** над головой
+- [ ] Stagger / hard stun показывают крутящиеся звёзды (Tom & Jerry)
+- [ ] Hitstop / camera shake / knockback масштабируются от % HP урона; hit flash на попадании
+- [ ] Смерть врага: кровь/лужи + куски тела остаются валяться на арене
+- [ ] Input buffer (~0.22с): можно нажать следующую атаку/блок/dash до конца recovery
+- [ ] Комбо **LMB→RMB→LMB** даёт круговую атаку; RMB **сразу** отменяет атаку в щит (block priority)
+- [ ] Щит по RMB встаёт сразу (без долгого «подъёма»); parry-окно короткое (~0.22с)
+- [ ] Третий LMB комбо можно добить из щита (не обязательно сначала отпускать RMB)
+- [ ] Длинный бой / мульти-хиты не зависают (time_scale возвращается в 1)
+
 ## Стабильность
 - [ ] Death → R restart не закрывает окно
 - [ ] Tutorial (3 комнаты) и короткий кусок Campaign / Procedural без краша
+- [ ] Feel Arena открывается и тюнится без кампании
 - [ ] Пауза оверлеев (route / arch / reward / death / win) не ломает ввод
