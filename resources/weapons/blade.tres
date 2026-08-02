@@ -7,7 +7,7 @@
 script = ExtResource("1")
 display_name = "Energy Blade"
 primary = ExtResource("2_pri")
-hitbox_reach = 40.0
+hitbox_reach = 56.0
 visual_tint = Color(0.55, 0.58, 0.62, 1)
 shape_tag = &"blade"
 element_tag = &"physical"

@@ -26,7 +26,7 @@ func enter(_msg: Dictionary = {}) -> void:
 	_face_target()
 	var speed := enemy.get_action_speed_multiplier()
 	if enemy.combat_visual:
-		enemy.combat_visual.play_melee_windup(_aim_angle, _attack.windup / speed)
+		enemy.combat_visual.play_hostile_melee_windup(_aim_angle, _attack.windup / speed)
 
 
 func physics_update(delta: float) -> void:
@@ -70,4 +70,4 @@ func _face_target() -> void:
 	if dir != Vector2.ZERO:
 		_aim_angle = dir.angle()
 		enemy.hitbox.rotation = _aim_angle
-		enemy.hitbox.position = dir.normalized() * 22.0
+		enemy.hitbox.position = dir.normalized() * 28.0 + Vector2(0, -18)

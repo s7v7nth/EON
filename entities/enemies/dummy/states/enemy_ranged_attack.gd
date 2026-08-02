@@ -21,7 +21,7 @@ func enter(_msg: Dictionary = {}) -> void:
 	_aim_angle = _aim.angle()
 	var speed := enemy.get_action_speed_multiplier()
 	if enemy.combat_visual:
-		enemy.combat_visual.play_ranged_windup(_aim_angle, enemy.ranged_attack_data.windup / speed)
+		enemy.combat_visual.play_hostile_ranged_windup(_aim_angle, enemy.ranged_attack_data.windup / speed)
 
 
 func physics_update(delta: float) -> void:

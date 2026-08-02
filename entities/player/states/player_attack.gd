@@ -95,8 +95,11 @@ func physics_update(delta: float) -> void:
 				_phase = Phase.ACTIVE
 				player.hitbox.activate()
 				if player.combat_visual and not _circular:
+					var swing_color := Color(0, 0, 0, 0)
+					if _combo_index >= 2:
+						swing_color = Color(0.72, 0.28, 1.0, 1.0)
 					player.combat_visual.play_melee_swing(
-						_aim_angle, _attack.active_duration / speed, _attack.damage_type
+						_aim_angle, _attack.active_duration / speed, _attack.damage_type, swing_color
 					)
 		Phase.ACTIVE:
 			if _elapsed >= _attack.active_duration:

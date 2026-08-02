@@ -33,8 +33,19 @@ func _ready() -> void:
 	body_entered.connect(_on_body_entered)
 	_ensure_visuals()
 	_apply_visual_style()
+	_fit_hitbox()
 	if attack_data and attack_data.returning:
 		_max_range = 280.0 + 220.0 * charge
+
+
+func _fit_hitbox() -> void:
+	var shape_node := get_node_or_null("CollisionShape2D") as CollisionShape2D
+	if shape_node == null:
+		return
+	var circle := CircleShape2D.new()
+	# Returning blade throw needs a generous catch volume; other shots still larger than before.
+	circle.radius = 30.0 if (attack_data and attack_data.returning) else 24.0
+	shape_node.shape = circle
 
 
 func _physics_process(delta: float) -> void:
@@ -110,15 +121,22 @@ func _apply_visual_style() -> void:
 	_visual.modulate = Color.WHITE
 	_visual.z_index = 1
 	_visual.polygon = PackedVector2Array([
-		Vector2(22, 0), Vector2(-10, -8), Vector2(-4, 0), Vector2(-10, 8)
+		Vector2(28, 0), Vector2(-14, -12), Vector2(-6, 0), Vector2(-14, 12)
 	])
 	_core.color = Color(1, 1, 1, 0.95)
 	_core.modulate = Color.WHITE
 	_core.z_index = 2
 	_core.polygon = PackedVector2Array([
-		Vector2(12, 0), Vector2(-2, -4), Vector2(0, 0), Vector2(-2, 4)
+		Vector2(16, 0), Vector2(-4, -6), Vector2(2, 0), Vector2(-4, 6)
 	])
 	modulate = Color.WHITE
+	if attack_data and attack_data.returning:
+		_visual.polygon = PackedVector2Array([
+			Vector2(32, 0), Vector2(-16, -14), Vector2(-6, 0), Vector2(-16, 14)
+		])
+		_core.polygon = PackedVector2Array([
+			Vector2(18, 0), Vector2(-4, -7), Vector2(2, 0), Vector2(-4, 7)
+		])
 
 
 func _spawn_trail() -> void:

@@ -64,6 +64,10 @@ func _initialize() -> void:
 
 	engagement.in_combat = false
 	engagement._linger = 0.0
+	await process_frame
+	# High leftover adrenaline still regenerates energy outside combat.
+	assert(adrenaline.current_adrenaline > 1.0)
+	assert(energy.absolute_regen_rate > 0.01)
 	await create_timer(1.2).timeout
 	assert(adrenaline.current_adrenaline <= 0.01)
 	assert(energy.absolute_regen_rate <= 0.01)

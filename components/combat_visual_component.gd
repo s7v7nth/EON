@@ -190,17 +190,58 @@ func play_melee_windup(aim_angle: float, duration: float) -> void:
 		_tween.parallel().tween_property(body, "scale", Vector2(0.92, 1.08), wind)
 
 
-func play_melee_swing(aim_angle: float, duration: float, damage_type: GameplayEnums.DamageType = GameplayEnums.DamageType.PHYSICAL) -> void:
+func play_hostile_melee_windup(aim_angle: float, duration: float) -> void:
+	## Strong readable telegraph so the player can time a dodge.
 	_kill_tween()
-	var col := _element_color(damage_type)
-	_accent = col
-	swing_arc.polygon = _arc_poly(52.0)
+	rotation = 0.0
+	weapon.visible = true
+	weapon.rotation = aim_angle - 1.25
+	weapon.position = _weapon_rest_pos.rotated(aim_angle * 0.15)
+	weapon.scale = Vector2(1.35, 1.35)
+	telegraph.polygon = _diamond_poly(22.0)
+	telegraph.rotation = aim_angle
+	telegraph.position = Vector2.from_angle(aim_angle) * 36.0 + Vector2(0, -16)
+	telegraph.scale = Vector2(0.6, 0.6)
+	telegraph.color = Color(1.0, 0.2, 0.12, 0.0)
+	swing_arc.polygon = _arc_poly(64.0)
 	swing_arc.rotation = aim_angle - 0.9
-	swing_arc.position = Vector2(12, -10)
-	swing_arc.color = Color(col.r, col.g, col.b, 0.75)
+	swing_arc.position = Vector2(8, -14)
+	swing_arc.color = Color(1.0, 0.25, 0.15, 0.35)
+	swing_arc.modulate.a = 0.0
+	if body:
+		body.scale = Vector2.ONE
+		body.modulate = Color(1.35, 0.85, 0.75, 1)
+	_tween = create_tween()
+	var wind := maxf(duration, 0.12)
+	_tween.tween_property(weapon, "rotation", aim_angle - 1.55, wind * 0.85).set_trans(Tween.TRANS_BACK)
+	_tween.parallel().tween_property(telegraph, "color:a", 0.9, wind * 0.35)
+	_tween.parallel().tween_property(telegraph, "scale", Vector2(1.6, 1.6), wind)
+	_tween.parallel().tween_property(swing_arc, "modulate:a", 0.85, wind * 0.5)
+	if body:
+		_tween.parallel().tween_property(body, "scale", Vector2(0.88, 1.14), wind)
+		_tween.parallel().tween_property(body, "modulate", Color(1.6, 0.55, 0.4, 1), wind)
+
+
+func play_melee_swing(
+	aim_angle: float,
+	duration: float,
+	damage_type: GameplayEnums.DamageType = GameplayEnums.DamageType.PHYSICAL,
+	accent_override: Color = Color(0, 0, 0, 0)
+) -> void:
+	_kill_tween()
+	var col := accent_override if accent_override.a > 0.0 else _element_color(damage_type)
+	_accent = col
+	var arc_r := 72.0 if accent_override.a > 0.0 else 64.0
+	swing_arc.polygon = _arc_poly(arc_r)
+	swing_arc.rotation = aim_angle - 0.9
+	swing_arc.position = Vector2(12, -14)
+	swing_arc.color = Color(col.r, col.g, col.b, 0.85)
 	swing_arc.modulate.a = 1.0
 	telegraph.color.a = 0.0
 	weapon.rotation = aim_angle - 1.2
+	weapon.scale = Vector2(1.25, 1.25) if accent_override.a > 0.0 else Vector2(1.1, 1.1)
+	if accent_override.a > 0.0:
+		weapon.modulate = Color(col.r, col.g, col.b, 1.0)
 	_tween = create_tween()
 	var active := maxf(duration, 0.06)
 	_tween.tween_property(weapon, "rotation", aim_angle + 0.95, active).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
@@ -210,6 +251,8 @@ func play_melee_swing(aim_angle: float, duration: float, damage_type: GameplayEn
 		_tween.parallel().tween_property(body, "scale", Vector2(1.12, 0.9), active * 0.45)
 		_tween.tween_property(body, "scale", Vector2.ONE, active * 0.55)
 		_tween.parallel().tween_property(body, "modulate", Color.WHITE, active)
+	_tween.parallel().tween_property(weapon, "modulate", Color.WHITE, active)
+	_tween.parallel().tween_property(weapon, "scale", Vector2.ONE, active)
 
 
 func play_ranged_windup(aim_angle: float, duration: float) -> void:
@@ -228,6 +271,33 @@ func play_ranged_windup(aim_angle: float, duration: float) -> void:
 	_tween.tween_property(weapon, "position", Vector2(10, -18) + Vector2.from_angle(aim_angle) * -4.0, wind)
 	_tween.parallel().tween_property(telegraph, "color:a", 0.7, wind)
 	_tween.parallel().tween_property(telegraph, "scale", Vector2(1.4, 1.4), wind)
+
+
+func play_hostile_ranged_windup(aim_angle: float, duration: float) -> void:
+	_kill_tween()
+	weapon.visible = true
+	weapon.rotation = aim_angle
+	weapon.position = Vector2(14, -18)
+	telegraph.polygon = _diamond_poly(18.0)
+	telegraph.rotation = aim_angle
+	telegraph.position = Vector2.from_angle(aim_angle) * 42.0 + Vector2(0, -12)
+	telegraph.scale = Vector2(0.7, 0.7)
+	telegraph.color = Color(1.0, 0.35, 0.15, 0.0)
+	swing_arc.polygon = _muzzle_poly()
+	swing_arc.rotation = aim_angle
+	swing_arc.position = Vector2(18, -16)
+	swing_arc.color = Color(1.0, 0.4, 0.2, 0.55)
+	swing_arc.modulate.a = 0.0
+	if body:
+		body.modulate = Color(1.35, 0.9, 0.75, 1)
+	_tween = create_tween()
+	var wind := maxf(duration, 0.15)
+	_tween.tween_property(weapon, "position", Vector2(8, -18) + Vector2.from_angle(aim_angle) * -8.0, wind)
+	_tween.parallel().tween_property(telegraph, "color:a", 0.95, wind * 0.4)
+	_tween.parallel().tween_property(telegraph, "scale", Vector2(1.7, 1.7), wind)
+	_tween.parallel().tween_property(swing_arc, "modulate:a", 0.8, wind * 0.55)
+	if body:
+		_tween.parallel().tween_property(body, "modulate", Color(1.55, 0.55, 0.4, 1), wind)
 
 
 func play_ranged_fire(aim_angle: float, damage_type: GameplayEnums.DamageType = GameplayEnums.DamageType.PHYSICAL) -> void:
@@ -451,7 +521,7 @@ func _beast_body_poly() -> PackedVector2Array:
 
 func _blade_poly() -> PackedVector2Array:
 	return PackedVector2Array([
-		Vector2(0, 2), Vector2(26, -2), Vector2(28, -6), Vector2(4, -8), Vector2(0, -4)
+		Vector2(0, 4), Vector2(40, -2), Vector2(46, -8), Vector2(6, -12), Vector2(0, -4)
 	])
 
 

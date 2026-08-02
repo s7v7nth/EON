@@ -23,6 +23,7 @@ const PROJECTILE_SCENE := preload("res://entities/projectiles/projectile.tscn")
 
 var target: Node2D
 var _behaviors: Array[EnemyBehavior] = []
+var _room_alerted: bool = false
 
 const KNOCKBACK_DURATION := 0.15
 var _kb_dir: Vector2 = Vector2.ZERO
@@ -42,6 +43,22 @@ func _ready() -> void:
 	detection_area.body_exited.connect(_on_detection_body_exited)
 	# Catch bodies already overlapping on spawn.
 	call_deferred("_scan_detection_area")
+	call_deferred("_fit_combat_shapes")
+
+
+func _fit_combat_shapes() -> void:
+	## Match hurt/hit volumes to the full greybox body, not just the feet circle.
+	var hurt_shape := hurtbox.get_node_or_null("CollisionShape2D") as CollisionShape2D if hurtbox else null
+	if hurt_shape:
+		hurt_shape.position = Vector2(0, -22)
+		var circle := CircleShape2D.new()
+		circle.radius = 26.0
+		hurt_shape.shape = circle
+	var hit_shape := hitbox.get_node_or_null("CollisionShape2D") as CollisionShape2D if hitbox else null
+	if hit_shape:
+		var rect := RectangleShape2D.new()
+		rect.size = Vector2(48, 44)
+		hit_shape.shape = rect
 
 
 func _physics_process(delta: float) -> void:
@@ -167,12 +184,32 @@ func apply_retreat_movement() -> void:
 
 func _on_detection_body_entered(body: Node2D) -> void:
 	if body is Player:
-		target = body
+		_alert_room(body as Player)
 
 
 func _on_detection_body_exited(body: Node2D) -> void:
-	if body == target:
+	## Once anyone in the room spotted the player, keep chase until death.
+	if body == target and not _room_alerted:
 		target = null
+
+
+func receive_room_alert(player: Node2D) -> void:
+	if player == null:
+		return
+	target = player
+	_room_alerted = true
+
+
+func _alert_room(player: Player) -> void:
+	receive_room_alert(player)
+	var parent := get_parent()
+	if parent == null:
+		return
+	for sibling in parent.get_children():
+		if sibling == self:
+			continue
+		if sibling is EnemyDummy:
+			(sibling as EnemyDummy).receive_room_alert(player)
 
 
 func _on_died() -> void:

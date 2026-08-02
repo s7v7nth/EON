@@ -74,10 +74,23 @@ func _ready() -> void:
 		architecture = DEFAULT_ARCH
 	equip_architecture(architecture)
 	call_deferred("_emit_initial_bus_values")
+	call_deferred("_fit_hurtbox_to_body")
 	RunState.apply_to_player(self)
 	RunState.begin_room()
 	if not SignalBus.enemy_died.is_connected(_on_enemy_died_for_economy):
 		SignalBus.enemy_died.connect(_on_enemy_died_for_economy)
+
+
+func _fit_hurtbox_to_body() -> void:
+	if hurtbox == null:
+		return
+	var shape_node := hurtbox.get_node_or_null("CollisionShape2D") as CollisionShape2D
+	if shape_node == null:
+		return
+	shape_node.position = Vector2(0, -22)
+	var circle := CircleShape2D.new()
+	circle.radius = 26.0
+	shape_node.shape = circle
 
 
 func _physics_process(delta: float) -> void:
@@ -420,8 +433,8 @@ func equip_weapon(index: int) -> void:
 		return
 	if hitbox:
 		hitbox.attack_data = weapon.primary
-		hitbox.position = Vector2(weapon.hitbox_reach, 0.0)
-		_resize_melee_hitbox(weapon.hitbox_reach)
+		hitbox.position = Vector2(maxf(weapon.hitbox_reach, 52.0) * 0.55, -16.0)
+		_resize_melee_hitbox(maxf(weapon.hitbox_reach, 52.0))
 	combo_root = weapon.primary
 	pending_combo = null
 	ranged_attack_data = weapon.secondary
@@ -440,7 +453,7 @@ func _resize_melee_hitbox(reach: float) -> void:
 		return
 	if shape_node.shape is RectangleShape2D:
 		var rect := (shape_node.shape as RectangleShape2D).duplicate() as RectangleShape2D
-		rect.size = Vector2(maxf(reach * 1.15, 36.0), 28.0)
+		rect.size = Vector2(maxf(reach * 1.35, 56.0), 56.0)
 		shape_node.shape = rect
 
 
@@ -452,17 +465,17 @@ func configure_hitbox_for_attack(attack: AttackData) -> void:
 	if shape_node == null:
 		return
 	if attack.circular:
-		hitbox.position = Vector2.ZERO
+		hitbox.position = Vector2(0, -18)
 		var circle := CircleShape2D.new()
-		circle.radius = attack.circular_radius
+		circle.radius = maxf(attack.circular_radius, 78.0)
 		shape_node.shape = circle
 	else:
-		var reach := 40.0
+		var reach := 56.0
 		if not weapons.is_empty() and weapons[weapon_index]:
-			reach = weapons[weapon_index].hitbox_reach
-		hitbox.position = Vector2(reach, 0.0)
+			reach = maxf(weapons[weapon_index].hitbox_reach, 52.0)
+		hitbox.position = Vector2(reach * 0.55, -16.0)
 		var rect := RectangleShape2D.new()
-		rect.size = Vector2(maxf(reach * 1.15, 36.0), 28.0)
+		rect.size = Vector2(maxf(reach * 1.35, 56.0), 56.0)
 		shape_node.shape = rect
 
 

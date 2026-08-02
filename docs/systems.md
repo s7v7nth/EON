@@ -71,7 +71,7 @@ Runtime: `ArchitectureData.economy` (`ResourceEconomy`) is duplicated on equip; 
 - **RMB hold** — energy shield (−50% damage); first **0.5s** = parry (full negate + stagger).
 - **Combos** (`systems/combat/ComboRecognizer`): LMB×3 string; LMB→RMB→LMB circle AoE.
 - **Energy** — pool ~50; spent on attacks/dash; absorbs damage before HP; ideal dash refunds cost.
-- **Adrenaline** — 0 out of combat; baseline in combat → **3 Energy/s**; rises from hits, HP damage, parry, ideal dash; decays to floor.
+- **Adrenaline** — baseline floor in combat → Energy regen; rises from hits, HP damage, parry, ideal dash; decays toward 0 out of combat, but **leftover adrenaline still regenerates Energy** until gone.
 - **Engagement** — `CombatEngagementComponent` (enemy aggro and/or recent exchange).
 - **Q / F** — reserved (no-op for Synthetic).
 
