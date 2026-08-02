@@ -20,10 +20,10 @@ Skill actions feed **Adrenaline** + **Style Score** + craft tags / loot parts.
 | Enum | Values |
 |------|--------|
 | `DamageType` | PHYSICAL, ELECTRICITY, CORROSION, FIRE, BLEED, GLITCH |
-| `Faction` | SAVAGE, CYBORG, ANDROID, ROBO_BEAST, *(planned)* BIO_MUTANT |
+| `Faction` | SAVAGE, CYBORG, ANDROID, ROBO_BEAST, BIO_MUTANT |
 | `BiomeId` | JUNGLE, DATA_CENTER, DOWNTOWN, RESIDENTIAL, TAIGA, ALLEY, LANDFILL, MALL, WASTELAND, GATEWAY |
-| `ArchitectureId` | DEFAULT (Синтетик), NANOMACHINES (Улей), ELECTRO_TRAIN (Паровоз), *(planned)* NEURO_HACKER |
-| `EconomyPolicy` | ENERGY_ADRENALINE, BLOOD_HARVEST, OVERHEAT, *(planned)* RAM_COMPUTE |
+| `ArchitectureId` | DEFAULT (Синтетик), NANOMACHINES (Улей), ELECTRO_TRAIN (Паровоз), NEURO_HACKER |
+| `EconomyPolicy` | ENERGY_ADRENALINE, BLOOD_HARVEST, OVERHEAT, RAM_COMPUTE |
 | `StyleAction` | HIT, KILL, PERFECT_DODGE, PARRY, COMBO, MULTI_KILL, ELEMENT_CASCADE, TOOK_DAMAGE |
 
 ## Damage & resists
@@ -57,7 +57,7 @@ Skill actions feed **Adrenaline** + **Style Score** + craft tags / loot parts.
 | DEFAULT / Синтетик | `EconomyAdrenaline` | Energy machete / disc / shield-parry |
 | NANOMACHINES / Улей | `EconomyBloodHarvest` | Nano blade / whip / toad |
 | ELECTRO_TRAIN / Паровоз | `EconomyOverheat` + Vent (Q) | Plasma gun / blade / mortar |
-| NEURO_HACKER | RAM slots *(planned)* | Smart pistol / holo-blades / drones |
+| NEURO_HACKER | `EconomyRam` (Q = drone slot) | Smart pistol / holo blades / drones |
 
 Catalog: `resources/architectures/architecture_catalog.tres` — UI builds pick list from it.
 Runtime: `ArchitectureData.economy` (`ResourceEconomy`) is duplicated on equip; Player has no `match economy_policy`.
@@ -102,6 +102,14 @@ Run order comes from `ActRoute` (Act1 outskirts → Act4 data core), not hardcod
 - Room scenes (`room_01/02/03`) are **geometry templates**; `ArenaController` paints biome + swaps `wave_set` from `RunState`
 - Spawns: wave timing/counts stay; `faction_weights` remaps definitions via `EnemyCatalog`
 - Final room still opens reward/craft, then `run_won`
+
+### Enemy behaviors (Phase E)
+
+- `EnemyBehavior` plugins on `EnemyDefinition.behavior_modules`
+- Modules: aggro swarm, erratic dodge, tactical support, hyper chase, death burst
+- `status_vulnerabilities` scales buildup (savages↔burn, beasts↔bleed, androids↔shock, cyborgs↔glitch)
+- `BIO_MUTANT` + death cloud; Neuro-hacker `EconomyRam` + ally drone + `neuro_extra_slot` craft
+- Signal: `ram_slots_changed(used, max_slots)`
 
 ## Development order
 

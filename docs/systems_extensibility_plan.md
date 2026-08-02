@@ -374,10 +374,10 @@ Faction enum += `BIO_MUTANT`. Реакции на статусы (panic run, gli
 4. Финальная комната: exit → reward/craft → `run_won`.
 5. Gateway blend → Data Center (переход к ядру).
 
-### Phase E — Враги под стиль
-1. Behavior modules + BIO_MUTANT death cloud.
-2. Vulnerability table (savages↔fire panic, beasts↔bleed, androids↔electricity, cyborgs↔glitch).
-3. Нейро-хакер skeleton: `EconomyRam` + dummy drone scene + 1 upgrade.
+### Phase E — Враги под стиль ✅
+1. `EnemyBehavior` modules + `BIO_MUTANT` death burst.
+2. `status_vulnerabilities` на definitions (savages↔burn, beasts↔bleed, androids↔shock, cyborgs↔glitch).
+3. Нейро-хакер skeleton: `EconomyRam` + `ally_drone` + `neuro_extra_slot` (+1 RAM).
 
 ### Phase F — Контент-объём
 Нейро-хакер полный, Acts 2–4, остальные синергии, trap props в биомах — только data/scenes.

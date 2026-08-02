@@ -17,6 +17,7 @@ enum Faction {
 	CYBORG,
 	ANDROID,
 	ROBO_BEAST,
+	BIO_MUTANT,
 }
 
 enum BiomeId {
@@ -36,6 +37,7 @@ enum ArchitectureId {
 	DEFAULT,
 	NANOMACHINES,
 	ELECTRO_TRAIN,
+	NEURO_HACKER,
 }
 
 enum EconomyPolicy {
@@ -45,6 +47,8 @@ enum EconomyPolicy {
 	BLOOD_HARVEST,
 	## Heat gauge with yellow/red zones + Vent dump.
 	OVERHEAT,
+	## RAM slots occupied by drones / hacks; specials spend slots.
+	RAM_COMPUTE,
 }
 
 enum StyleAction {
@@ -84,4 +88,6 @@ static func architecture_name(a: ArchitectureId) -> String:
 			return "Улей"
 		ArchitectureId.ELECTRO_TRAIN:
 			return "Паровоз"
+		ArchitectureId.NEURO_HACKER:
+			return "Нейро-хакер"
 	return "Unknown"

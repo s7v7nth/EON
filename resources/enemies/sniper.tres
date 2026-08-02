@@ -15,9 +15,15 @@ ranged_range = 320.0
 detection_radius = 400.0
 visual_color = Color(0.35, 0.55, 0.85, 1)
 prefers_kite = true
+tags = PackedStringArray("android", "sniper")
+status_vulnerabilities = {
+"shock": 1.5,
+"glitch": 1.25
+}
 use_resist_overrides = true
 resist_physical = 0.05
 resist_electricity = -0.4
 resist_corrosion = -0.25
 resist_fire = 0.1
 resist_bleed = 0.7
+resist_glitch = -0.15

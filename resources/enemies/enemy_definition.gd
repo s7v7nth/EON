@@ -1,6 +1,6 @@
 class_name EnemyDefinition
 extends Resource
-## Data-driven enemy archetype — stats, attacks, ranges, visual tint.
+## Data-driven enemy archetype — stats, attacks, behaviors, resists.
 
 @export var display_name: String = "Enemy"
 @export var faction: GameplayEnums.Faction = GameplayEnums.Faction.SAVAGE
@@ -12,6 +12,13 @@ extends Resource
 @export var detection_radius: float = 340.0
 @export var visual_color: Color = Color(0.72, 0.28, 0.28, 1)
 @export var prefers_kite: bool = false
+
+@export_group("Behaviors")
+@export var behavior_modules: Array[EnemyBehavior] = []
+@export var on_death_effect: StatusEffect
+@export var tags: PackedStringArray = []
+## status_id (String) -> buildup multiplier, e.g. {"burn": 1.5}
+@export var status_vulnerabilities: Dictionary = {}
 
 @export_group("Resist Overrides")
 ## If true, use override resists instead of stats resists.
@@ -42,3 +49,28 @@ func get_resist(damage_type: GameplayEnums.DamageType) -> float:
 	if stats:
 		return stats.get_resist(damage_type)
 	return 0.0
+
+
+func get_status_vulnerability(status_id: StringName) -> float:
+	if status_vulnerabilities.is_empty() or status_id == StringName():
+		return 1.0
+	if status_vulnerabilities.has(status_id):
+		return maxf(float(status_vulnerabilities[status_id]), 0.0)
+	var key := String(status_id)
+	if status_vulnerabilities.has(key):
+		return maxf(float(status_vulnerabilities[key]), 0.0)
+	return 1.0
+
+
+func has_behavior(behavior_id: StringName) -> bool:
+	for module in behavior_modules:
+		if module and module.behavior_id == behavior_id:
+			return true
+	return false
+
+
+func find_behavior(behavior_id: StringName) -> EnemyBehavior:
+	for module in behavior_modules:
+		if module and module.behavior_id == behavior_id:
+			return module
+	return null

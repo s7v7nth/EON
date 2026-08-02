@@ -38,6 +38,11 @@ func receive_hit(attack_data: AttackData, source: Node) -> bool:
 			perfect_dodged.emit(attack_data, source)
 		return false
 
+	var owner_node := get_parent()
+	if owner_node and owner_node.has_method("try_behavior_dodge"):
+		if bool(owner_node.call("try_behavior_dodge", attack_data, source)):
+			return false
+
 	if health_component == null:
 		push_warning("%s: no HealthComponent assigned" % name)
 		return false
@@ -124,6 +129,11 @@ func _try_apply_status(attack_data: AttackData) -> void:
 		return
 	# Power maps into buildup; high-power hits can proc in 1–2 strikes.
 	var buildup := attack_data.status_power * 12.0
+	var owner_node := get_parent()
+	if owner_node is EnemyDummy:
+		var def := (owner_node as EnemyDummy).definition
+		if def:
+			buildup *= def.get_status_vulnerability(status_id)
 	status_component.add_buildup(status_id, buildup, attack_data.status_power)
 
 

@@ -86,6 +86,11 @@ func apply_architecture_look(arch: ArchitectureData) -> void:
 			aura.color = Color(0.35, 0.7, 1.0, 0.35)
 			aura.polygon = _ring_poly(16.0, 30.0)
 			aura.visible = true
+		GameplayEnums.ArchitectureId.NEURO_HACKER:
+			body.polygon = _default_body_poly()
+			aura.color = Color(0.7, 0.4, 1.0, 0.32)
+			aura.polygon = _ring_poly(15.0, 26.0)
+			aura.visible = true
 		_:
 			body.polygon = _default_body_poly()
 			aura.color = Color(0.7, 0.85, 1.0, 0.18)
@@ -148,6 +153,9 @@ func apply_faction_look(faction: GameplayEnums.Faction, base_color: Color) -> vo
 			body.polygon = _cyborg_body_poly()
 		GameplayEnums.Faction.ROBO_BEAST:
 			body.polygon = _beast_body_poly()
+		GameplayEnums.Faction.BIO_MUTANT:
+			body.polygon = _beast_body_poly()
+			body.color = Color(base_color.r, base_color.g, base_color.b, 1.0).lightened(0.1)
 		_:
 			body.polygon = _savage_body_poly()
 	_body_rest_poly = body.polygon

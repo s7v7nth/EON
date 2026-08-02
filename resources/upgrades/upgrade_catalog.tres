@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="UpgradeCatalog" load_steps=13 format=3]
+[gd_resource type="Resource" script_class="UpgradeCatalog" load_steps=15 format=3]
 
 [ext_resource type="Script" path="res://resources/upgrades/upgrade_catalog.gd" id="1"]
 [ext_resource type="Resource" path="res://resources/upgrades/default_counter.tres" id="2"]
@@ -8,13 +8,15 @@
 [ext_resource type="Resource" path="res://resources/upgrades/nano_proximity.tres" id="6"]
 [ext_resource type="Resource" path="res://resources/upgrades/nano_bioreactor.tres" id="7"]
 [ext_resource type="Resource" path="res://resources/upgrades/train_coil_overdrive.tres" id="8"]
-[ext_resource type="Resource" path="res://resources/loot/rusty_magnet.tres" id="9"]
-[ext_resource type="Resource" path="res://resources/loot/servo_motor.tres" id="10"]
-[ext_resource type="Resource" path="res://resources/loot/bioreactor.tres" id="11"]
-[ext_resource type="Resource" path="res://resources/loot/scrap_code.tres" id="12"]
-[ext_resource type="Resource" path="res://resources/loot/plasma_coil.tres" id="13"]
+[ext_resource type="Resource" path="res://resources/upgrades/neuro_extra_slot.tres" id="9"]
+[ext_resource type="Resource" path="res://resources/loot/rusty_magnet.tres" id="10"]
+[ext_resource type="Resource" path="res://resources/loot/servo_motor.tres" id="11"]
+[ext_resource type="Resource" path="res://resources/loot/bioreactor.tres" id="12"]
+[ext_resource type="Resource" path="res://resources/loot/scrap_code.tres" id="13"]
+[ext_resource type="Resource" path="res://resources/loot/plasma_coil.tres" id="14"]
+[ext_resource type="Resource" path="res://resources/loot/logic_core.tres" id="15"]
 
 [resource]
 script = ExtResource("1")
-upgrades = [ExtResource("2"), ExtResource("3"), ExtResource("4"), ExtResource("5"), ExtResource("6"), ExtResource("7"), ExtResource("8")]
-loot_parts = [ExtResource("9"), ExtResource("10"), ExtResource("11"), ExtResource("12"), ExtResource("13")]
+upgrades = [ExtResource("2"), ExtResource("3"), ExtResource("4"), ExtResource("5"), ExtResource("6"), ExtResource("7"), ExtResource("8"), ExtResource("9")]
+loot_parts = [ExtResource("10"), ExtResource("11"), ExtResource("12"), ExtResource("13"), ExtResource("14"), ExtResource("15")]

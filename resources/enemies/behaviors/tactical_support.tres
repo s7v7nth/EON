@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="BehaviorTacticalSupport" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://systems/enemies/behaviors/behavior_tactical_support.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+behavior_id = &"tactical_support"
+heal_radius = 120.0
+heal_amount = 4.0
+heal_interval = 1.6

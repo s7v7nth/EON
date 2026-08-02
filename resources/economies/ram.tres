@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="EconomyRam" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://systems/economy/economy_ram.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+policy = 3
+max_slots = 2
+special_slot_cost = 1
+drone_lifetime = 18.0

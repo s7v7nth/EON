@@ -9,6 +9,10 @@ func physics_update(_delta: float) -> void:
 	if enemy.target == null:
 		transition_to(&"Idle")
 		return
+	# Fire panic / scripted flee.
+	if enemy.is_panicking():
+		enemy.apply_retreat_movement()
+		return
 	if enemy.is_target_in_attack_range():
 		if enemy.hitbox and enemy.hitbox.attack_data and enemy.attack_cooldown.is_stopped():
 			transition_to(&"Attack")

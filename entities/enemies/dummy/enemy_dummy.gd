@@ -22,6 +22,7 @@ const PROJECTILE_SCENE := preload("res://entities/projectiles/projectile.tscn")
 @onready var ranged_cooldown: Timer = $RangedCooldownTimer
 
 var target: Node2D
+var _behaviors: Array[EnemyBehavior] = []
 
 const KNOCKBACK_DURATION := 0.15
 var _kb_dir: Vector2 = Vector2.ZERO
@@ -46,6 +47,9 @@ func _ready() -> void:
 func _physics_process(delta: float) -> void:
 	if _kb_time > 0.0:
 		_kb_time = maxf(0.0, _kb_time - delta)
+	for behavior in _behaviors:
+		if behavior:
+			behavior.tick(self, delta)
 
 
 func apply_knockback(direction: Vector2, force: float) -> void:
@@ -92,6 +96,7 @@ func apply_definition(def: EnemyDefinition) -> void:
 	if hitbox:
 		hitbox.attack_data = def.melee_attack
 	_configure_from_stats()
+	_install_behaviors(def)
 	var visual := get_node_or_null("Visual") as Polygon2D
 	if visual:
 		visual.visible = true
@@ -104,13 +109,55 @@ func apply_definition(def: EnemyDefinition) -> void:
 		(detect_shape.shape as CircleShape2D).radius = def.detection_radius
 
 
+func _install_behaviors(def: EnemyDefinition) -> void:
+	_behaviors.clear()
+	for module in def.behavior_modules:
+		if module == null:
+			continue
+		var instance := module.duplicate(true) as EnemyBehavior
+		if instance == null:
+			continue
+		_behaviors.append(instance)
+		instance.on_ready(self)
+
+
+func has_behavior(behavior_id: StringName) -> bool:
+	for behavior in _behaviors:
+		if behavior and behavior.behavior_id == behavior_id:
+			return true
+	return false
+
+
+func try_behavior_dodge(attack: AttackData, source: Node) -> bool:
+	for behavior in _behaviors:
+		if behavior and behavior.try_dodge_projectile(self, attack, source):
+			return true
+	return false
+
+
+func effective_move_speed() -> float:
+	var speed := stats.move_speed if stats else 0.0
+	for behavior in _behaviors:
+		if behavior:
+			speed = behavior.modify_move_speed(self, speed)
+	return speed
+
+
+func is_panicking() -> bool:
+	return has_meta("panicking") and bool(get_meta("panicking"))
+
+
+func is_glitched() -> bool:
+	return has_meta("glitched") and bool(get_meta("glitched"))
+
+
 func apply_retreat_movement() -> void:
 	if target == null or stats == null:
 		velocity = _knockback_vector()
 		move_and_slide()
 		return
 	var away := global_position.direction_to(target.global_position) * -1.0
-	velocity = Iso.apply_velocity(away, stats.move_speed)
+	velocity = Iso.apply_velocity(away, effective_move_speed())
 	velocity += _knockback_vector()
 	move_and_slide()
 
@@ -126,6 +173,11 @@ func _on_detection_body_exited(body: Node2D) -> void:
 
 
 func _on_died() -> void:
+	for behavior in _behaviors:
+		if behavior:
+			behavior.on_death(self)
+	if definition and definition.on_death_effect:
+		definition.on_death_effect.on_proc(self, {"power": 1.0})
 	SignalBus.enemy_died.emit(self)
 	SignalBus.entity_died.emit(self)
 	queue_free()
@@ -137,7 +189,10 @@ func apply_chase_movement() -> void:
 		move_and_slide()
 		return
 	var direction := global_position.direction_to(target.global_position)
-	velocity = Iso.apply_velocity(direction, stats.move_speed)
+	# Glitch robots may briefly retarget / jitter.
+	if is_glitched() and get_meta("glitch_robot", false):
+		direction = direction.rotated(randf_range(-0.7, 0.7))
+	velocity = Iso.apply_velocity(direction, effective_move_speed())
 	velocity += _knockback_vector()
 	move_and_slide()
 

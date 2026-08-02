@@ -39,4 +39,5 @@ func _is_robot(target: Node) -> bool:
 	if faction == null:
 		return false
 	return int(faction) == int(GameplayEnums.Faction.ANDROID) \
-		or int(faction) == int(GameplayEnums.Faction.CYBORG)
+		or int(faction) == int(GameplayEnums.Faction.CYBORG) \
+		or int(faction) == int(GameplayEnums.Faction.ROBO_BEAST)
