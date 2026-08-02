@@ -52,7 +52,38 @@ func _apply_biome() -> void:
 		for child in wall_visuals.get_children():
 			if child is Polygon2D:
 				(child as Polygon2D).color = biome.get_wall_color()
+	_spawn_biome_traps()
 	SignalBus.biome_changed.emit(biome.biome_id)
+
+
+func _spawn_biome_traps() -> void:
+	if biome == null or biome.trap_scene == null or biome.trap_count <= 0:
+		return
+	if _spawn_points == null:
+		return
+	var points := _spawn_points.get_children()
+	if points.is_empty():
+		return
+	var traps_root := get_node_or_null("Traps") as Node2D
+	if traps_root == null:
+		traps_root = Node2D.new()
+		traps_root.name = "Traps"
+		add_child(traps_root)
+	for i in biome.trap_count:
+		var marker: Node2D = points[i % points.size()] as Node2D
+		var trap := biome.trap_scene.instantiate() as Node2D
+		traps_root.add_child(trap)
+		# Offset from enemy spawns so traps aren't stacked on markers.
+		var offset := Vector2(-90 + (i % 3) * 40, 70 + (i % 2) * 36)
+		trap.global_position = marker.global_position + offset
+		if trap.has_method("configure"):
+			trap.call(
+				"configure",
+				biome.trap_color,
+				biome.trap_damage,
+				biome.trap_status_id,
+				biome.trap_status_buildup
+			)
 
 
 func _start_first_wave() -> void:
@@ -95,7 +126,8 @@ func _spawn_wave(wave: WaveDefinition) -> void:
 			_entities.add_child(enemy)
 			enemy.global_position = marker.global_position
 			var def := group.enemy_definition
-			if use_faction_weights and biome and biome.has_faction_weights():
+			# Soft remix: keep authored defs most of the time, pressure via weights sometimes.
+			if use_faction_weights and biome and biome.has_faction_weights() and randf() < 0.4:
 				def = RunState.pick_enemy_for_biome(def)
 			if def != null and enemy.has_method("apply_definition"):
 				enemy.call("apply_definition", def)

@@ -1,7 +1,9 @@
 extends Node
 ## Persists across room scene changes for a single run.
 
-const DEFAULT_ROUTE := preload("res://resources/runs/tutorial_route.tres")
+const TUTORIAL_ROUTE := preload("res://resources/runs/tutorial_route.tres")
+const CAMPAIGN_ROUTE := preload("res://resources/runs/campaign_route.tres")
+const DEFAULT_ROUTE := TUTORIAL_ROUTE
 const ARCH_CATALOG := preload("res://resources/architectures/architecture_catalog.tres")
 const UPGRADE_CATALOG := preload("res://resources/upgrades/upgrade_catalog.tres")
 const ENEMY_CATALOG := preload("res://resources/enemies/enemy_catalog.tres")
@@ -27,6 +29,7 @@ var dash_cost_mult: float = 1.0
 
 var architecture: ArchitectureData
 var architecture_picked: bool = false
+var route_picked: bool = false
 var owned_tags: PackedStringArray = PackedStringArray()
 var crafted_upgrades: Array[UpgradeData] = []
 var inventory: Array = []
@@ -76,13 +79,13 @@ func reset() -> void:
 	dash_cost_mult = 1.0
 	architecture = _default_architecture()
 	architecture_picked = false
+	route_picked = false
 	owned_tags = architecture.starting_tags.duplicate() if architecture else PackedStringArray(["default", "style"])
 	crafted_upgrades.clear()
 	inventory.clear()
 	last_loot.clear()
 	current_biome = null
-	if current_route == null:
-		current_route = DEFAULT_ROUTE as ActRoute
+	current_route = DEFAULT_ROUTE as ActRoute
 	_sync_route_cursor()
 	style_score = 0
 	style_multiplier = 1.0
@@ -125,6 +128,26 @@ func choose_architecture_data(arch: ArchitectureData) -> void:
 	owned_tags = arch.starting_tags.duplicate()
 	architecture_picked = true
 	SignalBus.architecture_changed.emit(architecture.architecture_id)
+
+
+func get_available_routes() -> Array[ActRoute]:
+	var routes: Array[ActRoute] = []
+	var tutorial := TUTORIAL_ROUTE as ActRoute
+	var campaign := CAMPAIGN_ROUTE as ActRoute
+	if tutorial:
+		routes.append(tutorial)
+	if campaign:
+		routes.append(campaign)
+	return routes
+
+
+func choose_route(route: ActRoute) -> void:
+	if route == null:
+		route = DEFAULT_ROUTE as ActRoute
+	current_route = route
+	route_picked = true
+	room_index = 0
+	_sync_route_cursor()
 
 
 func _default_architecture() -> ArchitectureData:

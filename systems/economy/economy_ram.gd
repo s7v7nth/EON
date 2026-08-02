@@ -9,6 +9,9 @@ const DRONE_SCENE := preload("res://entities/allies/drone/ally_drone.tscn")
 @export var drone_lifetime: float = 18.0
 
 var used_slots: int = 0
+var drone_damage_mult: float = 1.0
+var drone_speed_mult: float = 1.0
+var drone_glitch_buildup: float = 0.0
 var _drones: Array[Node] = []
 
 
@@ -18,6 +21,9 @@ func _init() -> void:
 
 func on_equip(host: Node) -> void:
 	used_slots = 0
+	drone_damage_mult = 1.0
+	drone_speed_mult = 1.0
+	drone_glitch_buildup = 0.0
 	_drones.clear()
 	_emit_slots()
 	var energy: EnergyComponent = host.get("energy") as EnergyComponent
@@ -79,6 +85,15 @@ func release_drone(drone: Node) -> void:
 func add_max_slots(amount: int) -> void:
 	max_slots = maxi(max_slots + amount, 1)
 	_emit_slots()
+
+
+func boost_drones(damage_mult: float, speed_mult: float, glitch_buildup: float) -> void:
+	drone_damage_mult = maxf(drone_damage_mult * damage_mult, 0.1)
+	drone_speed_mult = maxf(drone_speed_mult * speed_mult, 0.1)
+	drone_glitch_buildup = maxf(drone_glitch_buildup + glitch_buildup, 0.0)
+	for drone in _drones:
+		if is_instance_valid(drone) and drone.has_method("apply_economy_boosts"):
+			drone.call("apply_economy_boosts", self)
 
 
 func get_hud_values(_host: Node) -> Dictionary:

@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="WaveSet" load_steps=9 format=3]
+[gd_resource type="Resource" script_class="WaveSet" load_steps=10 format=3]
 
 [ext_resource type="Script" path="res://resources/waves/wave_set.gd" id="1_set"]
 [ext_resource type="Script" path="res://resources/waves/wave_definition.gd" id="2_def"]
@@ -6,6 +6,7 @@
 [ext_resource type="PackedScene" path="res://entities/enemies/dummy/enemy_dummy.tscn" id="4_enemy"]
 [ext_resource type="Resource" path="res://resources/enemies/swarm.tres" id="5_swarm"]
 [ext_resource type="Resource" path="res://resources/enemies/robo_beast.tres" id="6_beast"]
+[ext_resource type="Resource" path="res://resources/enemies/bio_mutant.tres" id="7_mutant"]
 
 [sub_resource type="Resource" id="spawn_w1"]
 script = ExtResource("3_group")
@@ -20,9 +21,9 @@ spawns = Array[ExtResource("3_group")]([SubResource("spawn_w1")])
 
 [sub_resource type="Resource" id="spawn_w2a"]
 script = ExtResource("3_group")
-count = 2
+count = 1
 enemy_scene = ExtResource("4_enemy")
-enemy_definition = ExtResource("5_swarm")
+enemy_definition = ExtResource("7_mutant")
 
 [sub_resource type="Resource" id="spawn_w2b"]
 script = ExtResource("3_group")

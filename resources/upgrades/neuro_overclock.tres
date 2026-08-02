@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="UpgradeData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://resources/upgrades/upgrade_data.gd" id="1"]
+[ext_resource type="Resource" path="res://resources/upgrades/effects/drone_overclock.tres" id="2"]
+
+[resource]
+script = ExtResource("1")
+upgrade_id = &"neuro_overclock"
+display_name = "Overclock Drones"
+description = "Antenna + logic: drones hit harder and move faster."
+architecture_id = 3
+required_tags = PackedStringArray("neuro", "drone", "logic", "antenna")
+grant_tags = PackedStringArray("overclock")
+effects = [ExtResource("2")]
+damage_mult = 1.05

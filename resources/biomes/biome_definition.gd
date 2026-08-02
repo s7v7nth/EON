@@ -16,6 +16,15 @@ extends Resource
 @export var loot_tags: PackedStringArray = []
 @export var neighbor_biomes: Array[int] = []
 
+@export_group("Hazards")
+## Optional trap props painted into the room layout.
+@export var trap_scene: PackedScene
+@export var trap_count: int = 0
+@export var trap_damage: float = 4.0
+@export var trap_status_id: StringName = &""
+@export var trap_status_buildup: float = 18.0
+@export var trap_color: Color = Color(0.9, 0.35, 0.2, 0.55)
+
 @export_group("Blend")
 ## Optional second biome for gateway transition tint lerp.
 @export var blend_biome: BiomeDefinition

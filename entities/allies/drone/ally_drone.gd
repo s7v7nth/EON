@@ -32,6 +32,16 @@ func configure(player: Node, econ: ResourceEconomy, life: float) -> void:
 	economy = econ
 	lifetime = life
 	_life_left = life
+	apply_economy_boosts(econ)
+
+
+func apply_economy_boosts(econ: ResourceEconomy) -> void:
+	if econ == null:
+		return
+	var dmg := float(econ.get("drone_damage_mult") if econ.get("drone_damage_mult") != null else 1.0)
+	var spd := float(econ.get("drone_speed_mult") if econ.get("drone_speed_mult") != null else 1.0)
+	attack_damage = 6.0 * maxf(dmg, 0.1)
+	move_speed = 230.0 * maxf(spd, 0.1)
 
 
 func _physics_process(delta: float) -> void:
@@ -71,6 +81,13 @@ func _strike(enemy: Node2D) -> void:
 	var health: HealthComponent = enemy.get("health") as HealthComponent
 	if health:
 		health.take_damage(attack_damage)
+	var glitch := 0.0
+	if economy:
+		glitch = float(economy.get("drone_glitch_buildup") if economy.get("drone_glitch_buildup") != null else 0.0)
+	if glitch > 0.0:
+		var status: StatusComponent = enemy.get("status") as StatusComponent
+		if status:
+			status.add_buildup(StatusComponent.STATUS_GLITCH, glitch, 2.5)
 
 
 func _nearest_enemy() -> Node2D:

@@ -1,11 +1,12 @@
 extends CanvasLayer
 ## Death / wave / win / reward / craft overlay. Always processes while tree is paused.
 
-enum Mode { HIDDEN, DEATH, WAVE_BANNER, WIN, REWARD, ARCH_PICK }
+enum Mode { HIDDEN, DEATH, WAVE_BANNER, WIN, REWARD, ARCH_PICK, ROUTE_PICK }
 
 var _mode: Mode = Mode.HIDDEN
 var _craft_nodes: Array[Node] = []
 var _arch_nodes: Array[Node] = []
+var _route_nodes: Array[Node] = []
 
 @onready var _panel: PanelContainer = $Center/Panel
 @onready var _title: Label = $Center/Panel/Margin/VBox/Title
@@ -15,6 +16,9 @@ var _arch_nodes: Array[Node] = []
 @onready var _rewards: VBoxContainer = $Center/Panel/Margin/VBox/Rewards
 @onready var _craft: VBoxContainer = $Center/Panel/Margin/VBox/Craft
 @onready var _arch: VBoxContainer = $Center/Panel/Margin/VBox/ArchPick
+@onready var _vbox: VBoxContainer = $Center/Panel/Margin/VBox
+
+var _route: VBoxContainer
 
 
 func _ready() -> void:
@@ -23,6 +27,8 @@ func _ready() -> void:
 	_rewards.visible = false
 	_craft.visible = false
 	_arch.visible = false
+	_ensure_route_box()
+	_route.visible = false
 	_wave_label.text = ""
 	if _style_banner:
 		_style_banner.text = ""
@@ -35,9 +41,22 @@ func _ready() -> void:
 	_rewards.get_node("BtnDamage").pressed.connect(_on_pick_damage)
 	_rewards.get_node("BtnSpeed").pressed.connect(_on_pick_speed)
 	_rewards.get_node("BtnDash").pressed.connect(_on_pick_dash)
-	# Offer architecture pick at run start once.
+	# Route → architecture at run start.
 	if RunState.room_index == 0 and not RunState.architecture_picked:
-		call_deferred("_show_arch_pick")
+		call_deferred("_show_start_flow")
+
+
+func _ensure_route_box() -> void:
+	_route = _vbox.get_node_or_null("RoutePick") as VBoxContainer
+	if _route:
+		return
+	_route = VBoxContainer.new()
+	_route.name = "RoutePick"
+	_route.add_theme_constant_override("separation", 8)
+	# Insert above ArchPick.
+	var arch_idx := _arch.get_index()
+	_vbox.add_child(_route)
+	_vbox.move_child(_route, arch_idx)
 
 
 func _input(event: InputEvent) -> void:
@@ -55,13 +74,22 @@ func _is_restart_key(event: InputEvent) -> bool:
 	return false
 
 
+func _show_start_flow() -> void:
+	if not RunState.route_picked:
+		_show_route_pick()
+	elif not RunState.architecture_picked:
+		_show_arch_pick()
+
+
 func _on_player_died() -> void:
 	_show(Mode.DEATH, "You Died", "Rank %s — Press R to restart" % RunState.current_room_rank())
 	get_tree().paused = true
 
 
 func _on_wave_started(index: int, total: int) -> void:
-	_wave_label.text = "Room %d — Wave %d / %d" % [RunState.room_index + 1, index + 1, total]
+	_wave_label.text = "Room %d/%d — Wave %d / %d" % [
+		RunState.room_index + 1, RunState.room_count(), index + 1, total
+	]
 
 
 func _on_wave_cleared(index: int) -> void:
@@ -75,6 +103,8 @@ func _on_run_won() -> void:
 	_rewards.visible = false
 	_craft.visible = false
 	_arch.visible = false
+	if _route:
+		_route.visible = false
 	get_tree().paused = true
 
 
@@ -91,6 +121,8 @@ func _on_exit_reached() -> void:
 	_rewards.visible = true
 	_craft.visible = true
 	_arch.visible = false
+	if _route:
+		_route.visible = false
 	get_tree().paused = true
 
 
@@ -99,10 +131,44 @@ func _on_style_changed(score: int, multiplier: float, rank: String) -> void:
 		_style_banner.text = "STYLE %s  x%.1f  %d" % [rank, multiplier, score]
 
 
+func _show_route_pick() -> void:
+	_ensure_route_box()
+	_populate_route_pick()
+	_show(Mode.ROUTE_PICK, "Choose Route", "Tutorial slice or full Acts 1–4 campaign")
+	_route.visible = true
+	_arch.visible = false
+	_rewards.visible = false
+	_craft.visible = false
+	get_tree().paused = true
+
+
+func _populate_route_pick() -> void:
+	for node in _route_nodes:
+		if is_instance_valid(node):
+			node.queue_free()
+	_route_nodes.clear()
+	for route in RunState.get_available_routes():
+		var btn := Button.new()
+		btn.text = "%s — %d rooms" % [route.display_name, route.total_rooms()]
+		btn.pressed.connect(_on_route_pressed.bind(route))
+		_route.add_child(btn)
+		_route_nodes.append(btn)
+
+
+func _on_route_pressed(route: ActRoute) -> void:
+	if _mode != Mode.ROUTE_PICK:
+		return
+	RunState.choose_route(route)
+	_route.visible = false
+	_show_arch_pick()
+
+
 func _show_arch_pick() -> void:
 	_populate_arch_pick()
 	_show(Mode.ARCH_PICK, "Choose Architecture", "Defines your combat language — Q = special")
 	_arch.visible = true
+	if _route:
+		_route.visible = false
 	_rewards.visible = false
 	_craft.visible = false
 	get_tree().paused = true
@@ -137,6 +203,8 @@ func _on_arch_pressed(arch: ArchitectureData) -> void:
 	_mode = Mode.HIDDEN
 	_panel.visible = false
 	_arch.visible = false
+	if _route:
+		_route.visible = false
 	get_tree().paused = false
 
 
@@ -213,3 +281,5 @@ func _show(mode: Mode, title: String, subtitle: String) -> void:
 	_rewards.visible = mode == Mode.REWARD
 	_craft.visible = mode == Mode.REWARD
 	_arch.visible = mode == Mode.ARCH_PICK
+	if _route:
+		_route.visible = mode == Mode.ROUTE_PICK

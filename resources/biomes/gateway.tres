@@ -1,6 +1,7 @@
-[gd_resource type="Resource" script_class="BiomeDefinition" load_steps=4 format=3]
+[gd_resource type="Resource" script_class="BiomeDefinition" load_steps=5 format=3]
 
 [ext_resource type="Script" path="res://resources/biomes/biome_definition.gd" id="1"]
+[ext_resource type="PackedScene" path="res://entities/props/biome_trap.tscn" id="trap"]
 [ext_resource type="Resource" path="res://resources/waves/gateway_waves.tres" id="2_waves"]
 [ext_resource type="Resource" path="res://resources/biomes/data_center.tres" id="3_blend"]
 
@@ -18,3 +19,9 @@ loot_tags = PackedStringArray("style", "nano")
 neighbor_biomes = Array[int]([1, 6])
 blend_biome = ExtResource("3_blend")
 blend_amount = 0.45
+trap_scene = ExtResource("trap")
+trap_count = 1
+trap_damage = 3.5
+trap_status_id = &"glitch"
+trap_status_buildup = 20.0
+trap_color = Color(0.7, 0.4, 1.0, 0.5)

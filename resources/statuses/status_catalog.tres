@@ -1,15 +1,17 @@
-[gd_resource type="Resource" script_class="StatusCatalog" load_steps=9 format=3]
+[gd_resource type="Resource" script_class="StatusCatalog" load_steps=12 format=3]
 
-[ext_resource type="Script" path="res://systems/status/status_catalog.gd" id="1"]
-[ext_resource type="Resource" path="res://resources/statuses/burn.tres" id="2"]
+[ext_resource type="Script" path="res://systems/status/status_catalog.gd" id="1"][ext_resource type="Resource" path="res://resources/statuses/burn.tres" id="2"]
 [ext_resource type="Resource" path="res://resources/statuses/bleed.tres" id="3"]
 [ext_resource type="Resource" path="res://resources/statuses/acid.tres" id="4"]
 [ext_resource type="Resource" path="res://resources/statuses/shock.tres" id="5"]
 [ext_resource type="Resource" path="res://resources/statuses/stagger.tres" id="6"]
 [ext_resource type="Resource" path="res://resources/statuses/glitch.tres" id="7"]
 [ext_resource type="Resource" path="res://resources/synergies/chemical_short.tres" id="8"]
+[ext_resource type="Resource" path="res://resources/synergies/napalm_rend.tres" id="9"]
+[ext_resource type="Resource" path="res://resources/synergies/system_crash.tres" id="10"]
+[ext_resource type="Resource" path="res://resources/synergies/concussive_ignition.tres" id="11"]
 
 [resource]
 script = ExtResource("1")
 statuses = Array[Resource]([ExtResource("2"), ExtResource("3"), ExtResource("4"), ExtResource("5"), ExtResource("6"), ExtResource("7")])
-synergies = Array[Resource]([ExtResource("8")])
+synergies = Array[Resource]([ExtResource("8"), ExtResource("9"), ExtResource("10"), ExtResource("11")])

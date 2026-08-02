@@ -1,6 +1,7 @@
-[gd_resource type="Resource" script_class="BiomeDefinition" load_steps=3 format=3]
+[gd_resource type="Resource" script_class="BiomeDefinition" load_steps=4 format=3]
 
 [ext_resource type="Script" path="res://resources/biomes/biome_definition.gd" id="1"]
+[ext_resource type="PackedScene" path="res://entities/props/biome_trap.tscn" id="trap"]
 [ext_resource type="Resource" path="res://resources/waves/alley_waves.tres" id="2_waves"]
 
 [resource]
@@ -15,3 +16,9 @@ faction_weights = Array[float]([0.5, 0.5])
 element_bias = Array[int]([4, 2])
 loot_tags = PackedStringArray("bleed", "corr")
 neighbor_biomes = Array[int]([2, 3, 6])
+trap_scene = ExtResource("trap")
+trap_count = 2
+trap_damage = 3.0
+trap_status_id = &"bleed"
+trap_status_buildup = 18.0
+trap_color = Color(0.7, 0.15, 0.2, 0.5)

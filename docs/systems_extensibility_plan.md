@@ -379,8 +379,11 @@ Faction enum += `BIO_MUTANT`. Реакции на статусы (panic run, gli
 2. `status_vulnerabilities` на definitions (savages↔burn, beasts↔bleed, androids↔shock, cyborgs↔glitch).
 3. Нейро-хакер skeleton: `EconomyRam` + `ally_drone` + `neuro_extra_slot` (+1 RAM).
 
-### Phase F — Контент-объём
-Нейро-хакер полный, Acts 2–4, остальные синергии, trap props в биомах — только data/scenes.
+### Phase F — Контент-объём ✅
+1. Route pick: Tutorial / Campaign (Acts 1–4).
+2. Neuro crafts: overclock drones + glitch link; antenna loot.
+3. Synergies: Napalm Rend, System Crash, Concussive Ignition (+ Chemical Short).
+4. Biome trap props per `BiomeDefinition`; bio_mutant in landfill/jungle waves.
 
 ---
 

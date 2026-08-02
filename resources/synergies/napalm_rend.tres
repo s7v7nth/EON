@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="SynergyRecipe" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://systems/status/synergy_recipe.gd" id="1"]
+[ext_resource type="Resource" path="res://resources/statuses/effects/napalm_rend_effect.tres" id="2"]
+
+[resource]
+script = ExtResource("1")
+recipe_id = &"napalm_rend"
+display_name = "Napalm Rend"
+required_statuses = PackedStringArray("burn", "bleed")
+consume_on_trigger = true
+style_points = 120
+cooldown = 1.5
+effect = ExtResource("2")

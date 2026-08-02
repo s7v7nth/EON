@@ -108,8 +108,11 @@ Run order comes from `ActRoute` (Act1 outskirts → Act4 data core), not hardcod
 - `EnemyBehavior` plugins on `EnemyDefinition.behavior_modules`
 - Modules: aggro swarm, erratic dodge, tactical support, hyper chase, death burst
 - `status_vulnerabilities` scales buildup (savages↔burn, beasts↔bleed, androids↔shock, cyborgs↔glitch)
-- `BIO_MUTANT` + death cloud; Neuro-hacker `EconomyRam` + ally drone + `neuro_extra_slot` craft
+- `BIO_MUTANT` + death cloud; Neuro-hacker `EconomyRam` + ally drone + RAM crafts
 - Signal: `ram_slots_changed(used, max_slots)`
+- Route pick: `tutorial_route` / `campaign_route` (Acts 1–4)
+- Synergies: Chemical Short, Napalm Rend, System Crash, Concussive Ignition
+- Biome traps: `BiomeDefinition.trap_*` → `BiomeTrap` props in arena
 
 ## Development order
 
