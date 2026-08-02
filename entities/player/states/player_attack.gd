@@ -148,7 +148,8 @@ func exit() -> void:
 	player.hitbox.deactivate()
 	if player.hitbox.hit_landed.is_connected(_on_hit_landed):
 		player.hitbox.hit_landed.disconnect(_on_hit_landed)
-	if player.combat_visual and _phase != Phase.ACTIVE:
+	# Always clear swing arcs — interrupting mid-ACTIVE (e.g. block) used to leave purple trail.
+	if player.combat_visual:
 		player.combat_visual.reset_pose()
 	# Restore default rectangular hitbox after circular.
 	if _circular and player.combo_root:

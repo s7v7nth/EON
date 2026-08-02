@@ -339,6 +339,10 @@ func play_parry_end() -> void:
 
 func play_block_start(parry_flash: bool = true) -> void:
 	_kill_tween()
+	if swing_arc:
+		swing_arc.modulate.a = 0.0
+	if telegraph:
+		telegraph.color.a = 0.0
 	if parry_flash:
 		parry_shield.color = Color(1.0, 0.95, 0.45, 0.9)
 	else:

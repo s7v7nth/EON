@@ -41,6 +41,8 @@ func _ready() -> void:
 	health.died.connect(_on_died)
 	detection_area.body_entered.connect(_on_detection_body_entered)
 	detection_area.body_exited.connect(_on_detection_body_exited)
+	if hurtbox and not hurtbox.hit_received.is_connected(_on_hurtbox_hit_received):
+		hurtbox.hit_received.connect(_on_hurtbox_hit_received)
 	# Catch bodies already overlapping on spawn.
 	call_deferred("_scan_detection_area")
 	call_deferred("_fit_combat_shapes")
@@ -185,6 +187,21 @@ func apply_retreat_movement() -> void:
 func _on_detection_body_entered(body: Node2D) -> void:
 	if body is Player:
 		_alert_room(body as Player)
+
+
+func _on_hurtbox_hit_received(_attack_data: AttackData, source: Node, _hp_damage: float) -> void:
+	## Melee and ranged hits aggro the room even outside detection radius.
+	var player := _player_from_hit_source(source)
+	if player:
+		_alert_room(player)
+
+
+func _player_from_hit_source(source: Node) -> Player:
+	if source is Player:
+		return source as Player
+	if source is Node and source.get_parent() is Player:
+		return source.get_parent() as Player
+	return null
 
 
 func _on_detection_body_exited(body: Node2D) -> void:
