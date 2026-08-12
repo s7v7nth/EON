@@ -7,7 +7,9 @@ extends Resource
 @export var stats: CharacterStats
 @export var melee_attack: AttackData
 @export var ranged_attack: AttackData
-@export var attack_range: float = 36.0
+## Signature moves — AI picks by range/weight. Empty = melee_attack / ranged_attack fallback.
+@export var moveset: Array[AttackData] = []
+@export var attack_range: float = 48.0
 @export var ranged_range: float = 260.0
 @export var detection_radius: float = 340.0
 @export var visual_color: Color = Color(0.72, 0.28, 0.28, 1)
@@ -19,6 +21,13 @@ extends Resource
 @export var tags: PackedStringArray = []
 ## status_id (String) -> buildup multiplier, e.g. {"burn": 1.5}
 @export var status_vulnerabilities: Dictionary = {}
+
+@export_group("Boss")
+@export var is_boss: bool = false
+@export_range(0.05, 0.95, 0.01) var boss_phase2_hp_ratio: float = 0.5
+@export var boss_phase2_action_speed: float = 1.28
+@export var boss_phase2_summon: EnemyDefinition
+@export var boss_phase2_summon_count: int = 2
 
 @export_group("Resist Overrides")
 ## If true, use override resists instead of stats resists.

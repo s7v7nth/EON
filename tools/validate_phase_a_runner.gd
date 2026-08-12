@@ -25,7 +25,7 @@ func _run() -> void:
 	RunState.apply_to_player(player)
 	assert(player.active_economy != null)
 	assert(player.active_economy.policy == GameplayEnums.EconomyPolicy.ENERGY_ADRENALINE)
-	# Synthetic: F/Q reserved; dash spends energy.
+	# Synthetic: F reserved; Q needs Energy Mirrors (Lattice Collapse).
 	assert(not player.parry_ready())
 	assert(not player.try_special())
 	var energy_before := player.energy.current_energy

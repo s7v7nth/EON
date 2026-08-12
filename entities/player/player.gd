@@ -9,7 +9,8 @@ const CIRCLE_SLASH_ATTACK := preload("res://resources/attacks/player_circle_slas
 const COMBO_MELEE := preload("res://resources/combos/combo_melee_string.tres")
 const COMBO_CIRCLE := preload("res://resources/combos/combo_circle_slash.tres")
 
-const HOLD_THRESHOLD := 0.25
+## Hold LMB this long (from press) before ChargeThrow starts. Keep snappy.
+const HOLD_THRESHOLD := 0.14
 
 @export var stats: CharacterStats
 @export var ranged_attack_data: AttackData
@@ -63,6 +64,8 @@ var _kb_time: float = 0.0
 var _kb_duration: float = KNOCKBACK_DURATION
 
 var _blade_in_flight: bool = false
+var _blade_flight_time: float = 0.0
+var _active_blade: Projectile = null
 var _last_dash_cost: float = 0.0
 var _attack_hold_time: float = -1.0
 
@@ -95,7 +98,7 @@ func _fit_hurtbox_to_body() -> void:
 		return
 	shape_node.position = Vector2(0, -22)
 	var circle := CircleShape2D.new()
-	circle.radius = 26.0
+	circle.radius = 28.0
 	shape_node.shape = circle
 
 
@@ -106,6 +109,12 @@ func _physics_process(delta: float) -> void:
 		counter_window = maxf(0.0, counter_window - delta)
 		if counter_window <= 0.0:
 			counter_damage_bonus = 1.0
+	if _blade_in_flight:
+		_blade_flight_time += delta
+		# Failsafe: never soft-lock throws if a blade dies without returned_to_source.
+		if _blade_flight_time > 3.0:
+			_blade_in_flight = false
+			_blade_flight_time = 0.0
 	_process_architecture_economy(delta)
 	_tick_upgrade_effects(delta)
 	_tick_attack_hold(delta)
@@ -418,8 +427,6 @@ func try_spend_attack_energy(attack: AttackData) -> bool:
 
 
 func try_special() -> bool:
-	if uses_synthetic_kit():
-		return false
 	if active_economy == null:
 		return false
 	if active_economy.is_action_locked(self):
@@ -461,12 +468,13 @@ func _resize_melee_hitbox(reach: float) -> void:
 	if hitbox == null:
 		return
 	var shape_node := hitbox.get_node_or_null("CollisionShape2D") as CollisionShape2D
-	if shape_node == null or shape_node.shape == null:
+	if shape_node == null:
 		return
-	if shape_node.shape is RectangleShape2D:
-		var rect := (shape_node.shape as RectangleShape2D).duplicate() as RectangleShape2D
-		rect.size = Vector2(maxf(reach * 1.35, 56.0), 56.0)
-		shape_node.shape = rect
+	hitbox.position = Vector2(maxf(reach, 52.0) * 0.62, -18.0)
+	var circle := CircleShape2D.new()
+	circle.radius = maxf(reach * 0.55, 32.0)
+	shape_node.shape = circle
+	shape_node.position = Vector2.ZERO
 
 
 func configure_hitbox_for_attack(attack: AttackData) -> void:
@@ -481,14 +489,17 @@ func configure_hitbox_for_attack(attack: AttackData) -> void:
 		var circle := CircleShape2D.new()
 		circle.radius = maxf(attack.circular_radius, 78.0)
 		shape_node.shape = circle
+		shape_node.position = Vector2.ZERO
 	else:
 		var reach := 56.0
 		if not weapons.is_empty() and weapons[weapon_index]:
 			reach = maxf(weapons[weapon_index].hitbox_reach, 52.0)
-		hitbox.position = Vector2(reach * 0.55, -16.0)
-		var rect := RectangleShape2D.new()
-		rect.size = Vector2(maxf(reach * 1.35, 56.0), 56.0)
-		shape_node.shape = rect
+		# Forward circle covering the blade arc (not a thin rotated rect that misses).
+		hitbox.position = Vector2(reach * 0.62, -18.0)
+		var circle := CircleShape2D.new()
+		circle.radius = maxf(reach * 0.55, 32.0)
+		shape_node.shape = circle
+		shape_node.position = Vector2.ZERO
 
 
 func spawn_projectile(direction: Vector2) -> void:
@@ -507,22 +518,66 @@ func spawn_projectile(direction: Vector2) -> void:
 func spawn_returning_blade(direction: Vector2, charge: float = 1.0) -> void:
 	if blade_throw_attack == null or _blade_in_flight:
 		return
+	var dir := direction.normalized()
+	if dir == Vector2.ZERO:
+		dir = facing_direction if facing_direction != Vector2.ZERO else Vector2.RIGHT
 	var proj := PROJECTILE_SCENE.instantiate() as Projectile
-	proj.attack_data = blade_throw_attack
-	proj.direction = direction.normalized()
+	var atk := blade_throw_attack.duplicate(true) as AttackData
+	if atk:
+		# Charge scales damage so partial throws aren't dead on arrival.
+		atk.damage *= lerpf(0.8, 1.2, clampf(charge, 0.0, 1.0))
+		proj.attack_data = atk
+	else:
+		proj.attack_data = blade_throw_attack
+	proj.direction = dir
 	proj.source = self
-	proj.charge = charge
-	proj.collision_mask = (1 << 0) | (1 << 4)
+	proj.charge = clampf(charge, 0.2, 1.0)
+	# World (1) + enemy hurtbox (16) + energy mirrors (32).
+	proj.collision_mask = (1 << 0) | (1 << 4) | (1 << 5)
 	proj.tint = Color(0.55, 0.85, 1.0, 1)
+	proj.max_mirror_bounces = 1
+	proj.wall_bounce_enabled = false
+	if active_economy != null and active_economy.has_method("get_ricochet_params"):
+		var params: Dictionary = active_economy.call("get_ricochet_params")
+		proj.max_mirror_bounces = int(params.get("max_bounces", 1))
+		proj.ricochet_damage_mult = float(params.get("ricochet_damage_mult", 1.5))
+		proj.extra_bounce_mult = float(params.get("extra_bounce_mult", 1.25))
+		proj.wall_bounce_enabled = bool(params.get("wall_bounce", false))
 	_blade_in_flight = true
+	_blade_flight_time = 0.0
+	_active_blade = proj
 	get_parent().add_child(proj)
-	proj.global_position = global_position + direction.normalized() * 28.0
+	# Spawn slightly ahead along aim so the blade clears the player hurtbox / feet.
+	proj.global_position = global_position + Vector2(0, -18) + dir * 34.0
 	proj.hit_landed.connect(_on_projectile_hit_landed)
 	proj.returned_to_source.connect(_on_blade_returned)
+	proj.tree_exiting.connect(_on_blade_tree_exiting)
 
 
 func _on_blade_returned() -> void:
 	_blade_in_flight = false
+	_blade_flight_time = 0.0
+	_active_blade = null
+
+
+func _on_blade_tree_exiting() -> void:
+	_blade_in_flight = false
+	_blade_flight_time = 0.0
+	_active_blade = null
+
+
+func get_active_blade() -> Projectile:
+	if _active_blade != null and is_instance_valid(_active_blade):
+		return _active_blade
+	return null
+
+
+func try_prevent_death(amount: float) -> bool:
+	for effect in active_effects:
+		var fx := effect as UpgradeEffect
+		if fx and fx.on_fatal_damage(self, amount):
+			return true
+	return false
 
 
 func _projectile_color(damage_type: GameplayEnums.DamageType) -> Color:
@@ -652,6 +707,10 @@ func is_tracking_attack_hold() -> bool:
 
 func attack_hold_exceeded() -> bool:
 	return _attack_hold_time >= HOLD_THRESHOLD
+
+
+func get_attack_hold_time() -> float:
+	return maxf(_attack_hold_time, 0.0)
 
 
 func consume_attack_hold_for_charge() -> bool:

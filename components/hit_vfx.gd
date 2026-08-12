@@ -33,6 +33,50 @@ static func spawn_at(
 			_burst(world, global_pos, dir, Color(0.9, 0.92, 1.0, 1), int(16 * s), 120.0 * s, 0.32, true, 1.4 * s)
 
 
+static func spawn_optic_burst(
+	world: Node,
+	global_pos: Vector2,
+	color: Color = Color(0.55, 0.9, 1.0, 1),
+	impact_dir: Vector2 = Vector2.RIGHT,
+	impact_scale: float = 1.0
+) -> void:
+	if world == null:
+		return
+	var dir: Vector2 = impact_dir.normalized() if impact_dir != Vector2.ZERO else Vector2.RIGHT
+	var s: float = maxf(impact_scale, 0.4)
+	_burst(world, global_pos, dir, color, int(16 * s), 150.0 * s, 0.32, true, 1.4 * s)
+	_burst(world, global_pos, dir, Color(1, 1, 1, 1), int(8 * s), 110.0 * s, 0.22, true, 1.0 * s)
+
+
+static func spawn_optic_ring(
+	world: Node,
+	origin: Vector2,
+	color: Color = Color(0.55, 0.9, 1.0, 0.85),
+	impact_scale: float = 1.0
+) -> void:
+	if world == null:
+		return
+	var ring := Polygon2D.new()
+	ring.polygon = _circle_poly(8.0 * maxf(impact_scale, 0.5))
+	ring.color = color
+	ring.z_index = 29
+	world.add_child(ring)
+	ring.global_position = origin
+	var tween := ring.create_tween()
+	var end_scale := 3.4 * clampf(impact_scale, 0.6, 2.0)
+	tween.tween_property(ring, "scale", Vector2(end_scale, end_scale), 0.18).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tween.parallel().tween_property(ring, "modulate:a", 0.0, 0.18)
+	tween.tween_callback(ring.queue_free)
+
+
+static func spawn_prism_explode(world: Node, origin: Vector2, color: Color = Color(0.75, 0.5, 1.0, 1)) -> void:
+	if world == null:
+		return
+	spawn_optic_ring(world, origin, Color(color.r, color.g, color.b, 0.9), 1.6)
+	_burst(world, origin, Vector2.UP, color, 22, 180.0, 0.4, true, 1.7)
+	_burst(world, origin, Vector2.RIGHT, Color(1, 1, 1, 1), 12, 130.0, 0.28, true, 1.2)
+
+
 static func _flash_ring(
 	world: Node,
 	origin: Vector2,

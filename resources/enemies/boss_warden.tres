@@ -1,0 +1,45 @@
+[gd_resource type="Resource" script_class="EnemyDefinition" load_steps=9 format=3]
+
+[ext_resource type="Script" path="res://resources/enemies/enemy_definition.gd" id="1"]
+[ext_resource type="Resource" path="res://resources/stats/enemy_boss_warden_stats.tres" id="2_stats"]
+[ext_resource type="Resource" path="res://resources/attacks/enemy_boss_swipe.tres" id="3_atk"]
+[ext_resource type="Resource" path="res://resources/attacks/enemy_boss_charge.tres" id="4_rng"]
+[ext_resource type="Resource" path="res://resources/attacks/enemy_boss_slam.tres" id="5_slam"]
+[ext_resource type="Resource" path="res://resources/attacks/enemy_boss_lunge.tres" id="6_lunge"]
+[ext_resource type="Resource" path="res://resources/enemies/swarm.tres" id="7_summon"]
+[ext_resource type="Resource" path="res://resources/enemies/behaviors/aggro_swarm.tres" id="8_beh"]
+
+[resource]
+script = ExtResource("1")
+display_name = "Warden"
+faction = 1
+stats = ExtResource("2_stats")
+melee_attack = ExtResource("3_atk")
+ranged_attack = ExtResource("4_rng")
+moveset = Array[Resource]([ExtResource("5_slam"), ExtResource("3_atk"), ExtResource("6_lunge"), ExtResource("4_rng")])
+attack_range = 70.0
+ranged_range = 340.0
+detection_radius = 480.0
+visual_color = Color(0.72, 0.2, 0.35, 1)
+prefers_kite = false
+behavior_modules = Array[Resource]([ExtResource("8_beh")])
+tags = PackedStringArray("boss", "warden", "cyborg")
+status_vulnerabilities = {
+"glitch": 1.35,
+"shock": 1.2,
+"stagger": 0.75
+}
+is_boss = true
+boss_phase2_hp_ratio = 0.5
+boss_phase2_action_speed = 1.28
+boss_phase2_summon = ExtResource("7_summon")
+boss_phase2_summon_count = 2
+use_resist_overrides = true
+resist_physical = 0.2
+resist_electricity = -0.15
+resist_corrosion = 0.05
+resist_fire = 0.1
+resist_bleed = 0.25
+resist_glitch = -0.2
+max_poise = 90.0
+poise_regen = 10.0

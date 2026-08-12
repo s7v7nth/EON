@@ -40,9 +40,9 @@
 
 ## Out of scope (Feel P0)
 
-- Дизайн волн, плотность spawn, элиты/аффиксы, boss AI / encounter scripts
+- Encounter design lives in waves / movesets / boss phases (see `docs/systems.md` Encounter pressure) — feel layer still owns weight/impact/poise only
 - Новые скелетные анимации / финальный арт
-- **SFX / rumble** — Feel P2 (аудиостека ещё нет)
+- **SFX / rumble** — Feel P2 shipped via `autoload/feel_audio.gd` (procedural AudioStreamGenerator blips + `Input.start_joy_vibration`). Hooked to `damage_dealt` / parry / perfect dodge / special / vent / enemy_died. Replace with authored WAV/OGG later without changing call sites.
 
 ## Критерий готовности
 

@@ -10,7 +10,7 @@
 
 [sub_resource type="Resource" id="spawn_w1"]
 script = ExtResource("3_group")
-count = 2
+count = 3
 enemy_scene = ExtResource("4_enemy")
 enemy_definition = ExtResource("5_swarm")
 
@@ -21,13 +21,13 @@ spawns = Array[ExtResource("3_group")]([SubResource("spawn_w1")])
 
 [sub_resource type="Resource" id="spawn_w2a"]
 script = ExtResource("3_group")
-count = 1
+count = 2
 enemy_scene = ExtResource("4_enemy")
 enemy_definition = ExtResource("6_bruiser")
 
 [sub_resource type="Resource" id="spawn_w2b"]
 script = ExtResource("3_group")
-count = 1
+count = 2
 enemy_scene = ExtResource("4_enemy")
 enemy_definition = ExtResource("7_sniper")
 
@@ -38,13 +38,13 @@ spawns = Array[ExtResource("3_group")]([SubResource("spawn_w2a"), SubResource("s
 
 [sub_resource type="Resource" id="spawn_w3a"]
 script = ExtResource("3_group")
-count = 2
+count = 3
 enemy_scene = ExtResource("4_enemy")
 enemy_definition = ExtResource("5_swarm")
 
 [sub_resource type="Resource" id="spawn_w3b"]
 script = ExtResource("3_group")
-count = 1
+count = 2
 enemy_scene = ExtResource("4_enemy")
 enemy_definition = ExtResource("6_bruiser")
 

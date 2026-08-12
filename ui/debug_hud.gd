@@ -48,9 +48,14 @@ func _ready() -> void:
 	SignalBus.architecture_changed.connect(_on_architecture_changed)
 	SignalBus.biome_changed.connect(_on_biome_changed)
 	SignalBus.damage_dealt.connect(_on_damage_dealt)
+	SignalBus.room_entered.connect(_on_room_entered)
 	_refresh_damage_label()
 	call_deferred("_refresh_location_from_run_state")
 	call_deferred("_refresh_seed_label")
+
+
+func _on_room_entered(_coord: Vector2i) -> void:
+	_refresh_seed_label()
 
 
 func _refresh_seed_label() -> void:

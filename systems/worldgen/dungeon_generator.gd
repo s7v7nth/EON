@@ -13,6 +13,8 @@ const LAYOUT_POOL: PackedStringArray = [
 	"res://levels/rooms/room_01.tscn",
 	"res://levels/rooms/room_02.tscn",
 	"res://levels/rooms/room_03.tscn",
+	"res://levels/rooms/room_04.tscn",
+	"res://levels/rooms/room_05.tscn",
 ]
 
 const BIOME_PATHS: PackedStringArray = [
@@ -71,6 +73,7 @@ static func generate(rng: RunRng, room_count: int = DEFAULT_ROOM_COUNT) -> Dunge
 			open.remove_at(from_idx)
 
 	_assign_boss(graph, rng)
+	_assign_special_rooms(graph, rng)
 	_apply_blends(graph)
 	return graph
 
@@ -149,6 +152,35 @@ static func _assign_boss(graph: DungeonGraph, rng: RunRng) -> void:
 	elif endgame:
 		boss.biome = endgame
 	graph.boss_coord = best
+
+
+static func _assign_special_rooms(graph: DungeonGraph, rng: RunRng) -> void:
+	## Sprinkle shop / treasure / secret on combat cells (not start/boss).
+	var combat: Array[Vector2i] = []
+	for key in graph.rooms.keys():
+		var coord := key as Vector2i
+		var room: DungeonRoom = graph.rooms[coord]
+		if room.kind == DungeonRoom.RoomKind.COMBAT:
+			combat.append(coord)
+	if combat.is_empty():
+		return
+	# Shuffle-ish via RNG picks.
+	var picks: Array[int] = [
+		DungeonRoom.RoomKind.TREASURE,
+		DungeonRoom.RoomKind.SHOP,
+		DungeonRoom.RoomKind.SECRET,
+	]
+	var count := mini(picks.size(), maxi(combat.size() / 4, 1))
+	count = mini(count, combat.size())
+	for i in count:
+		var idx := rng.map.randi() % combat.size()
+		var coord: Vector2i = combat[idx]
+		combat.remove_at(idx)
+		var room: DungeonRoom = graph.rooms[coord]
+		room.kind = picks[i % picks.size()]
+		# Prefer dead-end layouts for secret/treasure readability.
+		if room.kind == DungeonRoom.RoomKind.SECRET or room.kind == DungeonRoom.RoomKind.TREASURE:
+			room.layout_path = LAYOUT_POOL[rng.map.randi() % LAYOUT_POOL.size()]
 
 
 static func _apply_blends(graph: DungeonGraph) -> void:

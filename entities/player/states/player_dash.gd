@@ -48,8 +48,27 @@ func physics_update(delta: float) -> void:
 		_spawn_ghost()
 	player.velocity = Iso.apply_velocity(_dash_dir, player.stats.dash_speed)
 	player.move_and_slide()
+	_try_blade_intercept()
 	if _elapsed >= player.stats.dash_duration:
 		_return_to_locomotion()
+
+
+func _try_blade_intercept() -> void:
+	var economy = player.active_economy
+	if economy == null:
+		return
+	# Only Synthetic Kinetic Ping-Pong sets this; other economies lack the property
+	# and bool(null) hard-errors on Godot 4.7.
+	var intercept = economy.get("dash_blade_intercept")
+	if intercept == null or not intercept:
+		return
+	var blade := player.get_active_blade()
+	if blade == null:
+		return
+	if player.global_position.distance_to(blade.global_position) > 52.0:
+		return
+	if blade.has_method("apply_dash_intercept"):
+		blade.call("apply_dash_intercept")
 
 
 func exit() -> void:
@@ -62,12 +81,20 @@ func exit() -> void:
 
 
 func _spawn_ghost() -> void:
-	var visual := player.get_node_or_null("Visual") as Polygon2D
+	var visual := player.get_node_or_null("Visual") as Node2D
 	if visual == null:
 		return
 	var ghost := Polygon2D.new()
-	ghost.polygon = visual.polygon
-	ghost.color = visual.color
+	if "polygon" in visual and not (visual.polygon as PackedVector2Array).is_empty():
+		ghost.polygon = visual.polygon
+	else:
+		ghost.polygon = PackedVector2Array([
+			Vector2(-10, 0), Vector2(10, 0), Vector2(8, -36), Vector2(-8, -36)
+		])
+	if "color" in visual:
+		ghost.color = visual.color
+	else:
+		ghost.color = Color(0.55, 0.58, 0.62, 1)
 	ghost.modulate = GHOST_TINT
 	ghost.z_index = -1
 	player.get_parent().add_child(ghost)

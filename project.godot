@@ -23,6 +23,8 @@ Iso="*res://autoload/iso.gd"
 HitStop="*res://autoload/hit_stop.gd"
 CameraFx="*res://autoload/camera_fx.gd"
 RunState="*res://autoload/run_state.gd"
+RoomTransition="*res://autoload/room_transition.gd"
+FeelAudio="*res://autoload/feel_audio.gd"
 
 [display]
 

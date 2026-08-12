@@ -15,6 +15,11 @@ var lifetime: float = 18.0
 var _hp: float = 18.0
 var _cooldown: float = 0.0
 var _life_left: float = 18.0
+var _pulse_left: float = 0.0
+var _pulse_dmg: float = 1.0
+var _pulse_spd: float = 1.0
+var _base_damage: float = 6.0
+var _base_speed: float = 230.0
 
 
 func _ready() -> void:
@@ -40,8 +45,23 @@ func apply_economy_boosts(econ: ResourceEconomy) -> void:
 		return
 	var dmg := float(econ.get("drone_damage_mult") if econ.get("drone_damage_mult") != null else 1.0)
 	var spd := float(econ.get("drone_speed_mult") if econ.get("drone_speed_mult") != null else 1.0)
-	attack_damage = 6.0 * maxf(dmg, 0.1)
-	move_speed = 230.0 * maxf(spd, 0.1)
+	_base_damage = 6.0 * maxf(dmg, 0.1)
+	_base_speed = 230.0 * maxf(spd, 0.1)
+	_refresh_combat_stats()
+
+
+## Sync Blade / temporary melee-linked overclock.
+func apply_overclock_pulse(speed_boost: float, damage_boost: float, duration: float) -> void:
+	_pulse_spd = maxf(speed_boost, 1.0)
+	_pulse_dmg = maxf(damage_boost, 1.0)
+	_pulse_left = maxf(duration, 0.1)
+	_refresh_combat_stats()
+
+
+func _refresh_combat_stats() -> void:
+	var pulse_on := _pulse_left > 0.0
+	attack_damage = _base_damage * (_pulse_dmg if pulse_on else 1.0)
+	move_speed = _base_speed * (_pulse_spd if pulse_on else 1.0)
 
 
 func _physics_process(delta: float) -> void:
@@ -49,6 +69,12 @@ func _physics_process(delta: float) -> void:
 	if _life_left <= 0.0 or _hp <= 0.0:
 		_die()
 		return
+	if _pulse_left > 0.0:
+		_pulse_left = maxf(0.0, _pulse_left - delta)
+		if _pulse_left <= 0.0:
+			_pulse_dmg = 1.0
+			_pulse_spd = 1.0
+			_refresh_combat_stats()
 	if _cooldown > 0.0:
 		_cooldown = maxf(0.0, _cooldown - delta)
 	var enemy := _nearest_enemy()

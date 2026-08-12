@@ -5,6 +5,7 @@ enum Mode { HIDDEN, DEATH, WAVE_BANNER, WIN, REWARD, ARCH_PICK, ROUTE_PICK }
 
 var _mode: Mode = Mode.HIDDEN
 var _craft_nodes: Array[Node] = []
+var _reward_extra_nodes: Array[Node] = []
 var _arch_nodes: Array[Node] = []
 var _route_nodes: Array[Node] = []
 
@@ -110,9 +111,10 @@ func _on_run_won() -> void:
 
 func _on_exit_reached() -> void:
 	_populate_craft()
-	var loot_line := "Craft or take a boon"
+	_populate_reward_upgrades()
+	var loot_line := "Craft, Geometry upgrade, or take a boon"
 	if not RunState.last_loot.is_empty():
-		loot_line = "Loot: %s — craft or take a boon" % RunState.loot_summary()
+		loot_line = "Loot: %s — craft, Geometry upgrade, or boon" % RunState.loot_summary()
 	var title := "Room Cleared — Rank %s" % RunState.current_room_rank()
 	if RunState.is_last_room():
 		title = "Act Clear — Rank %s" % RunState.current_room_rank()
@@ -235,6 +237,39 @@ func _populate_craft() -> void:
 		_craft_nodes.append(btn)
 
 
+func _populate_reward_upgrades() -> void:
+	for node in _reward_extra_nodes:
+		if is_instance_valid(node):
+			node.queue_free()
+	_reward_extra_nodes.clear()
+	# Keep static boons at top; insert Geometry picks after them.
+	var upgrades := RunState.get_reward_upgrades()
+	if upgrades.is_empty():
+		return
+	var sep := Label.new()
+	sep.text = "— Geometry —"
+	sep.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_rewards.add_child(sep)
+	_reward_extra_nodes.append(sep)
+	for upgrade in upgrades:
+		var btn := Button.new()
+		btn.text = "%s — %s" % [upgrade.display_name, upgrade.description]
+		btn.pressed.connect(_on_reward_upgrade.bind(upgrade))
+		_rewards.add_child(btn)
+		_reward_extra_nodes.append(btn)
+
+
+func _on_reward_upgrade(upgrade: UpgradeData) -> void:
+	if _mode != Mode.REWARD:
+		return
+	if not RunState.grant_upgrade(upgrade):
+		return
+	var player := _find_player()
+	if player:
+		RunState.apply_to_player(player)
+	_finish_reward()
+
+
 func _on_craft(upgrade: UpgradeData) -> void:
 	if _mode != Mode.REWARD:
 		return
@@ -270,6 +305,10 @@ func _finish_reward() -> void:
 	_panel.visible = false
 	_rewards.visible = false
 	_craft.visible = false
+	for node in _reward_extra_nodes:
+		if is_instance_valid(node):
+			node.queue_free()
+	_reward_extra_nodes.clear()
 	RunState.finish_room_reward()
 
 

@@ -35,6 +35,11 @@ func on_kill(_host: Node, _enemy: Node) -> void:
 	pass
 
 
+## Return true if fatal damage was prevented (Holographic Substitution, etc.).
+func on_fatal_damage(_host: Node, _amount: float) -> bool:
+	return false
+
+
 func damage_multiplier(_host: Node) -> float:
 	return 1.0
 

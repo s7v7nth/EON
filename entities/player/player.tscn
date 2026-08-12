@@ -1,4 +1,4 @@
-[gd_scene load_steps=26 format=3]
+[gd_scene load_steps=27 format=3]
 
 [ext_resource type="Script" path="res://entities/player/player.gd" id="1_player"]
 [ext_resource type="Resource" path="res://resources/stats/player_stats.tres" id="2_stats"]
@@ -22,6 +22,7 @@
 [ext_resource type="Resource" path="res://resources/attacks/player_basic_attack.tres" id="14_atk"]
 [ext_resource type="Resource" path="res://resources/architectures/default.tres" id="16_arch"]
 [ext_resource type="Script" path="res://components/combat_visual_component.gd" id="17_cv"]
+[ext_resource type="Script" path="res://components/stylized_body_visual.gd" id="18_body"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_body"]
 radius = 12.0
@@ -41,9 +42,8 @@ script = ExtResource("1_player")
 stats = ExtResource("2_stats")
 architecture = ExtResource("16_arch")
 
-[node name="Visual" type="Polygon2D" parent="."]
-color = Color(0.55, 0.58, 0.62, 1)
-polygon = PackedVector2Array(-14, 0, 14, 0, 14, -48, -14, -48)
+[node name="Visual" type="Node2D" parent="."]
+script = ExtResource("18_body")
 
 [node name="CombatVisual" type="Node2D" parent="."]
 script = ExtResource("17_cv")

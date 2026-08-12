@@ -1,0 +1,41 @@
+[gd_resource type="Resource" script_class="WaveSet" load_steps=12 format=3]
+
+[ext_resource type="Script" path="res://resources/waves/wave_set.gd" id="1_set"]
+[ext_resource type="Script" path="res://resources/waves/wave_definition.gd" id="2_def"]
+[ext_resource type="Script" path="res://resources/waves/wave_spawn_group.gd" id="3_group"]
+[ext_resource type="PackedScene" path="res://entities/enemies/dummy/enemy_dummy.tscn" id="4_enemy"]
+[ext_resource type="Resource" path="res://resources/enemies/android.tres" id="5_android"]
+[ext_resource type="Resource" path="res://resources/enemies/boss_warden.tres" id="6_boss"]
+[ext_resource type="Resource" path="res://resources/enemies/swarm.tres" id="7_swarm"]
+
+[sub_resource type="Resource" id="spawn_adds"]
+script = ExtResource("3_group")
+count = 2
+enemy_scene = ExtResource("4_enemy")
+enemy_definition = ExtResource("5_android")
+
+[sub_resource type="Resource" id="wave_1"]
+script = ExtResource("2_def")
+delay = 0.4
+spawns = Array[ExtResource("3_group")]([SubResource("spawn_adds")])
+
+[sub_resource type="Resource" id="spawn_boss"]
+script = ExtResource("3_group")
+count = 1
+enemy_scene = ExtResource("4_enemy")
+enemy_definition = ExtResource("6_boss")
+
+[sub_resource type="Resource" id="spawn_pack"]
+script = ExtResource("3_group")
+count = 2
+enemy_scene = ExtResource("4_enemy")
+enemy_definition = ExtResource("7_swarm")
+
+[sub_resource type="Resource" id="wave_boss"]
+script = ExtResource("2_def")
+delay = 0.85
+spawns = Array[ExtResource("3_group")]([SubResource("spawn_boss"), SubResource("spawn_pack")])
+
+[resource]
+script = ExtResource("1_set")
+waves = Array[ExtResource("2_def")]([SubResource("wave_1"), SubResource("wave_boss")])

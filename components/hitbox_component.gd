@@ -24,6 +24,10 @@ func activate() -> void:
 	_set_shapes_disabled(false)
 
 
+func is_active() -> bool:
+	return _active
+
+
 func deactivate() -> void:
 	_active = false
 	_hit_targets.clear()

@@ -9,8 +9,10 @@ Implementation grows on top of components + `Resource` data + `SignalBus`.
 **External-AI architecture brainstorm context** (keep in sync on significant design changes):
 [`docs/architecture_brainstorm_prompt.md`](architecture_brainstorm_prompt.md)
 
-**Combat feel contract** (weight / impact / poise-flinch; not encounter design):
+**Combat feel contract** (weight / impact / poise-flinch):
 [`docs/combat_feel.md`](combat_feel.md)
+
+**Encounter pressure** (density / signature patterns / phased boss): denser mixed waves, `AttackData.pattern_kind` movesets, Warden boss phases — player verbs stay strong; mistakes cost more.
 
 ## Pillars
 
@@ -60,7 +62,7 @@ Skill actions feed **Adrenaline** + **Style Score** + craft tags / loot parts.
 
 | Id | Economy | Starter primitives |
 |----|---------|-------------------|
-| DEFAULT / Синтетик | `EconomyAdrenaline` | Energy blade · hold-block shield · charge-throw · combos; Q/F reserved |
+| DEFAULT / Синтетик | `EconomyAdrenaline` | Energy blade · Geometry mirrors · charge-throw · combos; Q = Lattice Collapse |
 | NANOMACHINES / Улей | `EconomyBloodHarvest` | Nano blade / whip / toad |
 | ELECTRO_TRAIN / Паровоз | `EconomyOverheat` + Vent (Q) | Plasma gun / blade / mortar |
 | NEURO_HACKER | `EconomyRam` (Q = drone slot) | Smart pistol / holo blades / drones |
@@ -70,19 +72,23 @@ Runtime: `ArchitectureData.economy` (`ResourceEconomy`) is duplicated on equip; 
 
 ### Синтетик — combat contract
 
-- **LMB tap** — melee swing (combo module). **LMB hold** — charge returning blade throw.
-- **RMB hold** — energy shield (−50% damage); first **0.5s** = parry (full negate + stagger).
+- **LMB tap** — melee swing (combo module). **LMB hold** — charge returning blade throw (snappy charge; blue feet charge bar + aim beam).
+- **RMB hold** — energy shield (−50% damage); first **~0.18s** raise-parry (full negate + stagger); dedicated Parry ~0.22s.
+- **Geometry of Reflections** — perfect parry spawns an Energy Mirror (cap 3; **action budget 3**, no timer) at the player↔attacker midpoint.
+- **Throw ↔ Mirror** — returning blade **pierces** foes then ricochets off a mirror with **lead aim** (×1.5; default 1 bounce). Each ricochet spends 1 mirror action. Prism Chain craft raises bounce budget.
+- **Dash / melee ↔ Mirror** — dash-through or melee clip spends 1 action (soft pulse); on the 3rd action the mirror fades/detonates (dash-final = AoE Stagger + short i-frame refresh). Cap overflow removes oldest. **Q** fully consumes via Lattice Collapse.
 - **Combos** (`systems/combat/ComboRecognizer`): LMB×3 string; LMB→RMB→LMB circle AoE.
-- **Energy** — pool ~50; spent on attacks/dash; absorbs damage before HP; ideal dash refunds cost.
+- **Energy** — pool ~50; spent on attacks/dash/Q Collapse; absorbs damage before HP; ideal dash refunds cost.
 - **Adrenaline** — baseline floor in combat → Energy regen; rises from hits, HP damage, parry, ideal dash; decays toward 0 out of combat, but **leftover adrenaline still regenerates Energy** until gone.
 - **Engagement** — `CombatEngagementComponent` (enemy aggro and/or recent exchange).
-- **Q / F** — reserved (no-op for Synthetic).
+- **Q** — Lattice Collapse (detonate all mirrors for Energy). **F** — reserved (no-op).
+- **Post-room Rewards** — Synthetic Geometry upgrades (`reward_offerable`) appear beside +damage/+speed/-dash cost; granted via `RunState.grant_upgrade` (no loot tags). Loot crafts stay in the Craft column. Focus Lens uses the same **action budget 3** (amplifies) as mirrors — no timer.
 
-Special input: `special` (Q) → `economy.try_special()` (swarm / Vent / drone; Synthetic reserved).
+Special input: `special` (Q) → `economy.try_special()` (swarm / Vent / drone / Lattice Collapse).
 
 **Upgrade rule:** one upgrade = one or more `UpgradeEffect` verbs (`systems/upgrades/`), not Player bool flags.
 Craft parts (`LootPart` in `resources/loot/`) grant tags; recipes gate on `owned_tags`.
-Catalog: `resources/upgrades/upgrade_catalog.tres`.
+Catalog: `resources/upgrades/upgrade_catalog.tres`. Reward-only Geometry picks use `UpgradeData.reward_offerable = true`.
 
 ## Style score (Hotline-like)
 
@@ -118,7 +124,16 @@ Run order comes from `ActRoute` (Act1 outskirts → Act4 data core), not hardcod
 - Full campaign data: `campaign_route.tres` (Acts 1–4)
 - Procedural: `procedural_route.tres` → `DungeonGenerator` builds an Isaac-style grid from `run_seed` (`systems/worldgen/`); doors N/E/S/W; biomes follow `neighbor_biomes` + blend; win on boss room after craft
 - Seed streams: `RunRng` map / spawn / loot (VFX stays on global rand)
-- Room scenes (`room_01/02/03`) are **geometry templates** (pool for procedural picks); `ArenaController` paints biome + swaps `wave_set` from `RunState`
+- Room scenes (`room_01`–`room_05`) are **geometry templates** (pool for procedural picks); `ArenaController` paints biome + swaps `wave_set` from `RunState`
+- Special kinds: `SHOP` / `TREASURE` / `SECRET` skip waves and call `RunState.grant_special_room_loot`; boss rooms use `boss_encounter_waves.tres` (**Warden** phased boss)
+- Elites: `WaveSpawnGroup.is_elite` → `EnemyDummy.apply_elite` (HP / move / **action speed** / tint / slight damage pressure)
+- Enemies: `EnemyDefinition.moveset` + `AttackData.pattern_kind` (SLASH / OVERHEAD_SLAM / LUNGE / COMBO / CHARGE_SHOT / FAN_SHOT); AI picks by range/weight; distinct telegraphs on `CombatVisualComponent`
+- Boss: `boss_warden.tres` (`is_boss`) → phase 2 at HP ratio summons adds via `SignalBus.enemy_spawned`
+- Room `+damage` boon soft-caps after 2 picks (`RunState.damage_boon_picks`)
+- Room polish: `RoomDresser` adds floor grid / neon rails / doorway carving; `RoomTransition` fades scene swaps; HUD `Minimap` (procedural only) reads `DungeonGraph` + `explored` / `cleared` / boss/shop/treasure/secret via `room_entered`
+- **Cleared rooms stay empty on revisit** — `DungeonRoom.cleared` is set on clear; `ArenaController` skips waves and keeps doors open when re-entering
+- Characters: `StylizedBodyVisual` (`_draw` silhouettes + idle/walk) replaces greybox rects; combat FX stay on `CombatVisualComponent`
+- Feel P2: `FeelAudio` autoload — procedural SFX + rumble on combat SignalBus events
 - Spawns: wave timing/counts stay; `faction_weights` remaps definitions via `EnemyCatalog`
 - Final room still opens reward/craft, then `run_won`
 

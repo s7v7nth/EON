@@ -83,6 +83,8 @@ func _compute_damage(attack_data: AttackData, source: Node) -> float:
 	if source is Player:
 		var player := source as Player
 		damage *= player.effective_damage_multiplier()
+	elif source != null and source.has_meta("elite_pressure"):
+		damage *= maxf(float(source.get_meta("elite_pressure")), 1.0)
 	var resist := _resolve_resist(attack_data.damage_type)
 	if status_component:
 		resist = clampf(resist - status_component.get_resist_shred(), -1.0, 0.9)

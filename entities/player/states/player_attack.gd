@@ -56,7 +56,11 @@ func enter(msg: Dictionary = {}) -> void:
 		if _circular:
 			player.combat_visual.play_circle_slash(_attack.active_duration / speed)
 		else:
-			player.combat_visual.play_melee_windup(_aim_angle, _attack.windup / speed)
+			player.combat_visual.play_melee_windup(
+				_aim_angle,
+				maxf(_attack.windup / speed, CombatVisualComponent.MIN_WINDUP_VISUAL),
+				_melee_anim_variant()
+			)
 	if not player.hitbox.hit_landed.is_connected(_on_hit_landed):
 		player.hitbox.hit_landed.connect(_on_hit_landed)
 
@@ -97,7 +101,11 @@ func physics_update(delta: float) -> void:
 					if _combo_index >= 2:
 						swing_color = Color(0.72, 0.28, 1.0, 1.0)
 					player.combat_visual.play_melee_swing(
-						_aim_angle, _attack.active_duration / speed, _attack.damage_type, swing_color
+						_aim_angle,
+						maxf(_attack.active_duration / speed, CombatVisualComponent.MIN_SWING_VISUAL),
+						_attack.damage_type,
+						swing_color,
+						_melee_anim_variant()
 					)
 		Phase.ACTIVE:
 			if _elapsed >= _attack.active_duration:
@@ -159,9 +167,10 @@ func _poll_synthetic_combo() -> void:
 
 	if player.is_tracking_attack_hold():
 		if player.attack_hold_exceeded():
+			var seed := player.get_attack_hold_time()
 			player.clear_attack_hold_tracking()
 			if not player.blade_in_flight():
-				transition_to(&"ChargeThrow")
+				transition_to(&"ChargeThrow", {"seed": seed})
 			return
 		if Input.is_action_just_released("attack"):
 			player.clear_attack_hold_tracking()
@@ -199,8 +208,8 @@ func exit() -> void:
 	player.hitbox.deactivate()
 	if player.hitbox.hit_landed.is_connected(_on_hit_landed):
 		player.hitbox.hit_landed.disconnect(_on_hit_landed)
-	if player.combat_visual:
-		player.combat_visual.reset_pose()
+	# Do not hard-reset pose here — Attack→Attack would kill readable swing variants.
+	# Idle/Move/Dash/Block settle the pose on enter.
 	if _circular and player.combo_root:
 		player.configure_hitbox_for_attack(player.combo_root)
 
@@ -217,6 +226,19 @@ func _aim_hitbox_at_cursor() -> void:
 	_aim_angle = aim.angle()
 	player.hitbox_pivot.rotation = _aim_angle
 	player.facing_direction = aim.normalized()
+
+
+func _melee_anim_variant() -> int:
+	## Distinct silhouettes across the string: slash → reverse → overhead/rising finisher.
+	match _combo_index:
+		0:
+			return 0
+		1:
+			return 1
+		2:
+			return 2
+		_:
+			return 4 if (_combo_index % 2) == 0 else 3
 
 
 func _on_hit_landed(target: HurtboxComponent) -> void:

@@ -2,6 +2,9 @@ class_name ArenaController
 extends Node2D
 ## Spawns waves into Entities, tracks clears, emits SignalBus wave/run events.
 
+const _RoomDresser = preload("res://levels/arena/room_dresser.gd")
+const BOSS_WAVE_SET = preload("res://resources/waves/boss_encounter_waves.tres")
+
 @export var wave_set: WaveSet
 @export var biome: BiomeDefinition
 @export var entities_path: NodePath = ^"Entities"
@@ -24,6 +27,11 @@ var _wave_index: int = -1
 var _alive_enemies: int = 0
 var _spawning: bool = false
 var _room_cleared: bool = false
+## True when this visit restores an already-cleared procedural room (no reward loop).
+var _revisit_cleared: bool = false
+## Door at the wall we spawned on; ignored until the player leaves it.
+var _blocked_entry_dir: Vector2i = Vector2i.ZERO
+var _exit_latch: bool = false
 var _spawn_cursor: int = 0
 var _door_nodes: Array[Area2D] = []
 
@@ -33,6 +41,7 @@ var _door_nodes: Array[Area2D] = []
 
 func _ready() -> void:
 	SignalBus.enemy_died.connect(_on_enemy_died)
+	SignalBus.enemy_spawned.connect(_on_enemy_spawned)
 	SignalBus.player_died.connect(_on_player_died)
 	SignalBus.route_chosen.connect(_on_route_chosen)
 	SignalBus.architecture_changed.connect(_on_architecture_changed)
@@ -50,6 +59,9 @@ func _on_route_chosen(_route_id: StringName) -> void:
 	_alive_enemies = 0
 	_spawning = false
 	_room_cleared = false
+	_revisit_cleared = false
+	_blocked_entry_dir = Vector2i.ZERO
+	_exit_latch = false
 	_spawn_cursor = 0
 	_apply_biome()
 	is_final_room = RunState.is_last_room()
@@ -66,7 +78,86 @@ func _try_start_combat() -> void:
 		return
 	if _wave_index >= 0 or _room_cleared or _spawning:
 		return
+	if _current_room_already_cleared():
+		_restore_cleared_room()
+		return
+	if _try_start_special_room():
+		return
 	_start_first_wave()
+
+
+func _try_start_special_room() -> bool:
+	if not RunState.is_procedural_run():
+		return false
+	var room := RunState.current_dungeon_room()
+	if room == null:
+		return false
+	match room.kind:
+		DungeonRoom.RoomKind.SHOP, DungeonRoom.RoomKind.TREASURE, DungeonRoom.RoomKind.SECRET:
+			_wave_index = 0
+			RunState.grant_special_room_loot(room.kind)
+			_spawn_special_marker(room.kind)
+			_finish_special_room()
+			return true
+		_:
+			return false
+
+
+func _finish_special_room() -> void:
+	## Clear without style-rank loot re-roll (special loot already granted).
+	_room_cleared = true
+	_spawning = false
+	_alive_enemies = 0
+	RunState.mark_current_room_cleared()
+	SignalBus.room_cleared.emit()
+	_show_exit()
+
+
+func _spawn_special_marker(kind: int) -> void:
+	if _entities == null:
+		return
+	var marker := Node2D.new()
+	marker.name = "SpecialRoomMarker"
+	marker.z_index = 5
+	var poly := Polygon2D.new()
+	poly.name = "Visual"
+	match kind:
+		DungeonRoom.RoomKind.SHOP:
+			poly.color = Color(0.35, 0.85, 0.55, 0.85)
+			poly.polygon = PackedVector2Array([Vector2(-18, -14), Vector2(18, -14), Vector2(18, 14), Vector2(-18, 14)])
+		DungeonRoom.RoomKind.TREASURE:
+			poly.color = Color(0.95, 0.8, 0.25, 0.9)
+			poly.polygon = PackedVector2Array([Vector2(0, -20), Vector2(16, 0), Vector2(0, 16), Vector2(-16, 0)])
+		_:
+			poly.color = Color(0.7, 0.45, 1.0, 0.85)
+			poly.polygon = PackedVector2Array([
+				Vector2(-4, -18), Vector2(4, -18), Vector2(4, 4), Vector2(-4, 4),
+				Vector2(-4, 10), Vector2(4, 10), Vector2(4, 18), Vector2(-4, 18)
+			])
+	marker.add_child(poly)
+	_entities.add_child(marker)
+	marker.position = Vector2.ZERO
+
+
+func _current_room_already_cleared() -> bool:
+	if not RunState.is_procedural_run():
+		return false
+	var room := RunState.current_dungeon_room()
+	return room != null and room.cleared
+
+
+func _restore_cleared_room() -> void:
+	## Revisit: keep the room empty, doors open, no loot/reward re-grant.
+	_room_cleared = true
+	_revisit_cleared = true
+	_wave_index = 0
+	_alive_enemies = 0
+	_spawning = false
+	_exit_latch = false
+	# Ignore the doorway we just walked through until the player leaves it.
+	_blocked_entry_dir = -RunState.entry_travel_dir if RunState.entry_travel_dir != Vector2i.ZERO else Vector2i.ZERO
+	_clear_live_enemies()
+	_show_exit()
 
 
 func _clear_live_enemies() -> void:
@@ -131,7 +222,7 @@ func _make_door(dir: Vector2i) -> Area2D:
 	door.monitorable = false
 	door.collision_layer = 0
 	door.collision_mask = 2
-	door.visible = false
+	door.visible = true
 	door.position = Vector2(float(dir.x) * RunState.ARENA_DOOR_OFFSET.x, float(dir.y) * RunState.ARENA_DOOR_OFFSET.y)
 	door.set_meta("dir", dir)
 	var shape := CollisionShape2D.new()
@@ -139,18 +230,46 @@ func _make_door(dir: Vector2i) -> Area2D:
 	rect.size = DOOR_SIZE if dir.x == 0 else Vector2(DOOR_SIZE.y, DOOR_SIZE.x)
 	shape.shape = rect
 	door.add_child(shape)
+	var half := rect.size * 0.5
+	var frame_col := DOOR_COLORS.get(dir, Color(0.3, 0.75, 0.45, 0.7)) as Color
+	# Outer frame always visible so doorways read as connected corridors.
+	var frame := Polygon2D.new()
+	frame.name = "DoorFrame"
+	frame.polygon = PackedVector2Array([
+		Vector2(-half.x - 8, -half.y - 8),
+		Vector2(half.x + 8, -half.y - 8),
+		Vector2(half.x + 8, half.y + 8),
+		Vector2(-half.x - 8, half.y + 8),
+	])
+	frame.color = Color(frame_col.r, frame_col.g, frame_col.b, 0.35)
+	door.add_child(frame)
 	var visual := Polygon2D.new()
 	visual.name = "DoorVisual"
-	var half := rect.size * 0.5
 	visual.polygon = PackedVector2Array([
 		Vector2(-half.x, -half.y),
 		Vector2(half.x, -half.y),
 		Vector2(half.x, half.y),
 		Vector2(-half.x, half.y),
 	])
-	visual.color = DOOR_COLORS.get(dir, Color(0.3, 0.75, 0.45, 0.7))
+	visual.color = Color(frame_col.r * 0.35, frame_col.g * 0.35, frame_col.b * 0.35, 0.55)
 	door.add_child(visual)
+	# Threshold glow into the carved wall gap.
+	var threshold := Polygon2D.new()
+	threshold.name = "DoorThreshold"
+	if dir.x == 0:
+		threshold.polygon = PackedVector2Array([
+			Vector2(-half.x - 4, -6), Vector2(half.x + 4, -6),
+			Vector2(half.x + 4, 6), Vector2(-half.x - 4, 6)
+		])
+	else:
+		threshold.polygon = PackedVector2Array([
+			Vector2(-6, -half.y - 4), Vector2(6, -half.y - 4),
+			Vector2(6, half.y + 4), Vector2(-6, half.y + 4)
+		])
+	threshold.color = Color(frame_col.r, frame_col.g, frame_col.b, 0.2)
+	door.add_child(threshold)
 	door.body_entered.connect(_on_door_body_entered.bind(dir))
+	door.body_exited.connect(_on_door_body_exited.bind(dir))
 	return door
 
 
@@ -163,16 +282,43 @@ func _apply_biome() -> void:
 	RunState.current_biome = biome
 	if biome.wave_set:
 		wave_set = biome.wave_set
+	# Boss rooms get a dedicated denser encounter pack.
+	if RunState.is_procedural_run():
+		var room := RunState.current_dungeon_room()
+		if room != null and room.kind == DungeonRoom.RoomKind.BOSS and BOSS_WAVE_SET != null:
+			wave_set = BOSS_WAVE_SET
+	_apply_doorway_geometry()
 	var floor_poly := get_node_or_null("Floor") as Polygon2D
 	if floor_poly:
 		floor_poly.color = biome.get_floor_color()
-	var wall_visuals := get_node_or_null("WallVisuals")
-	if wall_visuals:
-		for child in wall_visuals.get_children():
-			if child is Polygon2D:
-				(child as Polygon2D).color = biome.get_wall_color()
+	_tint_wall_visuals()
+	_RoomDresser.dress(self, biome)
 	_spawn_biome_traps()
 	SignalBus.biome_changed.emit(biome.biome_id)
+
+
+func _apply_doorway_geometry() -> void:
+	var dirs: Array[Vector2i] = []
+	if RunState.is_procedural_run():
+		var room := RunState.current_dungeon_room()
+		if room:
+			dirs = room.door_dirs()
+	if dirs.is_empty():
+		return
+	_RoomDresser.carve_doorways(self, dirs)
+	_tint_wall_visuals()
+
+
+func _tint_wall_visuals() -> void:
+	if biome == null:
+		return
+	var wall_visuals := get_node_or_null("WallVisuals")
+	if wall_visuals == null:
+		return
+	var wall_c := biome.get_wall_color()
+	for child in wall_visuals.get_children():
+		if child is Polygon2D:
+			(child as Polygon2D).color = wall_c
 
 
 func _spawn_biome_traps() -> void:
@@ -250,7 +396,21 @@ func _spawn_wave(wave: WaveDefinition) -> void:
 				def = RunState.pick_enemy_for_biome(def)
 			if def != null and enemy.has_method("apply_definition"):
 				enemy.call("apply_definition", def)
+			if group.is_elite and enemy.has_method("apply_elite"):
+				enemy.call(
+					"apply_elite",
+					group.elite_hp_mult,
+					group.elite_move_mult,
+					group.elite_action_speed
+				)
 			_alive_enemies += 1
+
+
+func _on_enemy_spawned(_enemy: Node) -> void:
+	## Mid-fight summons (boss phase adds) count toward room clear.
+	if _room_cleared:
+		return
+	_alive_enemies += 1
 
 
 func _on_enemy_died(_enemy: Node) -> void:
@@ -272,6 +432,7 @@ func _on_wave_cleared() -> void:
 
 func _on_all_waves_cleared() -> void:
 	_room_cleared = true
+	RunState.mark_current_room_cleared()
 	RunState.grant_loot_for_room_rank()
 	SignalBus.room_cleared.emit()
 	# Always offer exit → reward/craft, including the final room (win after reward).
@@ -294,6 +455,7 @@ func _show_exit() -> void:
 			if is_instance_valid(door):
 				door.visible = true
 				door.monitoring = true
+				_set_door_unlocked_look(door)
 				any_door = true
 		if any_door:
 			return
@@ -309,19 +471,53 @@ func _show_exit() -> void:
 
 
 func _on_exit_body_entered(body: Node2D) -> void:
-	if not _room_cleared:
+	if not _room_cleared or _exit_latch:
 		return
 	if body is Player:
+		_exit_latch = true
 		RunState.set_pending_exit_dir(Vector2i.ZERO)
+		if _revisit_cleared:
+			# Linear exit marker shouldn't appear in procedural, but stay safe.
+			return
 		SignalBus.exit_reached.emit()
 
 
 func _on_door_body_entered(body: Node2D, dir: Vector2i) -> void:
-	if not _room_cleared:
+	if not _room_cleared or _exit_latch:
 		return
-	if body is Player:
-		RunState.set_pending_exit_dir(dir)
-		SignalBus.exit_reached.emit()
+	if body is not Player:
+		return
+	# Standing in the door we entered from must not bounce/reward-loop.
+	if dir == _blocked_entry_dir:
+		return
+	_exit_latch = true
+	RunState.set_pending_exit_dir(dir)
+	if _revisit_cleared:
+		# Already cleared earlier this run — just travel, no craft/reward overlay.
+		RunState.advance_to_next_room()
+		return
+	SignalBus.exit_reached.emit()
+
+
+func _on_door_body_exited(body: Node2D, dir: Vector2i) -> void:
+	if body is not Player:
+		return
+	if dir == _blocked_entry_dir:
+		_blocked_entry_dir = Vector2i.ZERO
+
+
+func _set_door_unlocked_look(door: Area2D) -> void:
+	var dir: Vector2i = door.get_meta("dir", Vector2i.ZERO)
+	var frame_col := DOOR_COLORS.get(dir, Color(0.3, 0.75, 0.45, 0.7)) as Color
+	var visual := door.get_node_or_null("DoorVisual") as Polygon2D
+	if visual:
+		visual.color = Color(frame_col.r, frame_col.g, frame_col.b, 0.8)
+	var frame := door.get_node_or_null("DoorFrame") as Polygon2D
+	if frame:
+		frame.color = Color(frame_col.r, frame_col.g, frame_col.b, 0.65)
+	var threshold := door.get_node_or_null("DoorThreshold") as Polygon2D
+	if threshold:
+		threshold.color = Color(frame_col.r, frame_col.g, frame_col.b, 0.45)
 
 
 func _on_player_died() -> void:

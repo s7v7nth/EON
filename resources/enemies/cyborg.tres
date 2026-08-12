@@ -1,10 +1,11 @@
-[gd_resource type="Resource" script_class="EnemyDefinition" load_steps=6 format=3]
+[gd_resource type="Resource" script_class="EnemyDefinition" load_steps=7 format=3]
 
 [ext_resource type="Script" path="res://resources/enemies/enemy_definition.gd" id="1"]
 [ext_resource type="Resource" path="res://resources/stats/enemy_bruiser_stats.tres" id="2_stats"]
-[ext_resource type="Resource" path="res://resources/attacks/enemy_bruiser_attack.tres" id="3_atk"]
-[ext_resource type="Resource" path="res://resources/attacks/enemy_sniper_ranged.tres" id="4_rng"]
+[ext_resource type="Resource" path="res://resources/attacks/enemy_cyborg_slash.tres" id="3_atk"]
+[ext_resource type="Resource" path="res://resources/attacks/enemy_cyborg_fan.tres" id="4_rng"]
 [ext_resource type="Resource" path="res://resources/enemies/behaviors/erratic_dodge.tres" id="5_beh"]
+[ext_resource type="Resource" path="res://resources/attacks/enemy_bruiser_swipe.tres" id="6_swipe"]
 
 [resource]
 script = ExtResource("1")
@@ -13,8 +14,9 @@ faction = 1
 stats = ExtResource("2_stats")
 melee_attack = ExtResource("3_atk")
 ranged_attack = ExtResource("4_rng")
-attack_range = 38.0
-ranged_range = 220.0
+moveset = Array[Resource]([ExtResource("3_atk"), ExtResource("6_swipe"), ExtResource("4_rng")])
+attack_range = 42.0
+ranged_range = 240.0
 detection_radius = 320.0
 visual_color = Color(0.55, 0.35, 0.65, 1)
 prefers_kite = false

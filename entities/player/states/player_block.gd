@@ -2,7 +2,7 @@ extends State
 ## Hold RMB energy shield. Short parry window, then damage reduction block.
 ## Block cancels attacks immediately. LMB can finish an open combo (circle / melee).
 
-const PARRY_WINDOW := 0.22
+const PARRY_WINDOW := 0.18
 const BLOCK_MOVE_MULT := 0.45
 
 @onready var player: Player = owner as Player

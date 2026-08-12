@@ -81,6 +81,7 @@ func _run() -> void:
 	add_child(arena)
 	await get_tree().process_frame
 	RunState.begin_procedural_with_seed(seed_a)
+	RunState.choose_architecture(GameplayEnums.ArchitectureId.DEFAULT)
 	await get_tree().process_frame
 	var doors_root := arena.get_node_or_null("Doors")
 	assert(doors_root != null and doors_root.get_child_count() > 0, "doors must exist after procedural route pick")
@@ -90,7 +91,50 @@ func _run() -> void:
 		if child is Area2D and (child as Area2D).visible:
 			visible_doors += 1
 	assert(visible_doors > 0, "doors must open after room clear")
+
+	# Cleared rooms stay empty on revisit (no enemy respawn).
+	var cleared_room := RunState.current_dungeon_room()
+	assert(cleared_room != null and cleared_room.cleared, "force_clear must mark room cleared")
 	arena.queue_free()
+	await get_tree().process_frame
+	var revisit := arena_scene.instantiate() as ArenaController
+	add_child(revisit)
+	await get_tree().process_frame
+	await get_tree().process_frame
+	await get_tree().process_frame
+	assert(revisit._room_cleared, "revisit must restore cleared state")
+	var enemies := 0
+	var entities := revisit.get_node_or_null("Entities")
+	if entities:
+		for child in entities.get_children():
+			if child is Player:
+				continue
+			if child.get("health") != null:
+				enemies += 1
+	assert(enemies == 0, "cleared room revisit must not respawn enemies")
+	assert(revisit._revisit_cleared, "revisit flag must be set")
+	# Revisit must not open the reward overlay (that caused the bounce loop).
+	var reward_hits := [0]
+	var on_reward := func () -> void: reward_hits[0] += 1
+	SignalBus.exit_reached.connect(on_reward)
+	revisit._exit_latch = false
+	revisit._blocked_entry_dir = Vector2i(-1, 0)
+	var player_ghost: Player = (load("res://entities/player/player.tscn") as PackedScene).instantiate() as Player
+	# Entry door ignored.
+	revisit._on_door_body_entered(player_ghost, Vector2i(-1, 0))
+	assert(reward_hits[0] == 0, "blocked entry door must not emit exit_reached")
+	assert(not revisit._exit_latch, "blocked entry must not latch")
+	# Non-entry door on revisit: no reward signal. Null dungeon so travel no-ops.
+	var saved_dungeon = RunState.dungeon
+	RunState.dungeon = null
+	revisit._on_door_body_entered(player_ghost, Vector2i(1, 0))
+	assert(reward_hits[0] == 0, "revisit door must not emit exit_reached/reward")
+	assert(revisit._exit_latch, "revisit travel should latch")
+	RunState.dungeon = saved_dungeon
+	if SignalBus.exit_reached.is_connected(on_reward):
+		SignalBus.exit_reached.disconnect(on_reward)
+	player_ghost.queue_free()
+	revisit.queue_free()
 	RunState.reset()
 
 	print("PROCEDURAL_OK seed graph + loot streams")

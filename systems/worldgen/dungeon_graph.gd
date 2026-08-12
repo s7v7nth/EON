@@ -15,6 +15,13 @@ func room_count() -> int:
 	return rooms.size()
 
 
+func all_rooms() -> Array:
+	var out: Array = []
+	for key in rooms.keys():
+		out.append(rooms[key])
+	return out
+
+
 func fingerprint() -> String:
 	## Stable string for seed smoke tests.
 	var keys: Array = rooms.keys()

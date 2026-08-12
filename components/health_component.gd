@@ -21,8 +21,13 @@ func _ready() -> void:
 func take_damage(amount: float) -> void:
 	if amount <= 0.0 or current_health <= 0.0:
 		return
+	if amount >= current_health:
+		var owner_node := get_parent()
+		if owner_node != null and owner_node.has_method("try_prevent_death"):
+			if bool(owner_node.call("try_prevent_death", amount)):
+				return
 	current_health = maxf(current_health - amount, 0.0)
-	health_changed.emit(current_health, stats.max_health)
+	health_changed.emit(current_health, stats.max_health if stats else current_health)
 	if current_health <= 0.0:
 		died.emit()
 

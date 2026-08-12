@@ -46,20 +46,19 @@ flowchart TB
 
 Правило: **ядро знает интерфейсы, не конкретные билды.** Новая архитектура = `.tres` + (при новой экономике) один `ResourceEconomy` скрипт. Новый враг = `EnemyDefinition` + опциональный behavior-модуль. Новый апгрейд = `UpgradeData` + `UpgradeEffect` ресурс/скрипт.
 
-### Аудит: уже в коде, но не подключено
+### Аудит: исторический (Phase A–F закрыты)
 
-Быстрые wins до/вместе с Phase A–B (не требуют новой архитектуры плагинов):
+Большая часть строк ниже уже закрыта текущим каркасом; таблица оставлена как changelog, не как backlog:
 
-| Есть | Не используется | Куда воткнуть |
-|------|-----------------|---------------|
-| `StatusComponent.get_action_speed_multiplier()` | Нет callers | windup/cooldown атак игрока и enemy FSM |
-| Overheat runtime (`Player.overheat`) | Нет полоски в HUD | `economy.get_hud_values()` → `debug_hud` |
-| `BiomeDefinition.faction_ids` / `element_bias` | Спавн игнорирует | `ArenaController` / wave pick weights |
-| `grant_loot_for_room_rank()` `biome_tags` | Пустой массив | заполнять из `current_biome.loot_tags` |
-| `default_counter.tres` | Только `damage_mult`; counter window всегда от perfect dodge | сделать `UpgradeEffect` который **включает** counter, базовый dodge без бонуса |
-| Electro-Train upgrades | Пул крафта пуст | 1–2 `UpgradeData` на `train`/`plasma` tags |
+| Было «не подключено» | Сейчас |
+|------|--------|
+| Overheat HUD | `EconomyOverheat.get_hud_values()` → economy HUD bars |
+| Biome faction / loot tags | Arena faction remix + `grant_loot_for_room_rank` biome tags |
+| Electro-Train craft pool | Coil Overdrive + mid/late heat crafts (Pressure Valve / Redline / Afterburn) |
+| Counter as UpgradeEffect | `default_counter` + effect plugins |
+| Action-speed multiplier callers | Feel / attack recovery use status multipliers where wired |
 
-Бой, три архитектуры, parry/dodge/style/craft-теги — **уже работают**; дальше в основном вынос из `match`/bool и выравнивание с брифом.
+Актуальные gaps смотри в [`architecture_brainstorm_prompt.md`](architecture_brainstorm_prompt.md) (слабые identity) и Feel P2 (SFX/rumble) в [`combat_feel.md`](combat_feel.md).
 
 ---
 

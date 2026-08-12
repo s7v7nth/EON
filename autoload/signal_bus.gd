@@ -10,10 +10,12 @@ signal damage_dealt(amount: float, target: Node, source: Node)
 signal entity_died(entity: Node)
 signal player_died
 signal enemy_died(enemy: Node)
+signal enemy_spawned(enemy: Node)
 signal wave_started(index: int, total: int)
 signal wave_cleared(index: int)
 signal run_won
 signal room_cleared
+signal room_entered(coord: Vector2i)
 signal exit_reached
 signal modifier_chosen(modifier_id: StringName)
 signal weapon_changed(weapon_name: String)

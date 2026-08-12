@@ -16,8 +16,8 @@ const LAYOUT_SCENES: PackedStringArray = [
 	"res://levels/rooms/room_03.tscn",
 ]
 
-## Arena half-extents used for door / entry spawn placement.
-const ARENA_DOOR_OFFSET := Vector2(720, 390)
+## Near-wall inset for door / entry spawn (±800×±450 arena half-extents).
+const ARENA_DOOR_OFFSET := Vector2(760, 405)
 
 var arch_catalog: ArchitectureCatalog
 var upgrade_catalog: UpgradeCatalog
@@ -30,6 +30,8 @@ var room_in_act: int = 0
 var damage_mult: float = 1.0
 var speed_mult: float = 1.0
 var dash_cost_mult: float = 1.0
+## Soft-cap room +damage boons after 2 full picks.
+var damage_boon_picks: int = 0
 
 var architecture: ArchitectureData
 var architecture_picked: bool = false
@@ -90,6 +92,7 @@ func reset() -> void:
 	damage_mult = 1.0
 	speed_mult = 1.0
 	dash_cost_mult = 1.0
+	damage_boon_picks = 0
 	architecture = _default_architecture()
 	architecture_picked = false
 	route_picked = false
@@ -211,9 +214,14 @@ func set_pending_exit_dir(dir: Vector2i) -> void:
 func player_spawn_position() -> Vector2:
 	if entry_travel_dir == Vector2i.ZERO:
 		return Vector2(-150, 50)
-	# Travelled into this room along entry_travel_dir → appear at opposite wall.
+	# Travelled into this room along entry_travel_dir → appear inset from opposite wall
+	# so the entry door Area2D does not instantly re-trigger travel/rewards.
 	var wall := -entry_travel_dir
-	return Vector2(float(wall.x) * ARENA_DOOR_OFFSET.x, float(wall.y) * ARENA_DOOR_OFFSET.y)
+	const SPAWN_INSET := 110.0
+	return Vector2(
+		float(wall.x) * (ARENA_DOOR_OFFSET.x - SPAWN_INSET),
+		float(wall.y) * (ARENA_DOOR_OFFSET.y - SPAWN_INSET)
+	)
 
 
 func _begin_procedural_dungeon() -> void:
@@ -227,6 +235,9 @@ func _begin_procedural_dungeon() -> void:
 	current_coord = dungeon.start_coord if dungeon else Vector2i.ZERO
 	pending_exit_dir = Vector2i.ZERO
 	entry_travel_dir = Vector2i.ZERO
+	var start_room := current_dungeon_room()
+	if start_room:
+		start_room.explored = true
 
 
 func _fresh_seed() -> int:
@@ -256,7 +267,12 @@ func _find_architecture(arch_id: GameplayEnums.ArchitectureId) -> ArchitectureDa
 func choose_modifier(modifier_id: StringName) -> void:
 	match modifier_id:
 		&"damage":
-			damage_mult *= 1.2
+			damage_boon_picks += 1
+			# First two picks full ×1.2; further picks soft-cap to ×1.08.
+			if damage_boon_picks <= 2:
+				damage_mult *= 1.2
+			else:
+				damage_mult *= 1.08
 		&"speed":
 			speed_mult *= 1.15
 		&"dash":
@@ -277,6 +293,8 @@ func get_craftable_upgrades() -> Array[UpgradeData]:
 		var upgrade := item as UpgradeData
 		if upgrade == null:
 			continue
+		if upgrade.reward_offerable:
+			continue
 		if _already_crafted(upgrade.upgrade_id):
 			continue
 		if architecture and upgrade.architecture_id != architecture.architecture_id:
@@ -286,11 +304,47 @@ func get_craftable_upgrades() -> Array[UpgradeData]:
 	return result
 
 
+## Post-room Rewards column: always-offerable Geometry upgrades (no loot tags).
+func get_reward_upgrades() -> Array[UpgradeData]:
+	var result: Array[UpgradeData] = []
+	if architecture == null:
+		return result
+	if upgrade_catalog == null:
+		upgrade_catalog = UPGRADE_CATALOG as UpgradeCatalog
+	if upgrade_catalog == null:
+		return result
+	for item in upgrade_catalog.all_upgrades():
+		var upgrade := item as UpgradeData
+		if upgrade == null or not upgrade.reward_offerable:
+			continue
+		if _already_crafted(upgrade.upgrade_id):
+			continue
+		if upgrade.architecture_id != architecture.architecture_id:
+			continue
+		result.append(upgrade)
+	return result
+
+
 func craft_upgrade(upgrade: UpgradeData) -> bool:
 	if upgrade == null:
 		return false
 	if upgrade not in get_craftable_upgrades():
 		return false
+	return _append_upgrade(upgrade)
+
+
+func grant_upgrade(upgrade: UpgradeData) -> bool:
+	## Tag-bypass grant for reward_offerable Geometry picks.
+	if upgrade == null:
+		return false
+	if _already_crafted(upgrade.upgrade_id):
+		return false
+	if architecture and upgrade.architecture_id != architecture.architecture_id:
+		return false
+	return _append_upgrade(upgrade)
+
+
+func _append_upgrade(upgrade: UpgradeData) -> bool:
 	crafted_upgrades.append(upgrade)
 	for tag in upgrade.grant_tags:
 		_add_tag(String(tag))
@@ -338,6 +392,38 @@ func grant_loot_for_room_rank() -> void:
 		SignalBus.loot_gained.emit(loot_summary())
 
 
+func grant_special_room_loot(kind: int) -> void:
+	## Shop / treasure / secret: guaranteed parts + style tag, independent of combat rank.
+	last_loot.clear()
+	_add_tag("style")
+	if upgrade_catalog == null:
+		upgrade_catalog = UPGRADE_CATALOG as UpgradeCatalog
+	var pool: Array = []
+	if upgrade_catalog:
+		pool = upgrade_catalog.all_parts()
+	var rolls := 1
+	match kind:
+		DungeonRoom.RoomKind.TREASURE:
+			rolls = 2
+		DungeonRoom.RoomKind.SHOP:
+			rolls = 1
+			_add_tag("magnet")
+		DungeonRoom.RoomKind.SECRET:
+			rolls = 1
+			_add_tag("code")
+		_:
+			rolls = 1
+	for _i in rolls:
+		if pool.is_empty():
+			break
+		var part := pool[_loot_index(pool.size())] as LootPart
+		if part == null:
+			continue
+		grant_part(part)
+	if not last_loot.is_empty():
+		SignalBus.loot_gained.emit(loot_summary())
+
+
 func grant_part(part: LootPart) -> void:
 	inventory.append(part)
 	last_loot.append(part)
@@ -373,6 +459,13 @@ func begin_room() -> void:
 	style_multiplier = maxf(style_multiplier * 0.5, 1.0)
 	_sync_route_cursor()
 	_emit_style()
+	if is_procedural_run():
+		var room := current_dungeon_room()
+		if room:
+			room.explored = true
+		SignalBus.room_entered.emit(current_coord)
+	else:
+		SignalBus.room_entered.emit(Vector2i(room_index, 0))
 
 
 func register_took_damage() -> void:
@@ -442,9 +535,8 @@ func advance_to_next_room() -> void:
 func finish_room_reward() -> void:
 	## Called after craft/boon on room clear. Wins on last room instead of advancing.
 	if is_procedural_run():
+		mark_current_room_cleared()
 		var room := current_dungeon_room()
-		if room:
-			room.cleared = true
 		if room and room.kind == DungeonRoom.RoomKind.BOSS:
 			SignalBus.run_won.emit()
 			return
@@ -456,6 +548,15 @@ func finish_room_reward() -> void:
 		SignalBus.run_won.emit()
 		return
 	advance_to_next_room()
+
+
+func mark_current_room_cleared() -> void:
+	if not is_procedural_run():
+		return
+	var room := current_dungeon_room()
+	if room:
+		room.cleared = true
+		room.explored = true
 
 
 func _advance_through_door(dir: Vector2i) -> void:
@@ -517,11 +618,21 @@ func _change_scene(path: String) -> void:
 	_transitioning = true
 	Engine.time_scale = 1.0
 	get_tree().paused = false
-	get_tree().call_deferred("change_scene_to_file", path)
-	call_deferred("_clear_transition_flag")
+	if RoomTransition and RoomTransition.has_method("go_to"):
+		RoomTransition.go_to(path)
+		call_deferred("_clear_transition_flag_delayed")
+	else:
+		get_tree().call_deferred("change_scene_to_file", path)
+		call_deferred("_clear_transition_flag")
 
 
 func _clear_transition_flag() -> void:
+	_transitioning = false
+
+
+func _clear_transition_flag_delayed() -> void:
+	## Keep gate until fade finishes so double-door triggers don't stack.
+	await get_tree().create_timer(0.35).timeout
 	_transitioning = false
 
 

@@ -9,6 +9,8 @@ extends Resource
 @export var required_tags: PackedStringArray = []
 @export var grant_tags: PackedStringArray = []
 @export var effects: Array = []
+## When true, offered in post-room Rewards (boon column) without loot-tag gating.
+@export var reward_offerable: bool = false
 
 @export_group("Legacy / simple mods")
 ## Kept for convenience; prefer EffectDamageMult in effects[].

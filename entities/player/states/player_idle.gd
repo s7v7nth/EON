@@ -58,9 +58,10 @@ func _check_synthetic_inputs() -> bool:
 
 	if player.is_tracking_attack_hold():
 		if player.attack_hold_exceeded():
+			var seed := player.get_attack_hold_time()
 			player.clear_attack_hold_tracking()
 			if not player.blade_in_flight():
-				transition_to(&"ChargeThrow")
+				transition_to(&"ChargeThrow", {"seed": seed})
 				return true
 		elif Input.is_action_just_released("attack"):
 			player.clear_attack_hold_tracking()

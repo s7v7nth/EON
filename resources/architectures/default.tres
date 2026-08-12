@@ -8,7 +8,7 @@
 script = ExtResource("1")
 architecture_id = 0
 display_name = "Синтетик"
-description = "Energy blade · hold-block shield · adrenaline regen · Q/F reserved"
+description = "Energy blade · Geometry of Reflections · adrenaline · Q Lattice Collapse"
 economy = ExtResource("5_econ")
 economy_policy = 0
 primitives = Array[Resource]([ExtResource("2_blade")])

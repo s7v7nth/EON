@@ -49,6 +49,11 @@ Campaign Acts:
 - Tutorial: Landfill → Wasteland → Data Center (3 комнаты)
 - Campaign: Acts 1–4
 - Procedural: Isaac-style сетка ~12 комнат, seed, двери N/E/S/W, соседние биомы + blend, финал = boss room + craft → win
+- Procedural special rooms: SHOP / TREASURE / SECRET (no waves, guaranteed loot); layout pool room_01–05
+- Boss rooms: `boss_encounter_waves` (android adds → **Warden** boss + swarm pack); Warden phase 2 @50% HP (faster actions + summon); gateway/data-center waves mark elites (HP + action speed)
+- Encounter pressure: denser mixed packs (roles overlap), signature enemy patterns (slam / lunge / charge / fan / combo) with distinct telegraphs
+- HUD procedural: мини-карта (explored / current / cleared / boss / shop / treasure / secret), fade при смене комнаты, проёмы дверей в стенах; персонажи — stylized silhouettes (не greybox-rects); cleared rooms stay empty on revisit (no enemy respawn)
+- Feel P2: `FeelAudio` autoload — procedural hit/parry/Q blips + gamepad rumble on SignalBus combat events
 
 Биомы (BiomeId): JUNGLE, DATA_CENTER, DOWNTOWN, RESIDENTIAL, TAIGA, ALLEY, LANDFILL, MALL, WASTELAND, GATEWAY.
 
@@ -91,24 +96,39 @@ Behaviors: aggro swarm, erratic dodge, tactical support, hyper chase, death burs
 - особый special (Q), если экономика его реализует.
 
 --- 1) СИНТЕТИК (DEFAULT) ---
-Fantasy: сбалансированный энерго-мечник / «дефолтный» боец стиля.
+Fantasy: энерго-мечник / Geometry of Reflections — skill-ceiling positioning fighter.
 Economy: ENERGY_ADRENALINE (EconomyAdrenaline)
 - Energy pool ~50. Атаки/dash тратят Energy. Входящий урон сначала жрёт Energy, остаток → HP.
 - Ideal dash возвращает стоимость. Вне боя adrenaline → 0; в бою baseline + ~3 Energy/s; растёт от хитов, HP-урона, parry, ideal dash.
 - Адреналин даёт attack speed bonus (до ~+35%).
 Combat:
-- LMB tap — melee swing (combo). LMB hold — charge returning blade throw.
-- RMB hold — energy shield (−50% dmg); первые ~0.5s = parry (full negate + stagger).
+- LMB tap — melee swing (combo). LMB hold — snappy charge returning blade throw (feet blue charge bar + aim beam).
+- RMB hold — energy shield (−50% dmg); first ~0.18s raise-parry (full negate + stagger); dedicated Parry stays ~0.22s.
+- Perfect parry leaves an **Energy Mirror** at the impact midpoint (cap 3; **action budget 3**, no timer).
+- Room `+damage` boon: first 2 picks ×1.2, further picks soft-cap ×1.08.
+- Thrown blade **pierces** enemies (keeps flying) so mirrors behind them still matter; hit on a mirror **ricochets** with **lead aim** toward where the foe will be (×1.5 damage; default 1 bounce). Each ricochet / melee clip / dash-through spends 1 mirror action; 3rd spends the mirror; Q fully consumes.
+- Dash through a mirror: soft stagger pulse per pass; **3rd dash detonates** (AoE Stagger + brief i-frame refresh). Cap overflow removes oldest.
 - Combos: LMB×3 string; LMB→RMB→LMB circle AoE.
-- Q / F — reserved (no-op). Это сознательный gap / место для будущей идентичности.
+- Q = **Lattice Collapse** — spend Energy to pull/detonate all active mirrors (fails if none).
+- F — reserved (no-op).
 Tags: default, style
 Resists: slight physical/bleed
 Primitives: energy blade
-Crafts:
+Crafts (loot-gated):
 - Counter Charge (default+style+magnet+servo) — perfect dodge → counter window
 - Parry Reactor (default+servo) — parries flood adrenaline
+- Prism Chain (default+style+mirror) — blade chains mirror→mirror (up to 3 bounces, stack mult)
+- Echo Shade (default+style+servo) — ideal dash leaves a holographic mirror behind the foe (same action budget as normal mirrors)
+Loot: Prism Shard grants `mirror` tag
 
-Дизайн-напряжение: самый «честный» скилл-ориентированный билд; сейчас слабее уникальности Q/identity по сравнению с остальными.
+Post-room Rewards (always offerable for Synthetic, same menu as +damage/+speed):
+- Kinetic Ping-Pong — wall bounce blade; dash intercept boosts flying blade
+- Prismatic Trap — returning blade leaves crystal at **first enemy contact** (**no timer**; cap 3, oldest explodes into rays); melee near it splits into rays
+- Optical Labyrinth — max mirrors 5 + glitch confuse aura on mirrors
+- Focus Lens — parry also deploys amplifying lens (×2.5 blade; **action budget 3**, no timer)
+- Holographic Substitution — fatal hit → hologram detonate save (cooldown)
+
+Дизайн-напряжение: skill-ceiling setup/payoff через геометрию арены; identity закрыта mirrors + Q Collapse + reward Geometry tree.
 
 --- 2) УЛЕЙ (NANOMACHINES) ---
 Fantasy: нано-рой / биологический паразит-носитель.
@@ -137,10 +157,12 @@ Combat primitives: plasma blade / gun / mortar
 Tags: train, plasma
 Resists: +electricity/fire/bleed; −corrosion
 Crafts:
-- Coil Overdrive (train+plasma) — raw damage while riding heat curve
-(пул крафтов тоньше, чем у Улья/Синтетика)
+- Coil Overdrive (train+plasma) — damage scales riding yellow→red heat
+- Pressure Valve (train+plasma+servo) — bigger Vent, shorter weapon lock
+- Redline Protocol (train+plasma+style) — at full heat, hits dump shock + burn
+- Plasma Afterburn (train+plasma+magnet) — post-Vent damage window with cooler heat gain
 
-Дизайн-напряжение: risk-management шкалы; сейчас мало mid/late craft identity.
+Дизайн-напряжение: risk-management шкалы; mid/late craft identity закрыта Vent/redline/afterburn loop.
 
 --- 4) НЕЙРО-ХАКЕР (NEURO_HACKER) ---
 Fantasy: хакер/оператор дронов, glitch kit.
@@ -149,13 +171,16 @@ Economy: RAM_COMPUTE (EconomyRam)
 - Без слотов — второй дрон блокируется.
 Tags: neuro, glitch, drone
 Resists: +glitch/+elec
-Primitives: smart pistol (holo blades/drones в fantasy; в данных сейчас pistol + drone special)
+Primitives: smart pistol + holo slash melee (LMB) / pistol shot (RMB); Q drone
 Crafts:
 - Parallel Thread (neuro+drone+logic) — +1 RAM
 - Overclock Drones (neuro+drone+logic+antenna) — drone dmg/speed
 - Glitch Link (neuro+drone+glitch) — drone hits apply glitch buildup
+- Holo Edge (neuro+glitch) — melee hits harder + glitch buildup
+- Fragment Slash (neuro+glitch+code) — melee sprays short holo shards
+- Sync Blade (neuro+drone+antenna) — melee briefly overclocks nearby drones
 
-Дизайн-напряжение: summoner/control; меньше melee identity, сильнее через pets + glitch synergies.
+Дизайн-напряжение: summoner/control остаётся core; melee crafts связывают holo slash с drone swarm без смены niche.
 
 ═══════════════════════════════════════
 КРАФТ / ЛУТ («Сборка ядра»)
@@ -197,7 +222,7 @@ LootPart даёт tags. Upgrade открывается, если у игрока
 МОЙ ЗАПРОС СЕЙЧАС
 ═══════════════════════════════════════
 [СЮДА ВСТАВЬ ЗАДАЧУ, например:
-«Усиль identity Синтетика: придумай Q или альтернативу reserved-слоту + 3 крафта, не копируя Vent/Swarm/Drone»
+«Расширь Geometry of Reflections: ещё 2 крафта на mirror tags, не копируя Vent/Swarm/Drone»
 или
 «Предложи 5-ю архитектуру под пустую нишу»
 или

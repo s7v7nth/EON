@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="EffectPressureValve" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://systems/upgrades/effects/effect_pressure_valve.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+vent_damage_mult = 1.4
+vent_radius_mult = 1.25
+lock_mult = 0.55
