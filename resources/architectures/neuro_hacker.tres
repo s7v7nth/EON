@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="ArchitectureData" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://resources/architectures/architecture_data.gd" id="1"]
+[ext_resource type="Resource" path="res://resources/weapons/smart_pistol_w.tres" id="2_w"]
+[ext_resource type="Resource" path="res://resources/economies/ram.tres" id="3_econ"]
+
+[resource]
+script = ExtResource("1")
+architecture_id = 3
+display_name = "Нейро-хакер"
+description = "RAM-слоты · Q = дрон · glitch kit"
+economy = ExtResource("3_econ")
+economy_policy = 3
+primitives = Array[Resource]([ExtResource("2_w")])
+starting_tags = PackedStringArray("neuro", "glitch", "drone")
+visual_tint = Color(0.62, 0.42, 0.9, 1)
+resist_physical = 0.0
+resist_electricity = 0.1
+resist_corrosion = 0.0
+resist_fire = 0.0
+resist_bleed = 0.0
+resist_glitch = 0.25

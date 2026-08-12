@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="BehaviorAggroSwarm" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://systems/enemies/behaviors/behavior_aggro_swarm.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+behavior_id = &"aggro_swarm"
+ally_radius = 140.0
+speed_per_ally = 0.12
+max_bonus = 0.45

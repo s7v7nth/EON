@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="UpgradeData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://resources/upgrades/upgrade_data.gd" id="1"]
+[ext_resource type="Resource" path="res://resources/upgrades/effects/hookshot.tres" id="2"]
+
+[resource]
+script = ExtResource("1")
+upgrade_id = &"nano_hookshot"
+display_name = "Hookshot Strand"
+description = "Nano whip pulls you to the struck enemy."
+architecture_id = 1
+required_tags = PackedStringArray("nano", "whip")
+grant_tags = PackedStringArray("hook")
+effects = [ExtResource("2")]

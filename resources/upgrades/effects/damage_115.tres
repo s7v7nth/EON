@@ -1,0 +1,7 @@
+[gd_resource type="Resource" script_class="EffectDamageMult" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://systems/upgrades/effects/effect_damage_mult.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+mult = 1.15

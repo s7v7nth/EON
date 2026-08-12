@@ -1,0 +1,8 @@
+[gd_resource type="Resource" script_class="BehaviorHyperChase" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://systems/enemies/behaviors/behavior_hyper_chase.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+behavior_id = &"hyper_chase"
+speed_mult = 1.35

@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="BiomeDefinition" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://resources/biomes/biome_definition.gd" id="1"]
+[ext_resource type="PackedScene" path="res://entities/props/biome_trap.tscn" id="trap"]
+[ext_resource type="Resource" path="res://resources/waves/data_center_waves.tres" id="2_waves"]
+
+[resource]
+script = ExtResource("1")
+biome_id = 1
+display_name = "Data Center"
+wave_set = ExtResource("2_waves")
+floor_color = Color(0.12, 0.18, 0.24, 1)
+wall_color = Color(0.08, 0.12, 0.18, 1)
+faction_ids = Array[int]([2, 1])
+faction_weights = Array[float]([0.65, 0.35])
+element_bias = Array[int]([1, 2])
+loot_tags = PackedStringArray("elec", "nano", "default", "glitch")
+neighbor_biomes = Array[int]([9, 6, 2])
+trap_scene = ExtResource("trap")
+trap_count = 2
+trap_damage = 4.0
+trap_status_id = &"glitch"
+trap_status_buildup = 22.0
+trap_color = Color(0.4, 0.85, 1.0, 0.5)

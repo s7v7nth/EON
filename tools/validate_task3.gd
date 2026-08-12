@@ -1,6 +1,8 @@
 extends SceneTree
 ## Isolated component smoke test for Task 3.
 
+const EngagementScript = preload("res://components/combat_engagement_component.gd")
+
 
 func _initialize() -> void:
 	var root := Node.new()
@@ -11,7 +13,10 @@ func _initialize() -> void:
 	var stats := CharacterStats.new()
 	stats.max_health = 100.0
 	stats.max_energy = 100.0
-	stats.energy_regen_rate = 20.0
+	stats.energy_regen_rate = 0.0
+	stats.baseline_adrenaline = 25.0
+	stats.baseline_energy_regen = 3.0
+	stats.max_bonus_energy_regen = 9.0
 	stats.max_adrenaline = 100.0
 	stats.adrenaline_decay_delay = 0.1
 	stats.adrenaline_decay_rate = 100.0
@@ -26,13 +31,17 @@ func _initialize() -> void:
 	energy.stats = stats
 	root.add_child(energy)
 
+	var engagement = EngagementScript.new()
+	engagement.name = "CombatEngagement"
+	root.add_child(engagement)
+
 	var adrenaline := AdrenalineComponent.new()
 	adrenaline.name = "Adrenaline"
 	adrenaline.stats = stats
 	adrenaline.energy_component = energy
+	adrenaline.engagement = engagement
 	root.add_child(adrenaline)
 
-	# Wait one frame so _ready runs.
 	await process_frame
 
 	assert(is_equal_approx(health.current_health, 100.0))
@@ -43,17 +52,25 @@ func _initialize() -> void:
 	assert(is_equal_approx(energy.current_energy, 60.0))
 	assert(not energy.try_spend(100.0))
 
+	engagement.notify_exchange()
+	await process_frame
+	assert(engagement.in_combat)
 	adrenaline.add(80.0)
-	assert(is_equal_approx(energy.regen_multiplier, 2.5))
+	assert(energy.absolute_regen_rate > stats.baseline_energy_regen)
 
 	var energy_before := energy.current_energy
-	await create_timer(0.2).timeout
+	await create_timer(0.25).timeout
 	assert(energy.current_energy > energy_before)
 
-	# Let decay delay + decay clear adrenaline.
+	engagement.in_combat = false
+	engagement._linger = 0.0
+	await process_frame
+	# High leftover adrenaline still regenerates energy outside combat.
+	assert(adrenaline.current_adrenaline > 1.0)
+	assert(energy.absolute_regen_rate > 0.01)
 	await create_timer(1.2).timeout
-	assert(energy.regen_multiplier <= 1.0 + 0.01)
 	assert(adrenaline.current_adrenaline <= 0.01)
+	assert(energy.absolute_regen_rate <= 0.01)
 
 	var died_flag: Array = [false]
 	health.died.connect(func() -> void: died_flag[0] = true)

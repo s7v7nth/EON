@@ -9,3 +9,5 @@ cooldown = 0.28
 windup = 0.03
 active_duration = 0.1
 knockback_force = 40.0
+damage_type = 0
+energy_cost = 4.0

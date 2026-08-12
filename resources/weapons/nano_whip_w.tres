@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="WeaponData" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://resources/weapons/weapon_data.gd" id="1"]
+[ext_resource type="Resource" path="res://resources/attacks/nano_whip.tres" id="2_pri"]
+[ext_resource type="Resource" path="res://resources/attacks/nano_toad.tres" id="3_sec"]
+
+[resource]
+script = ExtResource("1")
+display_name = "Nano Whip"
+primary = ExtResource("2_pri")
+secondary = ExtResource("3_sec")
+hitbox_reach = 52.0
+visual_tint = Color(0.25, 0.75, 0.55, 1)
+shape_tag = &"whip"
+element_tag = &"corrosion"

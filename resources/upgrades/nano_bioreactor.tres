@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="UpgradeData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://resources/upgrades/upgrade_data.gd" id="1"]
+[ext_resource type="Resource" path="res://resources/upgrades/effects/bioreactor_vamp.tres" id="2"]
+
+[resource]
+script = ExtResource("1")
+upgrade_id = &"nano_bioreactor"
+display_name = "Bioreactor Graft"
+description = "Bioreactor part: stronger vamp and passive HP regen."
+architecture_id = 1
+required_tags = PackedStringArray("nano", "bioreactor")
+grant_tags = PackedStringArray("vamp")
+effects = [ExtResource("2")]

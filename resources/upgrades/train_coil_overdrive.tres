@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="UpgradeData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://resources/upgrades/upgrade_data.gd" id="1"]
+[ext_resource type="Resource" path="res://resources/upgrades/effects/heat_coil.tres" id="2"]
+
+[resource]
+script = ExtResource("1")
+upgrade_id = &"train_coil_overdrive"
+display_name = "Coil Overdrive"
+description = "Plasma coil: outgoing damage scales as you ride yellow→red heat."
+architecture_id = 2
+required_tags = PackedStringArray("train", "plasma")
+grant_tags = PackedStringArray("overdrive")
+effects = [ExtResource("2")]
+damage_mult = 1.0

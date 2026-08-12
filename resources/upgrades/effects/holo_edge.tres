@@ -1,0 +1,8 @@
+[gd_resource type="Resource" script_class="EffectHoloEdge" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://systems/upgrades/effects/effect_holo_edge.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+glitch_buildup = 32.0
+bonus_damage = 4.0

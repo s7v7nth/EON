@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="EffectArmorShred" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://systems/status/effects/effect_armor_shred.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+base_shred = 0.15
+shred_per_power = 0.01
+puddle_damage = 6.0
+puddle_radius = 56.0
+puddle_duration = 2.5

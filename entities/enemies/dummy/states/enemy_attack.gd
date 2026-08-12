@@ -1,57 +1,178 @@
 extends State
-## Windup → activate hitbox → cooldown → back to Chase/Idle.
+## Windup → activate hitbox → optional combo_next → cooldown → Chase/Idle.
+## Supports SLASH / OVERHEAD_SLAM / COMBO with early aim-lock and circular slam.
 
 @onready var enemy: EnemyDummy = owner as EnemyDummy
 
-enum Phase { WINDUP, ACTIVE }
+enum Phase { WINDUP, ACTIVE, COMBO_GAP }
 
 var _phase: Phase = Phase.WINDUP
 var _elapsed: float = 0.0
 var _attack: AttackData
+var _aim_angle: float = 0.0
+var _anim_variant: int = 0
+var _locked_aim: bool = false
 
 
-func enter(_msg: Dictionary = {}) -> void:
+func enter(msg: Dictionary = {}) -> void:
 	_elapsed = 0.0
 	_phase = Phase.WINDUP
-	_attack = enemy.hitbox.attack_data
+	_locked_aim = false
+	_attack = msg.get("attack", enemy.pending_attack) as AttackData
+	if _attack == null and enemy.hitbox:
+		_attack = enemy.hitbox.attack_data
+	enemy.pending_attack = null
 	enemy.stop_movement()
+	enemy.set_meta("is_attacking", true)
 	if _attack == null:
 		transition_to(&"Chase")
 		return
-	if not enemy.attack_cooldown.is_stopped():
+	if not enemy.attack_cooldown.is_stopped() and not msg.get("combo_continue", false):
 		transition_to(&"Chase")
 		return
-	_face_target()
+	if enemy.hitbox:
+		enemy.hitbox.attack_data = _attack
+	_anim_variant = _variant_for_pattern(_attack)
+	_face_target(true)
+	var speed := enemy.get_action_speed_multiplier()
+	if enemy.combat_visual:
+		enemy.combat_visual.play_hostile_pattern_windup(
+			_attack.pattern_kind, _aim_angle, _attack.windup / speed, _anim_variant,
+			_attack.circular_radius if _attack.circular else 0.0
+		)
 
 
 func physics_update(delta: float) -> void:
 	enemy.stop_movement()
-	_elapsed += delta
+	if enemy.is_stunned() or enemy.is_flinching():
+		return
+	if _attack == null:
+		transition_to(&"Chase")
+		return
+	var speed := enemy.get_action_speed_multiplier()
+	_elapsed += delta * speed
 	match _phase:
 		Phase.WINDUP:
+			var lock_at := _attack.windup * clampf(_attack.commit_lock_early, 0.0, 1.0)
+			if not _locked_aim and _elapsed >= lock_at:
+				_locked_aim = true
+				_face_target(false)
+			else:
+				_face_target(true)
 			if _elapsed >= _attack.windup:
 				_elapsed = 0.0
 				_phase = Phase.ACTIVE
+				_locked_aim = true
+				_face_target(false)
+				_configure_melee_hitbox()
+				_apply_lunge_impulse()
 				enemy.hitbox.activate()
+				if enemy.combat_visual:
+					if _attack.circular or _attack.pattern_kind == AttackData.PatternKind.OVERHEAD_SLAM:
+						enemy.combat_visual.play_circle_slash(
+							maxf(_attack.active_duration / speed, 0.22)
+						)
+					else:
+						enemy.combat_visual.play_melee_swing(
+							_aim_angle,
+							maxf(_attack.active_duration / speed, 0.22),
+							_attack.damage_type,
+							Color(0, 0, 0, 0),
+							_anim_variant
+						)
 		Phase.ACTIVE:
 			if _elapsed >= _attack.active_duration:
 				enemy.hitbox.deactivate()
-				enemy.attack_cooldown.start(_attack.cooldown)
-				if enemy.target != null:
-					transition_to(&"Chase")
+				if _attack.combo_next != null:
+					_elapsed = 0.0
+					_phase = Phase.COMBO_GAP
 				else:
-					transition_to(&"Idle")
+					_finish_string()
+		Phase.COMBO_GAP:
+			if _elapsed >= 0.08:
+				transition_to(&"Attack", {"attack": _attack.combo_next, "combo_continue": true})
 
 
 func exit() -> void:
 	enemy.hitbox.deactivate()
+	if enemy.has_meta("is_attacking"):
+		enemy.remove_meta("is_attacking")
+	if enemy.combat_visual:
+		enemy.combat_visual.reset_pose()
 
 
-func _face_target() -> void:
+func _finish_string() -> void:
+	var speed := enemy.get_action_speed_multiplier()
+	enemy.attack_cooldown.start(_attack.cooldown / speed)
+	if enemy.target != null:
+		transition_to(&"Chase")
+	else:
+		transition_to(&"Idle")
+
+
+func _face_target(update_visual: bool) -> void:
+	if _locked_aim:
+		return
 	if enemy.target == null:
 		return
-	var dir := enemy.global_position.direction_to(enemy.target.global_position)
-	if dir != Vector2.ZERO:
-		enemy.hitbox.rotation = dir.angle()
-		# Keep hitbox offset in front of enemy.
-		enemy.hitbox.position = dir.normalized() * 22.0
+	var to_target := enemy.target.global_position - enemy.global_position
+	to_target += Vector2(0, -20)
+	if to_target == Vector2.ZERO:
+		return
+	_aim_angle = to_target.angle()
+	_configure_melee_hitbox()
+	if update_visual and enemy.combat_visual and _phase == Phase.WINDUP and _attack:
+		enemy.combat_visual.aim_hostile_pattern_telegraph(
+			_attack.pattern_kind, _aim_angle,
+			_attack.circular_radius if _attack.circular else 0.0
+		)
+
+
+func _apply_lunge_impulse() -> void:
+	if _attack == null:
+		return
+	var force := _attack.lunge_force
+	if force <= 0.0 and _attack.lunge_distance > 0.0:
+		force = _attack.lunge_distance * 4.0
+	if force <= 0.0:
+		return
+	var dir := Vector2.from_angle(_aim_angle)
+	enemy.apply_knockback(dir, force * 0.35, maxf(_attack.active_duration, 0.08))
+
+
+func _configure_melee_hitbox() -> void:
+	if enemy.hitbox == null:
+		return
+	var shape_node := enemy.hitbox.get_node_or_null("CollisionShape2D") as CollisionShape2D
+	if shape_node == null:
+		return
+	if _attack and (_attack.circular or _attack.pattern_kind == AttackData.PatternKind.OVERHEAD_SLAM):
+		enemy.hitbox.rotation = 0.0
+		enemy.hitbox.position = Vector2(0, -8)
+		var circle := CircleShape2D.new()
+		circle.radius = maxf(_attack.circular_radius, 56.0)
+		shape_node.shape = circle
+		shape_node.position = Vector2.ZERO
+		return
+	var dir := Vector2.from_angle(_aim_angle)
+	var reach := maxf(enemy.attack_range * 0.72, 30.0)
+	enemy.hitbox.rotation = 0.0
+	enemy.hitbox.position = dir * reach + Vector2(0, -8)
+	var hit_circle := CircleShape2D.new()
+	hit_circle.radius = 34.0
+	shape_node.shape = hit_circle
+	shape_node.position = Vector2.ZERO
+
+
+func _variant_for_pattern(atk: AttackData) -> int:
+	if atk == null:
+		return 0
+	match atk.pattern_kind:
+		AttackData.PatternKind.OVERHEAD_SLAM:
+			return 2
+		AttackData.PatternKind.LUNGE:
+			return 3
+		AttackData.PatternKind.COMBO:
+			return 1
+		_:
+			return randi() % CombatVisualComponent.MELEE_VARIANT_COUNT

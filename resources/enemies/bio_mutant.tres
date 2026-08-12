@@ -1,0 +1,36 @@
+[gd_resource type="Resource" script_class="EnemyDefinition" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://resources/enemies/enemy_definition.gd" id="1"]
+[ext_resource type="Resource" path="res://resources/stats/enemy_bio_mutant_stats.tres" id="2_stats"]
+[ext_resource type="Resource" path="res://resources/attacks/enemy_bio_mutant_attack.tres" id="3_atk"]
+[ext_resource type="Resource" path="res://resources/attacks/enemy_bio_mutant_combo_a.tres" id="4_combo"]
+[ext_resource type="Resource" path="res://resources/enemies/behaviors/death_burst.tres" id="5_burst"]
+
+[resource]
+script = ExtResource("1")
+display_name = "Bio-Mutant"
+faction = 4
+stats = ExtResource("2_stats")
+melee_attack = ExtResource("3_atk")
+moveset = Array[Resource]([ExtResource("4_combo"), ExtResource("3_atk")])
+attack_range = 40.0
+ranged_range = 0.0
+detection_radius = 290.0
+visual_color = Color(0.35, 0.75, 0.28, 1)
+prefers_kite = false
+behavior_modules = Array[Resource]([ExtResource("5_burst")])
+tags = PackedStringArray("bio", "death_burst")
+status_vulnerabilities = {
+"burn": 1.45,
+"bleed": 0.7,
+"acid": 0.5
+}
+use_resist_overrides = true
+resist_physical = 0.05
+resist_electricity = 0.1
+resist_corrosion = 0.35
+resist_fire = -0.35
+resist_bleed = 0.15
+resist_glitch = 0.4
+max_poise = 22.0
+poise_regen = 20.0

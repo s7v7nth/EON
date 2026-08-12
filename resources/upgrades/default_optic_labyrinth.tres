@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="UpgradeData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://resources/upgrades/upgrade_data.gd" id="1"]
+[ext_resource type="Resource" path="res://resources/upgrades/effects/optic_labyrinth.tres" id="2"]
+
+[resource]
+script = ExtResource("1")
+upgrade_id = &"default_optic_labyrinth"
+display_name = "Optical Labyrinth"
+description = "Up to 5 Energy Mirrors; mirrors confuse nearby foes with glitch aura."
+architecture_id = 0
+required_tags = PackedStringArray()
+grant_tags = PackedStringArray("labyrinth")
+effects = [ExtResource("2")]
+reward_offerable = true
+damage_mult = 1.0

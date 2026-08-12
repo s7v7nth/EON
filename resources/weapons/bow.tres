@@ -11,3 +11,5 @@ primary = ExtResource("2_pri")
 secondary = ExtResource("3_sec")
 hitbox_reach = 16.0
 visual_tint = Color(0.4, 0.65, 0.5, 1)
+shape_tag = &"gun"
+element_tag = &"physical"

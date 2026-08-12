@@ -1,0 +1,8 @@
+[gd_resource type="Resource" script_class="EconomyAdrenaline" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://systems/economy/economy_adrenaline.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+policy = 0
+max_attack_speed_bonus = 0.35

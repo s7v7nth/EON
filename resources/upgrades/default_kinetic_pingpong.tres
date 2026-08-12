@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="UpgradeData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://resources/upgrades/upgrade_data.gd" id="1"]
+[ext_resource type="Resource" path="res://resources/upgrades/effects/kinetic_pingpong.tres" id="2"]
+
+[resource]
+script = ExtResource("1")
+upgrade_id = &"default_kinetic_pingpong"
+display_name = "Kinetic Ping-Pong"
+description = "Blade bounces off walls; dash across a flying blade intercepts and boosts it."
+architecture_id = 0
+required_tags = PackedStringArray()
+grant_tags = PackedStringArray("pingpong")
+effects = [ExtResource("2")]
+reward_offerable = true
+damage_mult = 1.0

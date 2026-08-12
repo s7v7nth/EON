@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="AttackData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/attacks/attack_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+damage = 12.0
+cooldown = 1.35
+windup = 0.32
+active_duration = 0.05
+knockback_force = 55.0
+damage_type = 1
+status_chance = 0.4
+status_power = 6.0
+status_duration = 1.5
+pattern_kind = 5
+commit_lock_early = 0.7
+select_weight = 1.0
+min_range = 70.0
+max_range = 240.0
+projectile_speed = 440.0
+projectile_lifetime = 1.2
+projectile_count = 3
+spread_deg = 32.0
+poise_damage = 8.0
+camera_trauma = 0.08
+impact_scale = 1.0

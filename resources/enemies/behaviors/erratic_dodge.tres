@@ -1,0 +1,8 @@
+[gd_resource type="Resource" script_class="BehaviorErraticDodge" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://systems/enemies/behaviors/behavior_erratic_dodge.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+behavior_id = &"erratic_dodge"
+dodge_chance = 0.28

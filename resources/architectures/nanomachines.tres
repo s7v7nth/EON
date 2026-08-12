@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="ArchitectureData" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://resources/architectures/architecture_data.gd" id="1"]
+[ext_resource type="Resource" path="res://resources/weapons/nano_blade_w.tres" id="2_blade"]
+[ext_resource type="Resource" path="res://resources/weapons/nano_whip_w.tres" id="3_whip"]
+[ext_resource type="Resource" path="res://resources/weapons/nano_toad_w.tres" id="4_toad"]
+[ext_resource type="Resource" path="res://resources/economies/blood_harvest.tres" id="5_econ"]
+
+[resource]
+script = ExtResource("1")
+architecture_id = 1
+display_name = "Улей"
+description = "Кровавая жатва · HP drain · vamp on hits/kills"
+economy = ExtResource("5_econ")
+economy_policy = 1
+primitives = Array[Resource]([ExtResource("2_blade"), ExtResource("3_whip"), ExtResource("4_toad")])
+starting_tags = PackedStringArray("nano", "whip", "toad", "swarm", "proximity")
+visual_tint = Color(0.35, 0.85, 0.45, 1)
+resist_physical = -0.05
+resist_electricity = 0.1
+resist_corrosion = 0.2
+resist_fire = -0.1
+resist_bleed = 0.15

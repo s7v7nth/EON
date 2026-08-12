@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="EffectRedlineProtocol" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://systems/upgrades/effects/effect_redline_protocol.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+shock_buildup = 28.0
+burn_power = 6.0
+burn_duration = 2.0

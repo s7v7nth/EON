@@ -5,6 +5,7 @@ extends Area2D
 @export var attack_data: AttackData
 
 var _hit_targets: Dictionary = {} # instance_id -> true
+var _active: bool = false
 
 signal hit_landed(target: HurtboxComponent)
 
@@ -18,29 +19,48 @@ func _ready() -> void:
 
 func activate() -> void:
 	_hit_targets.clear()
+	_active = true
 	monitoring = true
 	_set_shapes_disabled(false)
 
 
+func is_active() -> bool:
+	return _active
+
+
 func deactivate() -> void:
-	monitoring = false
-	_set_shapes_disabled(true)
+	_active = false
 	_hit_targets.clear()
+	# Never flip monitoring inside an area_entered physics callback — defer it.
+	set_deferred("monitoring", false)
+	_set_shapes_disabled(true)
 
 
 func _on_area_entered(area: Area2D) -> void:
-	if not monitoring:
+	if not _active or not monitoring:
 		return
-	if area is not HurtboxComponent:
+	if not (area is HurtboxComponent):
 		return
-	var hurtbox := area as HurtboxComponent
-	var id := hurtbox.get_instance_id()
+	var hurtbox: HurtboxComponent = area as HurtboxComponent
+	var id: int = hurtbox.get_instance_id()
 	if _hit_targets.has(id):
 		return
 	_hit_targets[id] = true
-	hurtbox.receive_hit(attack_data, owner)
-	hit_landed.emit(hurtbox)
-	HitStop.punch()
+	# Defer hit resolution so receive_hit / death / queue_free can't re-enter physics.
+	call_deferred("_resolve_hit", hurtbox)
+
+
+func _resolve_hit(hurtbox: Node) -> void:
+	if not _active:
+		return
+	if hurtbox == null or not is_instance_valid(hurtbox):
+		return
+	if not (hurtbox is HurtboxComponent):
+		return
+	var hb: HurtboxComponent = hurtbox as HurtboxComponent
+	hb.receive_hit(attack_data, owner)
+	hit_landed.emit(hb)
+	# HitStop / trauma / flash are applied inside Hurtbox based on actual HP% damage.
 
 
 func _set_shapes_disabled(disabled: bool) -> void:
