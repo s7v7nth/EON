@@ -29,13 +29,15 @@ func extra_crit_chance(host: Node) -> float:
 
 
 func _is_low_hp(host: Node, threshold: float) -> bool:
-	var health = host.get("health") if host else null
-	if health == null or not health.has_method("get_max_health"):
+	if host == null:
 		return false
-	var mx := float(health.get_max_health())
+	var health: HealthComponent = host.get("health") as HealthComponent
+	if health == null:
+		return false
+	var mx := health.get_max_health()
 	if mx <= 0.0:
 		return false
-	return float(health.current_health) / mx <= threshold
+	return health.current_health / mx <= threshold
 
 
 func apply(host: Node) -> void:
@@ -75,7 +77,7 @@ func apply(host: Node) -> void:
 		&"extra_projectiles":
 			host.set("extra_projectiles", int(host.get("extra_projectiles")) + int(value))
 		&"block_mult":
-			var hurt := host.get("hurtbox")
+			var hurt: HurtboxComponent = host.get("hurtbox") as HurtboxComponent
 			if hurt:
 				hurt.block_damage_mult *= value
 		&"second_wind":
@@ -110,8 +112,8 @@ func on_kill(host: Node, _enemy: Node) -> void:
 		return
 	match kind:
 		&"kill_heal":
-			var health = host.get("health")
-			if health and health.has_method("heal"):
+			var health: HealthComponent = host.get("health") as HealthComponent
+			if health:
 				health.heal(value)
 		&"kill_frenzy":
 			if host.has_method("grant_frenzy"):
@@ -122,8 +124,8 @@ func on_kill(host: Node, _enemy: Node) -> void:
 		&"kill_pulse":
 			_pulse(host, value, value_b)
 		&"execute_heal":
-			var health2 = host.get("health")
-			if health2 and health2.has_method("heal"):
+			var health2: HealthComponent = host.get("health") as HealthComponent
+			if health2:
 				health2.heal(value)
 
 
@@ -149,9 +151,9 @@ func on_fatal_damage(host: Node, _amount: float) -> bool:
 	_second_wind_used = true
 	var charges := int(host.get("second_wind_charges"))
 	host.set("second_wind_charges", maxi(charges - 1, 0))
-	var health = host.get("health")
+	var health: HealthComponent = host.get("health") as HealthComponent
 	if health:
-		var max_hp := float(health.get_max_health()) if health.has_method("get_max_health") else 100.0
+		var max_hp := health.get_max_health()
 		health.current_health = maxf(max_hp * maxf(value, 0.2), 1.0)
 		health.health_changed.emit(health.current_health, max_hp)
 	if host.has_method("grant_second_wind_iframes"):
@@ -252,8 +254,8 @@ func _pulse(host: Node, radius: float, damage: float) -> void:
 func _damage_enemy(enemy: Node, amount: float, source: Node) -> void:
 	if enemy == null or amount <= 0.0:
 		return
-	var health = enemy.get("health")
-	if health and health.has_method("take_damage"):
+	var health: HealthComponent = enemy.get("health") as HealthComponent
+	if health:
 		health.take_damage(amount)
 		SignalBus.damage_dealt.emit(amount, enemy, source)
 
@@ -264,10 +266,12 @@ func _apply_status_to(target: Node, sid: StringName, buildup: float, power: floa
 	var node := target
 	if target is HurtboxComponent:
 		node = (target as HurtboxComponent).get_parent()
-	var status = node.get_node_or_null("StatusComponent") if node else null
-	if status == null:
-		status = node.get("status") if node else null
-	if status and status.has_method("add_buildup"):
+	var status: StatusComponent = null
+	if node:
+		status = node.get_node_or_null("StatusComponent") as StatusComponent
+		if status == null:
+			status = node.get("status") as StatusComponent
+	if status:
 		status.add_buildup(sid, buildup, power)
 
 

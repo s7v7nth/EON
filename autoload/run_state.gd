@@ -443,7 +443,7 @@ func _append_upgrade(upgrade: UpgradeData) -> bool:
 
 func _unlock_new_combos() -> void:
 	for recipe in ArtifactCombos.unlocked_for(owned_upgrade_ids()):
-		var cid: StringName = recipe["id"]
+		var cid := StringName(str(recipe.get("id", &"")))
 		if unlocked_combos.has(cid) or _already_crafted(cid):
 			continue
 		unlocked_combos.append(cid)
@@ -457,11 +457,11 @@ func _unlock_new_combos() -> void:
 		combo_upgrade.house = UpgradeData.House.CORE
 		combo_upgrade.rarity = UpgradeData.Rarity.EPIC
 		var fx := EffectBoonProc.new()
-		fx.kind = recipe.get("kind", &"damage")
+		fx.kind = StringName(str(recipe.get("kind", &"damage")))
 		fx.value = float(recipe.get("value", 1.0))
 		fx.value_b = float(recipe.get("value_b", 0.0))
 		if recipe.has("status"):
-			fx.status_id = recipe["status"]
+			fx.status_id = StringName(str(recipe["status"]))
 		combo_upgrade.effects = [fx]
 		crafted_upgrades.append(combo_upgrade)
 		SignalBus.combo_unlocked.emit(last_combo_name, combo_upgrade.description)
