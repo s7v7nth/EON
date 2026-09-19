@@ -134,7 +134,7 @@ func _build() -> void:
 	col.add_child(_start)
 
 	var help := Label.new()
-	help.text = "WASD move · LMB attack · RMB special/block · Space dash · Q cast/special · R restart"
+	help.text = "1–4 pick architecture · Enter begin · in run: WASD · LMB attack · RMB special/block · Space dash · Q cast · R restart"
 	help.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	help.add_theme_font_size_override("font_size", 13)
 	help.add_theme_color_override("font_color", Color(0.55, 0.6, 0.68))
@@ -159,11 +159,10 @@ func _make_arch_card(arch: ArchitectureData) -> Button:
 func _select_route(route: ActRoute) -> void:
 	_selected_route = route
 	for btn in _route_buttons:
-		btn.modulate = Color(0.7, 0.72, 0.78)
-	# Rough match by label prefix.
+		btn.modulate = Color(0.55, 0.58, 0.64)
 	for btn in _route_buttons:
 		if route and btn.text.begins_with(route.display_name):
-			btn.modulate = Color(1, 1, 1)
+			btn.modulate = Color(1.1, 1.15, 1.0)
 			break
 
 
@@ -172,11 +171,33 @@ func _select_arch(arch: ArchitectureData) -> void:
 	for i in _arch_buttons.size():
 		var btn := _arch_buttons[i]
 		var match_arch := RunState.get_architectures()
-		btn.modulate = Color(0.62, 0.64, 0.7)
+		btn.modulate = Color(0.55, 0.58, 0.64)
 		if i < match_arch.size() and match_arch[i] == arch:
-			btn.modulate = Color(1, 1, 1)
+			btn.modulate = Color(1.15, 1.12, 0.85)
 	var hint: Dictionary = HINTS.get(int(arch.architecture_id), {})
 	_flavor.text = "%s\n%s" % [str(hint.get("kit", "")), str(hint.get("fantasy", arch.description))]
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if event is not InputEventKey or not event.pressed or event.echo:
+		return
+	var key := event as InputEventKey
+	var arches := RunState.get_architectures()
+	match key.physical_keycode:
+		KEY_1, KEY_KP_1:
+			if arches.size() > 0:
+				_select_arch(arches[0])
+		KEY_2, KEY_KP_2:
+			if arches.size() > 1:
+				_select_arch(arches[1])
+		KEY_3, KEY_KP_3:
+			if arches.size() > 2:
+				_select_arch(arches[2])
+		KEY_4, KEY_KP_4:
+			if arches.size() > 3:
+				_select_arch(arches[3])
+		KEY_ENTER, KEY_KP_ENTER:
+			_begin_run()
 
 
 func _begin_run() -> void:

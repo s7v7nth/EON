@@ -165,18 +165,6 @@ static func _add_lighting(arena: Node2D, accent: Color, biome: BiomeDefinition) 
 	var layer := Node2D.new()
 	layer.name = "Atmosphere"
 	arena.add_child(layer)
-	var mood := CanvasModulate.new()
-	mood.color = Color(0.62, 0.66, 0.78, 1.0)
-	match biome.biome_id:
-		GameplayEnums.BiomeId.LANDFILL, GameplayEnums.BiomeId.WASTELAND:
-			mood.color = Color(0.72, 0.8, 0.6, 1)
-		GameplayEnums.BiomeId.DATA_CENTER, GameplayEnums.BiomeId.GATEWAY:
-			mood.color = Color(0.55, 0.68, 0.88, 1)
-		GameplayEnums.BiomeId.JUNGLE, GameplayEnums.BiomeId.TAIGA:
-			mood.color = Color(0.58, 0.78, 0.64, 1)
-		GameplayEnums.BiomeId.DOWNTOWN, GameplayEnums.BiomeId.ALLEY, GameplayEnums.BiomeId.MALL:
-			mood.color = Color(0.8, 0.64, 0.56, 1)
-	layer.add_child(mood)
 	var tex := _radial_light_texture()
 	var spots := [
 		Vector2(-520, -260), Vector2(520, -260),

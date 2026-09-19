@@ -3,8 +3,8 @@ extends Node2D
 ## World-space HP bar. Appears when damaged; hides at full HP after a short delay.
 
 @export var health_component: HealthComponent
-@export var bar_size: Vector2 = Vector2(40, 5)
-@export var offset: Vector2 = Vector2(0, -56)
+@export var bar_size: Vector2 = Vector2(48, 6)
+@export var offset: Vector2 = Vector2(0, -58)
 @export var hide_when_full: bool = true
 @export var hide_delay: float = 1.5
 @export var fill_color: Color = Color(0.85, 0.22, 0.22, 0.95)

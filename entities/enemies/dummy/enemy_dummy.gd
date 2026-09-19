@@ -233,6 +233,9 @@ func apply_elite(hp_mult: float = 2.0, move_mult: float = 1.12, action_speed: fl
 	if hp_bar:
 		var base := definition.display_name if definition != null and definition.display_name != "" else "Enemy"
 		hp_bar.set_label("ELITE " + base)
+		hp_bar.bar_size = Vector2(64, 8)
+		hp_bar.fill_color = Color(0.95, 0.72, 0.15, 0.95)
+		hp_bar.queue_redraw()
 
 
 func _install_behaviors(def: EnemyDefinition) -> void:
