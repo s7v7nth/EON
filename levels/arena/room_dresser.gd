@@ -21,6 +21,7 @@ static func dress(arena: Node2D, biome: BiomeDefinition) -> void:
 	_add_neon_rails(root, accent)
 	_add_center_decal(root, accent, biome)
 	_add_ambient_orbs(root, accent, biome)
+	_add_lighting(arena, accent, biome)
 
 
 static func carve_doorways(arena: Node2D, door_dirs: Array[Vector2i]) -> void:
@@ -157,6 +158,53 @@ static func _add_ambient_orbs(root: Node2D, accent: Color, biome: BiomeDefinitio
 		orb.color = Color(accent.r, accent.g, accent.b, 0.2)
 		orb.z_index = 2
 		root.add_child(orb)
+
+
+static func _add_lighting(arena: Node2D, accent: Color, biome: BiomeDefinition) -> void:
+	_clear_named(arena, "Atmosphere")
+	var layer := Node2D.new()
+	layer.name = "Atmosphere"
+	arena.add_child(layer)
+	var mood := CanvasModulate.new()
+	mood.color = Color(0.62, 0.66, 0.78, 1.0)
+	match biome.biome_id:
+		GameplayEnums.BiomeId.LANDFILL, GameplayEnums.BiomeId.WASTELAND:
+			mood.color = Color(0.72, 0.8, 0.6, 1)
+		GameplayEnums.BiomeId.DATA_CENTER, GameplayEnums.BiomeId.GATEWAY:
+			mood.color = Color(0.55, 0.68, 0.88, 1)
+		GameplayEnums.BiomeId.JUNGLE, GameplayEnums.BiomeId.TAIGA:
+			mood.color = Color(0.58, 0.78, 0.64, 1)
+		GameplayEnums.BiomeId.DOWNTOWN, GameplayEnums.BiomeId.ALLEY, GameplayEnums.BiomeId.MALL:
+			mood.color = Color(0.8, 0.64, 0.56, 1)
+	layer.add_child(mood)
+	var tex := _radial_light_texture()
+	var spots := [
+		Vector2(-520, -260), Vector2(520, -260),
+		Vector2(-520, 260), Vector2(520, 260),
+		Vector2(0, 20)
+	]
+	for i in spots.size():
+		var light := PointLight2D.new()
+		light.position = spots[i]
+		light.texture = tex
+		light.color = Color(accent.r, accent.g, accent.b, 1.0).lightened(0.25)
+		light.energy = 1.15 if i < 4 else 0.65
+		light.texture_scale = 2.8
+		layer.add_child(light)
+
+
+static func _radial_light_texture() -> Texture2D:
+	var grad := Gradient.new()
+	grad.colors = PackedColorArray([Color(1, 1, 1, 1), Color(1, 1, 1, 0)])
+	grad.offsets = PackedFloat32Array([0.0, 1.0])
+	var tex := GradientTexture2D.new()
+	tex.gradient = grad
+	tex.width = 256
+	tex.height = 256
+	tex.fill = GradientTexture2D.FILL_RADIAL
+	tex.fill_from = Vector2(0.5, 0.5)
+	tex.fill_to = Vector2(0.5, 0.0)
+	return tex
 
 
 static func _diamond(r: float) -> PackedVector2Array:

@@ -27,22 +27,40 @@ func take_damage(amount: float) -> void:
 			if bool(owner_node.call("try_prevent_death", amount)):
 				return
 	current_health = maxf(current_health - amount, 0.0)
-	health_changed.emit(current_health, stats.max_health if stats else current_health)
+	health_changed.emit(current_health, get_max_health())
 	if current_health <= 0.0:
 		died.emit()
 
 
 func heal(amount: float) -> void:
-	if amount <= 0.0 or current_health <= 0.0 or stats == null:
+	if amount <= 0.0 or current_health <= 0.0:
 		return
-	if current_health >= stats.max_health:
+	var mx := get_max_health()
+	if current_health >= mx:
 		return
-	current_health = minf(current_health + amount, stats.max_health)
-	health_changed.emit(current_health, stats.max_health)
+	current_health = minf(current_health + amount, mx)
+	health_changed.emit(current_health, mx)
 
 
 func get_max_health() -> float:
-	return stats.max_health if stats else 0.0
+	var bonus := 0.0
+	var owner_node := get_parent()
+	if owner_node != null and "bonus_max_health" in owner_node:
+		bonus = float(owner_node.bonus_max_health)
+	return (stats.max_health if stats else 0.0) + bonus
+
+
+func set_bonus_max(bonus: float) -> void:
+	var prev := get_max_health()
+	var owner_node := get_parent()
+	if owner_node:
+		owner_node.set("bonus_max_health", maxf(bonus, 0.0))
+	var now := get_max_health()
+	if now > prev and current_health > 0.0:
+		current_health += now - prev
+	elif current_health > now and now > 0.0:
+		current_health = now
+	health_changed.emit(current_health, now)
 
 
 func apply_stats(new_stats: CharacterStats) -> void:

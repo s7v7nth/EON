@@ -36,3 +36,5 @@ signal player_statuses_changed(statuses: PackedStringArray)
 signal special_triggered(source: Node)
 signal vent_triggered(source: Node)
 signal ram_slots_changed(used: int, max_slots: int)
+signal combo_unlocked(combo_name: String, description: String)
+signal artifact_pickup_available

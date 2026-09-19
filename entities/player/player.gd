@@ -56,6 +56,27 @@ var counter_damage_bonus: float = 1.0
 var active_effects: Array = []
 var _life_steal_bonus: float = 0.0
 var _hp_regen_bonus: float = 0.0
+var incoming_damage_mult: float = 1.0
+var attack_speed_bonus: float = 0.0
+var crit_chance: float = 0.0
+var crit_damage: float = 1.5
+var execute_threshold: float = 0.0
+var execute_bonus: float = 1.0
+var adrenaline_gain_mult: float = 1.0
+var dash_iframe_bonus: float = 0.0
+var dash_cooldown_mult: float = 1.0
+var projectile_pierce: int = 0
+var extra_projectiles: int = 0
+var second_wind_charges: int = 0
+var last_hit_was_crit: bool = false
+var bonus_max_health: float = 0.0
+var ranged_cooldown_mult: float = 1.0
+var knockback_bonus: float = 0.0
+var frenzy_until: float = 0.0
+var frenzy_speed: float = 1.0
+var temp_crit_until: float = 0.0
+var temp_crit_bonus: float = 0.0
+var _iframe_bonus_left: float = 0.0
 
 const KNOCKBACK_DURATION := 0.15
 var _kb_dir: Vector2 = Vector2.ZERO
@@ -84,6 +105,7 @@ func _ready() -> void:
 	equip_architecture(architecture)
 	call_deferred("_emit_initial_bus_values")
 	call_deferred("_fit_hurtbox_to_body")
+	_attach_body_light()
 	RunState.apply_to_player(self)
 	RunState.begin_room()
 	if not SignalBus.enemy_died.is_connected(_on_enemy_died_for_economy):
@@ -102,6 +124,28 @@ func _fit_hurtbox_to_body() -> void:
 	shape_node.shape = circle
 
 
+func _attach_body_light() -> void:
+	if get_node_or_null("BodyLight") != null:
+		return
+	var light := PointLight2D.new()
+	light.name = "BodyLight"
+	var grad := Gradient.new()
+	grad.colors = PackedColorArray([Color(1, 1, 1, 1), Color(1, 1, 1, 0)])
+	var tex := GradientTexture2D.new()
+	tex.gradient = grad
+	tex.width = 128
+	tex.height = 128
+	tex.fill = GradientTexture2D.FILL_RADIAL
+	tex.fill_from = Vector2(0.5, 0.5)
+	tex.fill_to = Vector2(0.5, 0.0)
+	light.texture = tex
+	light.energy = 0.9
+	light.texture_scale = 1.6
+	light.color = Color(0.85, 0.92, 1.0)
+	light.position = Vector2(0, -22)
+	add_child(light)
+
+
 func _physics_process(delta: float) -> void:
 	if _kb_time > 0.0:
 		_kb_time = maxf(0.0, _kb_time - delta)
@@ -109,6 +153,14 @@ func _physics_process(delta: float) -> void:
 		counter_window = maxf(0.0, counter_window - delta)
 		if counter_window <= 0.0:
 			counter_damage_bonus = 1.0
+	if _iframe_bonus_left > 0.0:
+		_iframe_bonus_left = maxf(0.0, _iframe_bonus_left - delta)
+		if _iframe_bonus_left <= 0.0 and hurtbox and hurtbox.is_invincible():
+			hurtbox.set_invincible(false, false)
+	if frenzy_until > 0.0:
+		frenzy_until = maxf(0.0, frenzy_until - delta)
+	if temp_crit_until > 0.0:
+		temp_crit_until = maxf(0.0, temp_crit_until - delta)
 	if _blade_in_flight:
 		_blade_flight_time += delta
 		# Failsafe: never soft-lock throws if a blade dies without returned_to_source.
@@ -305,6 +357,23 @@ func apply_run_upgrades(upgrades: Array[UpgradeData]) -> void:
 	active_effects.clear()
 	_life_steal_bonus = 0.0
 	_hp_regen_bonus = 0.0
+	incoming_damage_mult = 1.0
+	attack_speed_bonus = 0.0
+	crit_chance = 0.0
+	crit_damage = 1.5
+	execute_threshold = 0.0
+	execute_bonus = 1.0
+	adrenaline_gain_mult = 1.0
+	dash_iframe_bonus = 0.0
+	dash_cooldown_mult = 1.0
+	projectile_pierce = 0
+	extra_projectiles = 0
+	second_wind_charges = 0
+	bonus_max_health = 0.0
+	ranged_cooldown_mult = 1.0
+	knockback_bonus = 0.0
+	if hurtbox:
+		hurtbox.block_damage_mult = 0.5
 	for upgrade in upgrades:
 		if upgrade == null:
 			continue
@@ -317,8 +386,85 @@ func apply_run_upgrades(upgrades: Array[UpgradeData]) -> void:
 				continue
 			active_effects.append(instance)
 			instance.apply(self)
+	_sync_health_bonus()
 	if not SignalBus.enemy_died.is_connected(_on_enemy_died_for_upgrades):
 		SignalBus.enemy_died.connect(_on_enemy_died_for_upgrades)
+
+
+func add_max_health(amount: float) -> void:
+	bonus_max_health += maxf(amount, 0.0)
+	_sync_health_bonus()
+
+
+func _sync_health_bonus() -> void:
+	if health == null:
+		return
+	health.set_bonus_max(bonus_max_health)
+
+
+func notify_dash_started(direction: Vector2) -> void:
+	for effect in active_effects:
+		var fx := effect as UpgradeEffect
+		if fx:
+			fx.on_dash(self, direction)
+
+
+func grant_frenzy(speed_mult: float, duration: float) -> void:
+	frenzy_speed = maxf(speed_mult, 1.0)
+	frenzy_until = maxf(duration, 0.1)
+
+
+func grant_temp_crit(amount: float, duration: float) -> void:
+	temp_crit_bonus = amount
+	temp_crit_until = duration
+
+
+func grant_second_wind_iframes() -> void:
+	if hurtbox:
+		hurtbox.set_invincible(true, false)
+	_iframe_bonus_left = 0.8
+	CameraFx.add_trauma(0.45)
+
+
+func restore_resource(amount: float) -> void:
+	if amount <= 0.0:
+		return
+	if active_economy and active_economy.has_method("restore"):
+		active_economy.call("restore", self, amount)
+		return
+	if energy:
+		energy.current_energy = minf(energy.current_energy + amount, energy.get_max_energy())
+		energy.energy_changed.emit(energy.current_energy, energy.get_max_energy())
+
+
+func refund_ranged_cooldown(fraction: float) -> void:
+	if ranged_cooldown == null or ranged_cooldown.is_stopped():
+		return
+	var left := ranged_cooldown.time_left * (1.0 - clampf(fraction, 0.0, 0.9))
+	ranged_cooldown.start(maxf(left, 0.05))
+
+
+func roll_crit() -> bool:
+	var chance := crit_chance
+	if temp_crit_until > 0.0:
+		chance += temp_crit_bonus
+	for effect in active_effects:
+		if effect is EffectBoonProc:
+			chance += (effect as EffectBoonProc).extra_crit_chance(self)
+	last_hit_was_crit = randf() < clampf(chance, 0.0, 0.85)
+	return last_hit_was_crit
+
+
+func execute_multiplier_against(hurtbox: HurtboxComponent) -> float:
+	if execute_threshold <= 0.0 or hurtbox == null or hurtbox.health_component == null:
+		return 1.0
+	var hp := hurtbox.health_component
+	var mx := hp.get_max_health()
+	if mx <= 0.0:
+		return 1.0
+	if hp.current_health / mx <= execute_threshold:
+		return maxf(execute_bonus, 1.0)
+	return 1.0
 
 
 func get_input_direction() -> Vector2:
@@ -335,7 +481,10 @@ func get_aim_direction() -> Vector2:
 func apply_movement(direction: Vector2) -> void:
 	if direction != Vector2.ZERO:
 		facing_direction = direction.normalized()
-	velocity = Iso.apply_velocity(direction, (stats.move_speed if stats else 0.0) * move_speed_multiplier)
+	var speed := (stats.move_speed if stats else 0.0) * move_speed_multiplier
+	if frenzy_until > 0.0:
+		speed *= frenzy_speed
+	velocity = Iso.apply_velocity(direction, speed)
 	velocity += _knockback_vector()
 	move_and_slide()
 
@@ -435,7 +584,7 @@ func try_special() -> bool:
 
 
 func get_attack_speed_multiplier() -> float:
-	var m := 1.0
+	var m := 1.0 + attack_speed_bonus
 	if status:
 		m *= status.get_action_speed_multiplier()
 	if active_economy:
@@ -503,16 +652,27 @@ func configure_hitbox_for_attack(attack: AttackData) -> void:
 
 
 func spawn_projectile(direction: Vector2) -> void:
-	var proj := PROJECTILE_SCENE.instantiate() as Projectile
-	proj.attack_data = ranged_attack_data
-	proj.direction = direction.normalized()
-	proj.source = self
-	proj.collision_mask = (1 << 0) | (1 << 4)
-	if ranged_attack_data:
-		proj.tint = _projectile_color(ranged_attack_data.damage_type)
-	get_parent().add_child(proj)
-	proj.global_position = global_position + direction.normalized() * 28.0
-	proj.hit_landed.connect(_on_projectile_hit_landed)
+	var shots := 1 + extra_projectiles
+	var base := direction.normalized()
+	if base == Vector2.ZERO:
+		base = facing_direction
+	var spread := 12.0 if shots > 1 else 0.0
+	for i in shots:
+		var dir := base
+		if shots > 1:
+			var t := (float(i) / float(shots - 1)) - 0.5
+			dir = base.rotated(deg_to_rad(spread * t * 2.0))
+		var proj := PROJECTILE_SCENE.instantiate() as Projectile
+		proj.attack_data = ranged_attack_data
+		proj.direction = dir
+		proj.source = self
+		proj.extra_pierce = projectile_pierce
+		proj.collision_mask = (1 << 0) | (1 << 4)
+		if ranged_attack_data:
+			proj.tint = _projectile_color(ranged_attack_data.damage_type)
+		get_parent().add_child(proj)
+		proj.global_position = global_position + dir * 28.0
+		proj.hit_landed.connect(_on_projectile_hit_landed)
 
 
 func spawn_returning_blade(direction: Vector2, charge: float = 1.0) -> void:
@@ -622,7 +782,7 @@ func on_melee_hit(target: HurtboxComponent) -> void:
 
 func _on_offensive_hit(target: HurtboxComponent) -> void:
 	if stats:
-		adrenaline.add(stats.adrenaline_gain_on_hit)
+		adrenaline.add(stats.adrenaline_gain_on_hit * adrenaline_gain_mult)
 	if engagement:
 		engagement.notify_exchange()
 	SignalBus.style_action.emit(GameplayEnums.StyleAction.HIT, 20)

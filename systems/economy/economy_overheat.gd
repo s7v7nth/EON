@@ -114,6 +114,10 @@ func try_special(host: Node) -> bool:
 	return true
 
 
+func restore(_host: Node, amount: float) -> void:
+	heat = maxf(heat - amount, 0.0)
+
+
 func get_hud_values(_host: Node) -> Dictionary:
 	var color := Color(0.45, 0.75, 1.0, 1)
 	if heat >= heat_max:

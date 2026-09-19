@@ -35,6 +35,10 @@ func on_kill(_host: Node, _enemy: Node) -> void:
 	pass
 
 
+func on_dash(_host: Node, _direction: Vector2) -> void:
+	pass
+
+
 ## Return true if fatal damage was prevented (Holographic Substitution, etc.).
 func on_fatal_damage(_host: Node, _amount: float) -> bool:
 	return false

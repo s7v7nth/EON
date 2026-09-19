@@ -31,6 +31,8 @@ var _last_mirror_id: int = 0
 var _last_redirect_target: Node = null
 var _mirror_ignore_until: float = 0.0
 var _dash_boosted: bool = false
+## Extra enemy pierces for non-returning shots (Ripcurrent boon).
+var extra_pierce: int = 0
 ## Returning blade pierces: each enemy hurtbox hit at most once per flight segment.
 var _pierced_ids: Dictionary = {}
 ## Prismatic Trap: drop once at first enemy contact (not at end of flight).
@@ -398,6 +400,9 @@ func _on_area_entered(area: Area2D) -> void:
 	if attack_data != null and attack_data.returning:
 		call_deferred("_resolve_pierce_hit", area)
 		return
+	if extra_pierce > 0:
+		call_deferred("_resolve_bonus_pierce", area)
+		return
 	_hit_done = true
 	# Defer so we never queue_free / toggle Area2D state inside the physics callback.
 	call_deferred("_resolve_hit", area)
@@ -426,6 +431,27 @@ func _resolve_pierce_hit(hurtbox: Node) -> void:
 	# Prismatic Trap drops at first enemy contact, not at max range / wall return.
 	_try_spawn_prism_crystal_at(pos)
 	# Keep flying — do not begin return / do not set _hit_done.
+
+
+func _resolve_bonus_pierce(hurtbox: Node) -> void:
+	if _hit_done:
+		return
+	if hurtbox == null or not is_instance_valid(hurtbox):
+		return
+	if not (hurtbox is HurtboxComponent):
+		return
+	var owner_node := hurtbox.get_parent()
+	var pierce_key := owner_node.get_instance_id() if owner_node != null else hurtbox.get_instance_id()
+	if _pierced_ids.has(pierce_key):
+		return
+	_pierced_ids[pierce_key] = true
+	var hb: HurtboxComponent = hurtbox as HurtboxComponent
+	hb.receive_hit(attack_data, source)
+	hit_landed.emit(hb)
+	extra_pierce -= 1
+	if extra_pierce < 0:
+		_hit_done = true
+		call_deferred("_finish_after_hit")
 
 
 func _resolve_hit(hurtbox: Node) -> void:

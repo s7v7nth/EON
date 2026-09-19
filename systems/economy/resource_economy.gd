@@ -50,6 +50,14 @@ func try_special(_host: Node) -> bool:
 	return false
 
 
+func restore(host: Node, amount: float) -> void:
+	var energy: EnergyComponent = host.get("energy") as EnergyComponent
+	if energy == null or amount <= 0.0:
+		return
+	energy.current_energy = minf(energy.current_energy + amount, energy.get_max_energy())
+	energy.energy_changed.emit(energy.current_energy, energy.get_max_energy())
+
+
 ## Returns { "primary": {value,max,label,color}, "secondary": {...} }.
 func get_hud_values(_host: Node) -> Dictionary:
 	return {}

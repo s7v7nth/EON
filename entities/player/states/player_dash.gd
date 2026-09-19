@@ -35,6 +35,7 @@ func enter(_msg: Dictionary = {}) -> void:
 	# detect_hits=true keeps hurtbox receivable for perfect-dodge callbacks.
 	player.hurtbox.set_invincible(true, true)
 	player.velocity = Iso.apply_velocity(_dash_dir, player.stats.dash_speed)
+	player.notify_dash_started(_dash_dir)
 	_spawn_ghost()
 
 
@@ -75,8 +76,11 @@ func exit() -> void:
 	if not _active:
 		return
 	player.hurtbox.set_invincible(false, false)
+	if player.dash_iframe_bonus > 0.0:
+		player.hurtbox.set_invincible(true, false)
+		player._iframe_bonus_left = player.dash_iframe_bonus
 	if player.dash_cooldown and player.stats:
-		player.dash_cooldown.start(player.stats.dash_cooldown)
+		player.dash_cooldown.start(player.stats.dash_cooldown * player.dash_cooldown_mult)
 	_active = false
 
 

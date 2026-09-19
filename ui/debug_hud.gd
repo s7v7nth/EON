@@ -17,6 +17,7 @@ var _economy_drives_bars: bool = false
 var _last_damage: float = 0.0
 var _total_damage: float = 0.0
 var _seed_label: Label
+var _artifact_label: Label
 
 
 func _ready() -> void:
@@ -52,6 +53,9 @@ func _ready() -> void:
 	_refresh_damage_label()
 	call_deferred("_refresh_location_from_run_state")
 	call_deferred("_refresh_seed_label")
+	_ensure_artifact_label()
+	SignalBus.upgrade_crafted.connect(_on_upgrade_crafted)
+	SignalBus.combo_unlocked.connect(_on_combo_hud)
 
 
 func _on_room_entered(_coord: Vector2i) -> void:
@@ -194,3 +198,48 @@ func _on_player_died() -> void:
 	_total_damage = 0.0
 	_refresh_damage_label()
 	print("Player died")
+
+
+func _ensure_artifact_label() -> void:
+	if _artifact_label:
+		return
+	_artifact_label = Label.new()
+	_artifact_label.add_theme_font_size_override("font_size", 12)
+	_artifact_label.add_theme_color_override("font_color", Color(0.85, 0.9, 1.0))
+	_artifact_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_artifact_label.custom_minimum_size = Vector2(280, 40)
+	_artifact_label.text = "Artifacts: —"
+	$Margin/VBox.add_child(_artifact_label)
+	_refresh_artifacts()
+
+
+func _on_upgrade_crafted(_id: StringName) -> void:
+	_refresh_artifacts()
+
+
+func _on_combo_hud(combo_name: String, _desc: String) -> void:
+	if _artifact_label:
+		_artifact_label.text = "COMBO %s\n%s" % [combo_name, _artifact_line()]
+		return
+	_refresh_artifacts()
+
+
+func _refresh_artifacts() -> void:
+	if _artifact_label == null:
+		return
+	_artifact_label.text = _artifact_line()
+
+
+func _artifact_line() -> String:
+	var names: PackedStringArray = []
+	for upgrade in RunState.crafted_upgrades:
+		if upgrade:
+			names.append(upgrade.display_name)
+	if names.is_empty():
+		return "Artifacts: —"
+	if names.size() > 6:
+		var shown: PackedStringArray = PackedStringArray()
+		for i in 6:
+			shown.append(names[i])
+		return "Artifacts (%d): %s…" % [names.size(), ", ".join(shown)]
+	return "Artifacts: %s" % ", ".join(names)

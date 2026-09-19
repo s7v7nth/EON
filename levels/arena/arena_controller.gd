@@ -415,10 +415,24 @@ func _on_enemy_spawned(_enemy: Node) -> void:
 
 func _on_enemy_died(_enemy: Node) -> void:
 	_alive_enemies = maxi(_alive_enemies - 1, 0)
+	if _enemy != null and _enemy.get("is_elite") and bool(_enemy.get("is_elite")):
+		_spawn_artifact_orb(_enemy)
 	if _spawning:
 		return
 	if _alive_enemies <= 0 and _wave_index >= 0 and not _room_cleared:
 		_on_wave_cleared()
+
+
+func _spawn_artifact_orb(enemy: Node) -> void:
+	if enemy is not Node2D or _entities == null:
+		return
+	var orb_script := load("res://entities/pickups/artifact_orb.gd") as Script
+	if orb_script == null:
+		return
+	var orb := Area2D.new()
+	orb.set_script(orb_script)
+	_entities.add_child(orb)
+	orb.global_position = (enemy as Node2D).global_position
 
 
 func _on_wave_cleared() -> void:

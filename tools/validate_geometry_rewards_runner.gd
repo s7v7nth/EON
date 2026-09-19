@@ -159,8 +159,14 @@ func _run() -> void:
 	assert(player.try_prevent_death(50.0))
 	assert(player.health.current_health > 5.0)
 
-	# Already granted → no longer in reward pool.
-	assert(RunState.get_reward_upgrades().is_empty())
+	# Already granted geometry → those ids leave the pool; shared boons remain.
+	var leftover := RunState.get_reward_upgrades()
+	var leftover_ids: PackedStringArray = PackedStringArray()
+	for u in leftover:
+		leftover_ids.append(String(u.upgrade_id))
+	for need in [&"default_kinetic_pingpong", &"default_prism_trap", &"default_optic_labyrinth", &"default_focus_lens", &"default_holo_sub"]:
+		assert(need not in leftover_ids, "granted geometry %s should leave the pool" % need)
+	assert(leftover.size() >= 36, "shared boon pool should still offer artifacts")
 
 	print("GEOMETRY_REWARDS_OK")
 	get_tree().quit(0)

@@ -57,10 +57,19 @@ func receive_hit(attack_data: AttackData, source: Node) -> bool:
 
 	var was_crit := _is_stagger_crit_window()
 	var damage := _compute_damage(attack_data, source)
+	if source is Player:
+		var p := source as Player
+		if p.roll_crit():
+			damage *= p.crit_damage
+			was_crit = true
+		damage *= p.execute_multiplier_against(self)
 	if _blocking and damage > 0.0:
 		var before := damage
 		damage *= block_damage_mult
 		blocked.emit(attack_data, source, before - damage)
+
+	if get_parent() is Player:
+		damage *= maxf((get_parent() as Player).incoming_damage_mult, 0.2)
 
 	var hp_damage := damage
 	if energy_component and damage > 0.0:
@@ -196,7 +205,10 @@ func _status_for_type(damage_type: GameplayEnums.DamageType) -> StringName:
 
 
 func _apply_knockback(attack_data: AttackData, source: Node, hp_damage: float = 0.0) -> void:
-	if attack_data.knockback_force <= 0.0:
+	var force := attack_data.knockback_force
+	if source is Player:
+		force += (source as Player).knockback_bonus
+	if force <= 0.0:
 		return
 	var body := get_parent()
 	if body == null or not body.has_method("apply_knockback"):
@@ -212,7 +224,7 @@ func _apply_knockback(attack_data: AttackData, source: Node, hp_damage: float = 
 	body.call(
 		"apply_knockback",
 		away.normalized(),
-		attack_data.knockback_force * kb_mult,
+		force * kb_mult,
 		maxf(attack_data.knockback_duration * lerpf(0.85, 1.55, clampf(frac, 0.0, 1.0)), 0.05)
 	)
 

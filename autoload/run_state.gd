@@ -61,12 +61,16 @@ var _multi_kill_timer: float = 0.0
 var _multi_kill_count: int = 0
 
 var _transitioning: bool = false
+var last_boon_offers: Array[UpgradeData] = []
+var unlocked_combos: Array[StringName] = []
+var last_combo_name: String = ""
 
 
 func _ready() -> void:
 	arch_catalog = ARCH_CATALOG as ArchitectureCatalog
 	upgrade_catalog = UPGRADE_CATALOG as UpgradeCatalog
 	enemy_catalog = ENEMY_CATALOG as EnemyCatalog
+	_merge_shared_boons()
 	current_route = DEFAULT_ROUTE as ActRoute
 	_sync_route_cursor()
 	if architecture == null:
@@ -76,6 +80,23 @@ func _ready() -> void:
 	SignalBus.style_action.connect(_on_style_action)
 	SignalBus.enemy_died.connect(_on_enemy_died)
 	set_process(true)
+
+
+func _merge_shared_boons() -> void:
+	if upgrade_catalog == null:
+		return
+	var existing: Dictionary = {}
+	for item in upgrade_catalog.all_upgrades():
+		var u := item as UpgradeData
+		if u:
+			existing[u.upgrade_id] = true
+			if u.reward_offerable and not u.any_architecture:
+				u.house = UpgradeData.House.GEOMETRY
+	for boon in ArtifactLibrary.all_boons():
+		if boon == null or existing.has(boon.upgrade_id):
+			continue
+		upgrade_catalog.upgrades.append(boon)
+		existing[boon.upgrade_id] = true
 
 
 func _process(delta: float) -> void:
@@ -100,6 +121,9 @@ func reset() -> void:
 	crafted_upgrades.clear()
 	inventory.clear()
 	last_loot.clear()
+	last_boon_offers.clear()
+	unlocked_combos.clear()
+	last_combo_name = ""
 	current_biome = null
 	current_route = DEFAULT_ROUTE as ActRoute
 	run_seed = 0
@@ -307,10 +331,9 @@ func get_craftable_upgrades() -> Array[UpgradeData]:
 ## Post-room Rewards column: always-offerable Geometry upgrades (no loot tags).
 func get_reward_upgrades() -> Array[UpgradeData]:
 	var result: Array[UpgradeData] = []
-	if architecture == null:
-		return result
 	if upgrade_catalog == null:
 		upgrade_catalog = UPGRADE_CATALOG as UpgradeCatalog
+		_merge_shared_boons()
 	if upgrade_catalog == null:
 		return result
 	for item in upgrade_catalog.all_upgrades():
@@ -319,10 +342,75 @@ func get_reward_upgrades() -> Array[UpgradeData]:
 			continue
 		if _already_crafted(upgrade.upgrade_id):
 			continue
-		if upgrade.architecture_id != architecture.architecture_id:
+		if not _upgrade_matches_arch(upgrade):
 			continue
 		result.append(upgrade)
 	return result
+
+
+func _upgrade_matches_arch(upgrade: UpgradeData) -> bool:
+	if upgrade == null:
+		return false
+	if upgrade.any_architecture:
+		return true
+	if architecture == null:
+		return true
+	return upgrade.architecture_id == architecture.architecture_id
+
+
+func roll_boon_offers(count: int = 3) -> Array[UpgradeData]:
+	var pool := get_reward_upgrades()
+	var picked: Array[UpgradeData] = []
+	var used_houses: Dictionary = {}
+	var used_ids: Dictionary = {}
+	for _pass in range(2):
+		if picked.size() >= count:
+			break
+		var weighted: Array = []
+		for upgrade in pool:
+			if used_ids.has(upgrade.upgrade_id):
+				continue
+			if _pass == 0 and used_houses.has(upgrade.house) and pool.size() > count:
+				continue
+			var w := _rarity_weight(upgrade.rarity)
+			for _i in w:
+				weighted.append(upgrade)
+		while picked.size() < count and not weighted.is_empty():
+			var choice: UpgradeData = weighted[_loot_index(weighted.size())]
+			if used_ids.has(choice.upgrade_id):
+				weighted.erase(choice)
+				continue
+			picked.append(choice)
+			used_ids[choice.upgrade_id] = true
+			used_houses[choice.house] = true
+			var cleaned: Array = []
+			for item in weighted:
+				if (item as UpgradeData).upgrade_id != choice.upgrade_id:
+					cleaned.append(item)
+			weighted = cleaned
+	last_boon_offers = picked
+	return picked
+
+
+func _rarity_weight(rarity: UpgradeData.Rarity) -> int:
+	match rarity:
+		UpgradeData.Rarity.COMMON:
+			return 55
+		UpgradeData.Rarity.RARE:
+			return 28
+		UpgradeData.Rarity.EPIC:
+			return 12
+		UpgradeData.Rarity.LEGENDARY:
+			return 4
+	return 20
+
+
+func owned_upgrade_ids() -> Array[StringName]:
+	var ids: Array[StringName] = []
+	for upgrade in crafted_upgrades:
+		if upgrade:
+			ids.append(upgrade.upgrade_id)
+	return ids
 
 
 func craft_upgrade(upgrade: UpgradeData) -> bool:
@@ -334,12 +422,12 @@ func craft_upgrade(upgrade: UpgradeData) -> bool:
 
 
 func grant_upgrade(upgrade: UpgradeData) -> bool:
-	## Tag-bypass grant for reward_offerable Geometry picks.
+	## Tag-bypass grant for reward_offerable Geometry picks and shared boons.
 	if upgrade == null:
 		return false
 	if _already_crafted(upgrade.upgrade_id):
 		return false
-	if architecture and upgrade.architecture_id != architecture.architecture_id:
+	if not _upgrade_matches_arch(upgrade):
 		return false
 	return _append_upgrade(upgrade)
 
@@ -349,7 +437,34 @@ func _append_upgrade(upgrade: UpgradeData) -> bool:
 	for tag in upgrade.grant_tags:
 		_add_tag(String(tag))
 	SignalBus.upgrade_crafted.emit(upgrade.upgrade_id)
+	_unlock_new_combos()
 	return true
+
+
+func _unlock_new_combos() -> void:
+	for recipe in ArtifactCombos.unlocked_for(owned_upgrade_ids()):
+		var cid: StringName = recipe["id"]
+		if unlocked_combos.has(cid) or _already_crafted(cid):
+			continue
+		unlocked_combos.append(cid)
+		last_combo_name = str(recipe.get("name", "Combo"))
+		var combo_upgrade := UpgradeData.new()
+		combo_upgrade.upgrade_id = cid
+		combo_upgrade.display_name = last_combo_name
+		combo_upgrade.description = str(recipe.get("desc", ""))
+		combo_upgrade.any_architecture = true
+		combo_upgrade.reward_offerable = false
+		combo_upgrade.house = UpgradeData.House.CORE
+		combo_upgrade.rarity = UpgradeData.Rarity.EPIC
+		var fx := EffectBoonProc.new()
+		fx.kind = recipe.get("kind", &"damage")
+		fx.value = float(recipe.get("value", 1.0))
+		fx.value_b = float(recipe.get("value_b", 0.0))
+		if recipe.has("status"):
+			fx.status_id = recipe["status"]
+		combo_upgrade.effects = [fx]
+		crafted_upgrades.append(combo_upgrade)
+		SignalBus.combo_unlocked.emit(last_combo_name, combo_upgrade.description)
 
 
 func grant_loot_for_room_rank() -> void:
@@ -576,8 +691,23 @@ func _advance_through_door(dir: Vector2i) -> void:
 func restart_run() -> void:
 	if _transitioning:
 		return
+	var keep_arch := architecture
+	var keep_route := current_route
+	var had_arch := architecture_picked
+	var had_route := route_picked
 	reset()
+	if had_route and keep_route:
+		choose_route(keep_route)
+	if had_arch and keep_arch:
+		choose_architecture_data(keep_arch)
 	_change_scene(layout_scene_for_current_room())
+
+
+func return_to_class_select() -> void:
+	if _transitioning:
+		return
+	reset()
+	_change_scene("res://ui/class_select.tscn")
 
 
 func _sync_route_cursor() -> void:

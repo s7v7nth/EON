@@ -42,9 +42,10 @@ func _ready() -> void:
 	_rewards.get_node("BtnDamage").pressed.connect(_on_pick_damage)
 	_rewards.get_node("BtnSpeed").pressed.connect(_on_pick_speed)
 	_rewards.get_node("BtnDash").pressed.connect(_on_pick_dash)
-	# Route → architecture at run start.
-	if RunState.room_index == 0 and not RunState.architecture_picked:
+	# Route → architecture at run start only when this overlay owns the live scene.
+	if get_parent() == get_tree().current_scene and RunState.room_index == 0 and not RunState.architecture_picked:
 		call_deferred("_show_start_flow")
+	SignalBus.combo_unlocked.connect(_on_combo_unlocked)
 
 
 func _ensure_route_box() -> void:
@@ -63,6 +64,12 @@ func _ensure_route_box() -> void:
 func _input(event: InputEvent) -> void:
 	if _mode != Mode.DEATH and _mode != Mode.WIN:
 		return
+	if event is InputEventKey and event.pressed and not event.echo:
+		var key := event as InputEventKey
+		if key.physical_keycode == KEY_C:
+			get_viewport().set_input_as_handled()
+			RunState.return_to_class_select()
+			return
 	if not event.is_action_pressed("restart") and not _is_restart_key(event):
 		return
 	get_viewport().set_input_as_handled()
@@ -83,7 +90,7 @@ func _show_start_flow() -> void:
 
 
 func _on_player_died() -> void:
-	_show(Mode.DEATH, "You Died", "Rank %s — Press R to restart" % RunState.current_room_rank())
+	_show(Mode.DEATH, "You Died", "Rank %s — R new run (same class) · C change class" % RunState.current_room_rank())
 	get_tree().paused = true
 
 
@@ -98,7 +105,7 @@ func _on_wave_cleared(index: int) -> void:
 
 
 func _on_run_won() -> void:
-	_show(Mode.WIN, "Run Complete", "Style %s — %d pts — Press R" % [
+	_show(Mode.WIN, "Run Complete", "Style %s — %d pts — R again · C class select" % [
 		RunState.current_room_rank(), RunState.style_score
 	])
 	_rewards.visible = false
@@ -112,9 +119,11 @@ func _on_run_won() -> void:
 func _on_exit_reached() -> void:
 	_populate_craft()
 	_populate_reward_upgrades()
-	var loot_line := "Craft, Geometry upgrade, or take a boon"
+	var loot_line := "Choose one artifact — three offerings, Hades-style"
 	if not RunState.last_loot.is_empty():
-		loot_line = "Loot: %s — craft, Geometry upgrade, or boon" % RunState.loot_summary()
+		loot_line = "Loot: %s — then pick an artifact" % RunState.loot_summary()
+	if RunState.last_combo_name != "":
+		loot_line = "COMBO %s — %s" % [RunState.last_combo_name, loot_line]
 	var title := "Room Cleared — Rank %s" % RunState.current_room_rank()
 	if RunState.is_last_room():
 		title = "Act Clear — Rank %s" % RunState.current_room_rank()
@@ -242,21 +251,46 @@ func _populate_reward_upgrades() -> void:
 		if is_instance_valid(node):
 			node.queue_free()
 	_reward_extra_nodes.clear()
-	# Keep static boons at top; insert Geometry picks after them.
-	var upgrades := RunState.get_reward_upgrades()
-	if upgrades.is_empty():
+	for child in _rewards.get_children():
+		child.visible = false
+	var offers := RunState.roll_boon_offers(3)
+	if offers.is_empty():
+		var empty := Label.new()
+		empty.text = "No artifacts remain — take a craft or skip"
+		empty.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		_rewards.add_child(empty)
+		_reward_extra_nodes.append(empty)
+		var skip := Button.new()
+		skip.text = "Continue"
+		skip.pressed.connect(_finish_reward)
+		_rewards.add_child(skip)
+		_reward_extra_nodes.append(skip)
 		return
-	var sep := Label.new()
-	sep.text = "— Geometry —"
-	sep.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_rewards.add_child(sep)
-	_reward_extra_nodes.append(sep)
-	for upgrade in upgrades:
-		var btn := Button.new()
-		btn.text = "%s — %s" % [upgrade.display_name, upgrade.description]
-		btn.pressed.connect(_on_reward_upgrade.bind(upgrade))
-		_rewards.add_child(btn)
-		_reward_extra_nodes.append(btn)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 10)
+	_rewards.add_child(row)
+	_reward_extra_nodes.append(row)
+	for upgrade in offers:
+		row.add_child(_make_boon_card(upgrade))
+
+
+func _make_boon_card(upgrade: UpgradeData) -> Button:
+	var btn := Button.new()
+	btn.custom_minimum_size = Vector2(168, 210)
+	btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var house := UpgradeData.house_name(upgrade.house)
+	var rare := UpgradeData.rarity_name(upgrade.rarity)
+	btn.text = "%s\n%s\n\n%s\n\n%s" % [rare, house, upgrade.display_name, upgrade.description]
+	btn.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	var tint := UpgradeData.rarity_color(upgrade.rarity)
+	btn.modulate = Color(lerpf(0.85, 1.0, tint.r), lerpf(0.85, 1.0, tint.g), lerpf(0.85, 1.0, tint.b))
+	btn.pressed.connect(_on_reward_upgrade.bind(upgrade))
+	return btn
+
+
+func _on_combo_unlocked(combo_name: String, description: String) -> void:
+	if _style_banner:
+		_style_banner.text = "COMBO  %s  —  %s" % [combo_name, description]
 
 
 func _on_reward_upgrade(upgrade: UpgradeData) -> void:

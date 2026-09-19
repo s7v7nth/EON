@@ -82,6 +82,12 @@ func on_kill(host: Node, _enemy: Node) -> void:
 		health.heal(heal_on_kill)
 
 
+func restore(host: Node, amount: float) -> void:
+	var health: HealthComponent = host.get("health") as HealthComponent
+	if health:
+		health.heal(amount)
+
+
 func try_special(host: Node) -> bool:
 	if not spend(host, &"special"):
 		return false

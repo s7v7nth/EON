@@ -46,7 +46,7 @@ func physics_update(delta: float) -> void:
 				player.combat_visual.play_ranged_fire(
 					_aim_angle, player.ranged_attack_data.damage_type
 				)
-			player.ranged_cooldown.start(player.ranged_attack_data.cooldown / speed)
+			player.ranged_cooldown.start((player.ranged_attack_data.cooldown / speed) * player.ranged_cooldown_mult)
 			_fired = true
 			_return_to_locomotion()
 	else:
