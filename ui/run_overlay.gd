@@ -619,6 +619,16 @@ func is_run_over() -> bool:
 	return _mode == Mode.DEATH or _mode == Mode.WIN
 
 
+func try_autopilot_reward() -> bool:
+	if _mode != Mode.REWARD or _offer_buttons.is_empty():
+		return false
+	var btn := _offer_buttons[0]
+	if btn == null or not is_instance_valid(btn):
+		return false
+	btn.emit_signal("pressed")
+	return true
+
+
 func _show(mode: Mode, title: String, subtitle: String) -> void:
 	_mode = mode
 	_title.text = title

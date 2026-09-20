@@ -332,7 +332,7 @@ func _ensure_artifact_label() -> void:
 	_artifact_label.name = "RelicLabel"
 	_paint_label(_artifact_label, 12, Color(0.82, 0.9, 1.0))
 	_artifact_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_artifact_label.custom_minimum_size = Vector2(260, 28)
+	_artifact_label.custom_minimum_size = Vector2(300, 28)
 	_artifact_label.text = "Relics  —"
 	health_bar.get_parent().add_child(_artifact_label)
 	_refresh_artifacts()

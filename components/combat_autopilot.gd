@@ -39,7 +39,10 @@ func _physics_process(delta: float) -> void:
 		player.aim_override = Vector2.ZERO
 		_reward_wait += delta
 		if _reward_wait >= 2.6:
-			_tap_key(KEY_1)
+			if overlay.has_method("try_autopilot_reward"):
+				overlay.try_autopilot_reward()
+			else:
+				_tap_key(KEY_1)
 			_reward_wait = 0.0
 		return
 	_reward_wait = 0.0
