@@ -213,11 +213,11 @@ func _ensure_combo_toast() -> void:
 	_combo_toast.anchor_right = 0.5
 	_combo_toast.anchor_top = 0.5
 	_combo_toast.anchor_bottom = 0.5
-	_combo_toast.offset_left = -300.0
-	_combo_toast.offset_right = 300.0
-	_combo_toast.offset_top = -86.0
-	_combo_toast.offset_bottom = 86.0
-	_combo_toast.z_index = 80
+	_combo_toast.offset_left = -320.0
+	_combo_toast.offset_right = 320.0
+	_combo_toast.offset_top = -94.0
+	_combo_toast.offset_bottom = 94.0
+	_combo_toast.z_index = 120
 	_combo_toast.process_mode = Node.PROCESS_MODE_ALWAYS
 	_combo_toast.add_theme_stylebox_override("panel", ArtBank.panel_style(&"card", Color(1.0, 0.92, 0.55, 0.97)))
 	_combo_toast.modulate.a = 0.0
@@ -290,8 +290,8 @@ func _ensure_boss_banner() -> void:
 	_boss_banner = Label.new()
 	_boss_banner.name = "BossBanner"
 	_boss_banner.set_anchors_preset(Control.PRESET_TOP_WIDE)
-	_boss_banner.offset_top = 64.0
-	_boss_banner.offset_bottom = 132.0
+	_boss_banner.offset_top = 128.0
+	_boss_banner.offset_bottom = 196.0
 	_boss_banner.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_boss_banner.add_theme_font_size_override("font_size", 42)
 	_boss_banner.add_theme_color_override("font_color", Color(1.0, 0.32, 0.28))
@@ -401,6 +401,11 @@ func _on_exit_reached() -> void:
 	if RunState.last_combo_name != "":
 		loot_line = "%s — %s" % [RunState.last_combo_name, loot_line]
 	var title := "Room Cleared — Rank %s" % RunState.current_room_rank()
+	match RunState.current_room_kind():
+		DungeonRoom.RoomKind.SHOP:
+			title = "Leaving Shop"
+		DungeonRoom.RoomKind.TREASURE:
+			title = "Cache Open"
 	if RunState.is_last_room():
 		title = "Act Clear — Rank %s" % RunState.current_room_rank()
 		loot_line = "%s — then finish the run" % loot_line

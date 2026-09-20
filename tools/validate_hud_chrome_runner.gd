@@ -63,6 +63,9 @@ func _run() -> void:
 	var toast := overlay.find_child("ComboToast", true, false) as Control
 	assert(toast != null, "combo toast should exist")
 	assert(toast.anchor_top > 0.4, "named combo toast should sit mid-screen, not under the location plaque")
+	var banner := overlay.find_child("BossBanner", true, false) as Control
+	assert(banner != null, "boss flash banner should exist")
+	assert(banner.offset_top >= 120.0, "boss flash should sit under the HP chrome, not on top of it")
 	assert(ArtBank.body_font() != null, "Inter body font must load")
 	assert(ArtBank.body_font() != ArtBank.title_font(), "body type should not be Kenney Future")
 	var overlay_title := overlay.get_node("Center/Panel/Margin/VBox/Title") as Label

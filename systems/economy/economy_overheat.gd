@@ -4,8 +4,8 @@ extends "res://systems/economy/resource_economy.gd"
 ## Special (Vent) dumps heat into an AoE and locks weapons briefly.
 
 @export var heat_max: float = 100.0
-@export var heat_gain_per_action: float = 16.0
-@export var heat_decay_per_sec: float = 16.0
+@export var heat_gain_per_action: float = 18.0
+@export var heat_decay_per_sec: float = 7.0
 @export var yellow_threshold: float = 50.0
 @export var yellow_damage_mult: float = 1.5
 @export var red_damage_mult: float = 2.0
@@ -151,14 +151,20 @@ func _paint_heat_aura(host: Node) -> void:
 	if cv == null or cv.aura == null:
 		return
 	if heat >= heat_max:
-		cv.aura.color = Color(1.0, 0.22, 0.12, 0.58)
+		cv.aura.color = Color(1.0, 0.22, 0.12, 0.72)
 		cv.aura.visible = true
+		cv.aura.scale = Vector2(2.15, 2.15)
 	elif heat >= yellow_threshold:
-		cv.aura.color = Color(1.0, 0.72, 0.12, 0.42)
+		cv.aura.color = Color(1.0, 0.72, 0.12, 0.58)
 		cv.aura.visible = true
+		cv.aura.scale = Vector2(1.7, 1.7)
 	elif heat > 8.0:
-		cv.aura.color = Color(0.45, 0.75, 1.0, 0.28)
+		cv.aura.color = Color(0.45, 0.75, 1.0, 0.36)
 		cv.aura.visible = true
+		cv.aura.scale = Vector2(1.25, 1.25)
+	else:
+		cv.aura.visible = false
+		cv.aura.scale = Vector2.ONE
 
 
 func _vent_blast(host: Node, dumped: float, ratio: float) -> void:

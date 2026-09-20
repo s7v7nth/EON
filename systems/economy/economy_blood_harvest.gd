@@ -11,6 +11,9 @@ extends "res://systems/economy/resource_economy.gd"
 @export var special_damage: float = 14.0
 @export var min_hp_from_drain: float = 8.0
 
+var _swarm: Node2D
+var _swarm_spin: float = 0.0
+
 
 func _init() -> void:
 	policy = GameplayEnums.EconomyPolicy.BLOOD_HARVEST
@@ -22,15 +25,18 @@ func on_equip(host: Node) -> void:
 		energy.lock_regen(0.0)
 		energy.current_energy = 0.0
 		energy.energy_changed.emit(0.0, energy.get_max_energy())
+	_ensure_swarm(host)
 
 
 func on_unequip(host: Node) -> void:
 	var energy: EnergyComponent = host.get("energy") as EnergyComponent
 	if energy:
 		energy.unlock_regen(1.0)
+	_free_swarm(host)
 
 
 func tick(host: Node, delta: float) -> void:
+	_spin_swarm(host, delta)
 	var health: HealthComponent = host.get("health") as HealthComponent
 	if health == null:
 		return
@@ -168,3 +174,61 @@ func _enemy_in_range(host: Node, radius: float) -> bool:
 		if origin.distance_to((child as Node2D).global_position) <= radius:
 			return true
 	return false
+
+
+func _ensure_swarm(host: Node) -> void:
+	if host is not Node2D:
+		return
+	_swarm = (host as Node2D).get_node_or_null("SwarmCloud") as Node2D
+	if _swarm:
+		return
+	_swarm = Node2D.new()
+	_swarm.name = "SwarmCloud"
+	_swarm.z_index = 6
+	(host as Node2D).add_child(_swarm)
+	for i in 8:
+		var mote := Polygon2D.new()
+		mote.name = "Mote%d" % i
+		mote.polygon = PackedVector2Array([
+			Vector2(0, -5), Vector2(4, 0), Vector2(0, 5), Vector2(-4, 0)
+		])
+		mote.color = Color(0.28, 1.0, 0.42, 0.92)
+		mote.z_index = 6
+		_swarm.add_child(mote)
+
+
+func _spin_swarm(host: Node, delta: float) -> void:
+	if _swarm == null or not is_instance_valid(_swarm):
+		_ensure_swarm(host)
+	if _swarm == null:
+		return
+	var hungry := _enemy_in_range(host, 240.0)
+	_swarm_spin += delta * (3.4 if hungry else 1.6)
+	var radius := 34.0 if hungry else 26.0
+	var kids := _swarm.get_children()
+	for i in kids.size():
+		var mote := kids[i] as Node2D
+		if mote == null:
+			continue
+		var ang := _swarm_spin + TAU * float(i) / float(maxi(kids.size(), 1))
+		mote.position = Vector2(cos(ang) * radius, sin(ang) * radius * 0.55 - 18.0)
+		mote.modulate = Color(1, 1, 1, 1.0 if hungry else 0.55)
+	var cv: CombatVisualComponent = host.get("combat_visual") as CombatVisualComponent
+	if cv and cv.aura:
+		cv.aura.visible = true
+		cv.aura.color = Color(0.28, 0.95, 0.38, 0.42 if hungry else 0.22)
+		cv.aura.scale = Vector2(1.55, 1.55) if hungry else Vector2(1.15, 1.15)
+
+
+func _free_swarm(host: Node) -> void:
+	if _swarm and is_instance_valid(_swarm):
+		_swarm.queue_free()
+	_swarm = null
+	if host:
+		var existing := host.get_node_or_null("SwarmCloud")
+		if existing:
+			existing.queue_free()
+	var cv: CombatVisualComponent = host.get("combat_visual") as CombatVisualComponent if host else null
+	if cv and cv.aura:
+		cv.aura.visible = false
+		cv.aura.scale = Vector2.ONE

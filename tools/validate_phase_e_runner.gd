@@ -85,6 +85,12 @@ func _run() -> void:
 	econ = player.active_economy as EconomyRam
 	assert(econ.max_slots >= 3)
 
+	RunState.choose_architecture(GameplayEnums.ArchitectureId.NANOMACHINES)
+	RunState.apply_to_player(player)
+	await get_tree().process_frame
+	assert(player.active_economy.policy == GameplayEnums.EconomyPolicy.BLOOD_HARVEST)
+	assert(player.get_node_or_null("SwarmCloud") != null, "Hive should wear a nano swarm")
+
 	room.queue_free()
 	RunState.reset()
 	print("PHASE_E_OK behaviors + bio mutant + neuro ram")
