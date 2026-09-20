@@ -8,6 +8,7 @@ const BLADE_THROW_ATTACK := preload("res://resources/attacks/player_blade_throw.
 const CIRCLE_SLASH_ATTACK := preload("res://resources/attacks/player_circle_slash.tres")
 const COMBO_MELEE := preload("res://resources/combos/combo_melee_string.tres")
 const COMBO_CIRCLE := preload("res://resources/combos/combo_circle_slash.tres")
+const _Autopilot := preload("res://components/combat_autopilot.gd")
 
 ## Hold LMB this long (from press) before ChargeThrow starts. Keep snappy.
 const HOLD_THRESHOLD := 0.14
@@ -89,6 +90,7 @@ var _blade_flight_time: float = 0.0
 var _active_blade: Projectile = null
 var _last_dash_cost: float = 0.0
 var _attack_hold_time: float = -1.0
+var aim_override: Vector2 = Vector2.ZERO
 
 
 func _ready() -> void:
@@ -108,8 +110,14 @@ func _ready() -> void:
 	_attach_body_light()
 	RunState.apply_to_player(self)
 	RunState.begin_room()
+	if not is_in_group("player"):
+		add_to_group("player")
 	if not SignalBus.enemy_died.is_connected(_on_enemy_died_for_economy):
 		SignalBus.enemy_died.connect(_on_enemy_died_for_economy)
+	if _Autopilot.is_requested():
+		var ap := _Autopilot.new()
+		ap.name = "CombatAutopilot"
+		add_child(ap)
 
 
 func _fit_hurtbox_to_body() -> void:
@@ -472,6 +480,8 @@ func get_input_direction() -> Vector2:
 
 
 func get_aim_direction() -> Vector2:
+	if aim_override != Vector2.ZERO:
+		return aim_override.normalized()
 	var aim := get_global_mouse_position() - global_position
 	if aim == Vector2.ZERO:
 		return facing_direction

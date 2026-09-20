@@ -4,7 +4,7 @@
 [ext_resource type="PackedScene" path="res://entities/player/player.tscn" id="2_player"]
 [ext_resource type="PackedScene" path="res://ui/debug_hud.tscn" id="3_hud"]
 [ext_resource type="PackedScene" path="res://ui/run_overlay.tscn" id="4_overlay"]
-[ext_resource type="Resource" path="res://resources/waves/wasteland_waves.tres" id="5_waves"]
+[ext_resource type="Resource" path="res://resources/waves/tutorial_wasteland_waves.tres" id="5_waves"]
 [ext_resource type="Resource" path="res://resources/biomes/wasteland.tres" id="6_biome"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_wall_h"]

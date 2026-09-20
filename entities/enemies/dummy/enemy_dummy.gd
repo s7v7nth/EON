@@ -62,6 +62,7 @@ func _ready() -> void:
 	# Catch bodies already overlapping on spawn.
 	call_deferred("_scan_detection_area")
 	call_deferred("_fit_combat_shapes")
+	add_to_group("enemies")
 
 
 func _fit_combat_shapes() -> void:
@@ -577,6 +578,9 @@ func spawn_projectile_volley(aim: Vector2, attack: AttackData) -> void:
 
 
 func _on_health_changed(current: float, max_value: float) -> void:
+	if definition and definition.is_boss:
+		var nm := definition.display_name if definition.display_name != "" else "BOSS"
+		SignalBus.boss_health_changed.emit(current, max_value, nm)
 	if definition == null or not definition.is_boss:
 		return
 	if _boss_phase2_fired or max_value <= 0.0:

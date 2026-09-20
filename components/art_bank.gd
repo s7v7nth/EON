@@ -15,11 +15,17 @@ const SHOOTER := "res://assets/kenney/space-shooter/"
 const SHOOTER_BG := "res://assets/kenney/space-shooter/bg/"
 const ICONS := "res://assets/kenney/icons/"
 const UI := "res://assets/kenney/ui-scifi/"
+const UI_PACK := "res://assets/kenney/ui-pack/"
 const PATTERNS := "res://assets/kenney/patterns/"
 const ABSTRACT := "res://assets/kenney/abstract/"
 const FONT_TITLE := "res://assets/kenney/ui-scifi/fonts/Kenney Future.ttf"
 const FONT_UI := "res://assets/kenney/ui-scifi/fonts/Kenney Future Narrow.ttf"
 const PORTRAITS := "res://assets/portraits/"
+const PANEL_GLASS := "res://assets/kenney/ui-scifi/panel_glass.png"
+const PANEL_RECT := "res://assets/kenney/ui-scifi/panel_rectangle.png"
+const CARD_BORDER := "res://assets/kenney/ui-pack/button_rectangle_depth_border.png"
+const CARD_GLOSS := "res://assets/kenney/ui-pack/button_rectangle_depth_gloss.png"
+const BAR_GLOSS := "res://assets/kenney/ui-scifi/bar_round_gloss_large.png"
 
 const DIR8: PackedStringArray = ["E", "SE", "S", "SW", "W", "NW", "N", "NE"]
 
@@ -69,6 +75,61 @@ static func ui(stem: String) -> Texture2D:
 	return tex(UI + stem + ".png")
 
 
+static func ui_pack(stem: String) -> Texture2D:
+	return tex(UI_PACK + stem + ".png")
+
+
+## Kenney nine-slice. Callers must tolerate a null when the PNG is missing.
+static func nine_slice(path: String, margin: float = 16.0, tint: Color = Color.WHITE) -> StyleBoxTexture:
+	var texture := tex(path)
+	if texture == null:
+		return null
+	var sb := StyleBoxTexture.new()
+	sb.texture = texture
+	sb.set_texture_margin_all(margin)
+	sb.modulate_color = tint
+	sb.content_margin_left = margin
+	sb.content_margin_right = margin
+	sb.content_margin_top = margin * 0.65
+	sb.content_margin_bottom = margin * 0.65
+	return sb
+
+
+static func panel_style(kind: StringName = &"glass", tint: Color = Color(1, 1, 1, 1)) -> StyleBox:
+	var path := PANEL_GLASS
+	var margin := 18.0
+	match kind:
+		&"rect":
+			path = PANEL_RECT
+			margin = 20.0
+		&"card":
+			path = CARD_BORDER
+			margin = 22.0
+		&"card_hover":
+			path = CARD_GLOSS
+			margin = 22.0
+		&"bar":
+			path = BAR_GLOSS
+			margin = 10.0
+	var sb := nine_slice(path, margin, tint)
+	if sb:
+		return sb
+	var flat := StyleBoxFlat.new()
+	flat.bg_color = Color(0.05, 0.06, 0.09, 0.92)
+	flat.set_corner_radius_all(10)
+	flat.set_border_width_all(2)
+	flat.border_color = Color(0.55, 0.62, 0.78, 0.55)
+	flat.content_margin_left = 12
+	flat.content_margin_right = 12
+	flat.content_margin_top = 10
+	flat.content_margin_bottom = 10
+	return flat
+
+
+static func button_style(hover: bool = false, tint: Color = Color.WHITE) -> StyleBox:
+	return panel_style(&"card_hover" if hover else &"card", tint)
+
+
 static func rts_tile(index: int) -> Texture2D:
 	return tex("%sscifiTile_%02d.png" % [RTS_TILE, index])
 
@@ -86,15 +147,27 @@ static func rts_struct(index: int) -> Texture2D:
 
 
 static func title_font() -> FontFile:
-	if _font_title == null and ResourceLoader.exists(FONT_TITLE):
-		_font_title = load(FONT_TITLE) as FontFile
+	if _font_title == null:
+		_font_title = _load_font(FONT_TITLE)
 	return _font_title
 
 
 static func ui_font() -> FontFile:
-	if _font_ui == null and ResourceLoader.exists(FONT_UI):
-		_font_ui = load(FONT_UI) as FontFile
+	if _font_ui == null:
+		_font_ui = _load_font(FONT_UI)
 	return _font_ui
+
+
+static func _load_font(path: String) -> FontFile:
+	if ResourceLoader.exists(path):
+		var loaded := load(path) as FontFile
+		if loaded:
+			return loaded
+	if FileAccess.file_exists(path):
+		var font := FontFile.new()
+		if font.load_dynamic_font(path) == OK:
+			return font
+	return null
 
 
 static func dir8_from(v: Vector2) -> String:

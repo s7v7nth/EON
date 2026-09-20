@@ -4,14 +4,14 @@
 
 [resource]
 script = ExtResource("1")
-damage = 10.0
-cooldown = 0.65
-windup = 0.3
+damage = 7.0
+cooldown = 0.7
+windup = 0.32
 active_duration = 0.12
-knockback_force = 100.0
+knockback_force = 90.0
 damage_type = 4
-status_chance = 0.45
-status_power = 5.0
+status_chance = 0.16
+status_power = 3.0
 status_duration = 2.2
 pattern_kind = 0
 commit_lock_early = 0.7

@@ -40,4 +40,5 @@ signal combo_unlocked(combo_name: String, description: String)
 signal artifact_pickup_available
 signal gold_changed(amount: int)
 signal boss_spawned(boss_name: String)
+signal boss_health_changed(current: float, max_value: float, boss_name: String)
 signal boss_phase(phase: int, boss_name: String)

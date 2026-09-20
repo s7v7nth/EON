@@ -1,17 +1,15 @@
-[gd_resource type="Resource" script_class="WaveSet" load_steps=11 format=3]
+[gd_resource type="Resource" script_class="WaveSet" load_steps=9 format=3]
 
 [ext_resource type="Script" path="res://resources/waves/wave_set.gd" id="1_set"]
 [ext_resource type="Script" path="res://resources/waves/wave_definition.gd" id="2_def"]
 [ext_resource type="Script" path="res://resources/waves/wave_spawn_group.gd" id="3_group"]
 [ext_resource type="PackedScene" path="res://entities/enemies/dummy/enemy_dummy.tscn" id="4_enemy"]
 [ext_resource type="Resource" path="res://resources/enemies/swarm.tres" id="5_swarm"]
-[ext_resource type="Resource" path="res://resources/enemies/bruiser.tres" id="6_bruiser"]
-[ext_resource type="Resource" path="res://resources/enemies/robo_beast.tres" id="7_beast"]
-[ext_resource type="Resource" path="res://resources/enemies/bio_mutant.tres" id="8_mutant"]
+[ext_resource type="Resource" path="res://resources/enemies/bio_mutant.tres" id="6_mutant"]
 
 [sub_resource type="Resource" id="spawn_w1"]
 script = ExtResource("3_group")
-count = 3
+count = 2
 enemy_scene = ExtResource("4_enemy")
 enemy_definition = ExtResource("5_swarm")
 
@@ -20,13 +18,7 @@ script = ExtResource("2_def")
 delay = 0.55
 spawns = Array[ExtResource("3_group")]([SubResource("spawn_w1")])
 
-[sub_resource type="Resource" id="spawn_w2a"]
-script = ExtResource("3_group")
-count = 1
-enemy_scene = ExtResource("4_enemy")
-enemy_definition = ExtResource("6_bruiser")
-
-[sub_resource type="Resource" id="spawn_w2c"]
+[sub_resource type="Resource" id="spawn_w2"]
 script = ExtResource("3_group")
 count = 1
 enemy_scene = ExtResource("4_enemy")
@@ -34,26 +26,21 @@ enemy_definition = ExtResource("5_swarm")
 
 [sub_resource type="Resource" id="wave_2"]
 script = ExtResource("2_def")
-delay = 1.4
-spawns = Array[ExtResource("3_group")]([SubResource("spawn_w2c")])
+delay = 1.2
+spawns = Array[ExtResource("3_group")]([SubResource("spawn_w2")])
 
 [sub_resource type="Resource" id="spawn_w3"]
 script = ExtResource("3_group")
 count = 1
 enemy_scene = ExtResource("4_enemy")
-enemy_definition = ExtResource("8_mutant")
-
-[sub_resource type="Resource" id="spawn_w3b"]
-script = ExtResource("3_group")
-count = 1
-enemy_scene = ExtResource("4_enemy")
-enemy_definition = ExtResource("6_bruiser")
+enemy_definition = ExtResource("6_mutant")
 
 [sub_resource type="Resource" id="wave_3"]
 script = ExtResource("2_def")
-delay = 1.1
+delay = 1.0
 spawns = Array[ExtResource("3_group")]([SubResource("spawn_w3")])
 
 [resource]
 script = ExtResource("1_set")
+between_wave_heal = 0.45
 waves = Array[ExtResource("2_def")]([SubResource("wave_1"), SubResource("wave_2"), SubResource("wave_3")])

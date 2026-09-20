@@ -1,6 +1,8 @@
 extends Control
 ## Run boot: pick route + architecture, then dive into the first room.
 
+const _Autopilot := preload("res://components/combat_autopilot.gd")
+
 const HINTS := {
 	0: {
 		"title": "Синтетик",
@@ -46,6 +48,8 @@ func _ready() -> void:
 	var arches := RunState.get_architectures()
 	if not arches.is_empty():
 		_select_arch(arches[0])
+	if _Autopilot.is_requested():
+		call_deferred("_autopilot_begin")
 
 
 func _build() -> void:
@@ -115,6 +119,12 @@ func _build() -> void:
 		btn.custom_minimum_size = Vector2(0, 44)
 		btn.text = "%s  ·  %d rooms" % [route.display_name, route.total_rooms()]
 		btn.pressed.connect(_select_route.bind(route))
+		var route_style := ArtBank.button_style(false, Color(0.85, 0.92, 1.0, 1))
+		var route_hover := ArtBank.button_style(true, Color(1.0, 0.95, 0.75, 1))
+		if route_style:
+			btn.add_theme_stylebox_override("normal", route_style)
+		if route_hover:
+			btn.add_theme_stylebox_override("hover", route_hover)
 		route_row.add_child(btn)
 		_route_buttons.append(btn)
 
@@ -279,3 +289,10 @@ func _begin_run() -> void:
 	if FeelAudio:
 		FeelAudio.play_ui()
 	get_tree().change_scene_to_file(path)
+
+
+func _autopilot_begin() -> void:
+	await get_tree().create_timer(1.15).timeout
+	if not is_inside_tree():
+		return
+	_begin_run()

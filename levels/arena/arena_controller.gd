@@ -49,6 +49,7 @@ func _ready() -> void:
 	is_final_room = RunState.is_last_room()
 	_place_player()
 	_setup_exits()
+	_dress_exit_marker()
 	call_deferred("_try_start_combat")
 
 
@@ -139,13 +140,21 @@ func _spawn_special_marker(kind: int) -> void:
 			spr.texture = ArtBank.shooter("powerupBlue_shield")
 			ArtBank.fit_height(spr, 48.0, false)
 	marker.add_child(spr)
+	var plaque := PanelContainer.new()
+	plaque.name = "HintPlaque"
+	plaque.position = Vector2(-110, -108)
+	plaque.custom_minimum_size = Vector2(220, 32)
+	plaque.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	plaque.add_theme_stylebox_override("panel", ArtBank.panel_style(&"card", Color(0.9, 0.92, 1.0, 0.95)))
 	var hint := Label.new()
-	hint.position = Vector2(-110, -92)
 	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	hint.custom_minimum_size = Vector2(180, 20)
+	hint.custom_minimum_size = Vector2(200, 22)
 	hint.add_theme_font_size_override("font_size", 14)
 	hint.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
 	hint.add_theme_constant_override("outline_size", 4)
+	var hint_font := ArtBank.ui_font()
+	if hint_font:
+		hint.add_theme_font_override("font", hint_font)
 	match kind:
 		DungeonRoom.RoomKind.SHOP:
 			hint.text = "SHOP — pay gold, pick one"
@@ -156,7 +165,8 @@ func _spawn_special_marker(kind: int) -> void:
 		_:
 			hint.text = "SECRET — walk over to claim"
 			hint.add_theme_color_override("font_color", Color(0.82, 0.65, 1.0))
-	marker.add_child(hint)
+	plaque.add_child(hint)
+	marker.add_child(plaque)
 	_entities.add_child(marker)
 	marker.position = Vector2.ZERO
 
@@ -237,6 +247,43 @@ func _setup_exits() -> void:
 			exit_node.body_entered.connect(_on_exit_body_entered)
 	if RunState.is_procedural_run():
 		_build_procedural_doors()
+
+
+func _dress_exit_marker() -> void:
+	if exit_marker_path == NodePath() or not has_node(exit_marker_path):
+		return
+	var exit_node := get_node(exit_marker_path) as Node2D
+	if exit_node == null:
+		return
+	var poly := exit_node.get_node_or_null("ExitVisual") as CanvasItem
+	if poly:
+		poly.visible = false
+	var spr := exit_node.get_node_or_null("ExitSprite") as Sprite2D
+	if spr == null:
+		spr = Sprite2D.new()
+		spr.name = "ExitSprite"
+		spr.centered = true
+		spr.z_index = 2
+		spr.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+		exit_node.add_child(spr)
+	spr.texture = ArtBank.dungeon_facing("stoneWallDoorOpen", Vector2(0, 1))
+	if spr.texture == null:
+		spr.texture = ArtBank.dungeon_facing("stoneWallArchway", Vector2(0, 1))
+	if spr.texture == null:
+		spr.texture = ArtBank.space("platform_small_SE")
+	if spr.texture:
+		ArtBank.fit_height(spr, 92.0, true)
+		spr.modulate = Color(0.75, 1.15, 0.85, 1)
+	var glow := exit_node.get_node_or_null("ExitGlow") as Sprite2D
+	if glow == null:
+		glow = Sprite2D.new()
+		glow.name = "ExitGlow"
+		glow.centered = true
+		glow.z_index = 1
+		glow.texture = ArtBank.particle("circle_05")
+		glow.modulate = Color(0.35, 0.95, 0.55, 0.45)
+		glow.scale = Vector2(1.6, 0.7)
+		exit_node.add_child(glow)
 
 
 func _clear_procedural_doors() -> void:
@@ -471,39 +518,55 @@ func _present_boss(enemy: EnemyDummy) -> void:
 		return
 	var visual := enemy.get_node_or_null("Visual") as Node2D
 	if visual:
-		visual.scale = Vector2(1.7, 1.7)
-	CameraFx.add_trauma(0.55)
-	CameraFx.flash(Color(1.0, 0.25, 0.18, 0.45), 0.22)
-	HitStop.punch(0.12, 0.16)
+		visual.scale = Vector2(1.9, 1.9)
+	CameraFx.add_trauma(0.65)
+	CameraFx.flash(Color(1.0, 0.18, 0.12, 0.55), 0.28)
+	CameraFx.punch_zoom(0.16, 0.55)
+	HitStop.punch(0.16, 0.22)
 	if FeelAudio:
 		FeelAudio.play_boss()
 	var name_txt := "WARDEN"
 	if enemy.definition and enemy.definition.display_name != "":
 		name_txt = enemy.definition.display_name
 	SignalBus.boss_spawned.emit(name_txt)
+	if enemy.health:
+		SignalBus.boss_health_changed.emit(
+			enemy.health.current_health,
+			enemy.health.get_max_health(),
+			name_txt
+		)
 	var plate := Label.new()
 	plate.name = "BossPlate"
 	plate.text = name_txt.to_upper()
 	plate.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	plate.position = Vector2(-90, -128)
-	plate.custom_minimum_size = Vector2(180, 24)
-	plate.add_theme_font_size_override("font_size", 18)
+	plate.position = Vector2(-110, -148)
+	plate.custom_minimum_size = Vector2(220, 28)
+	plate.add_theme_font_size_override("font_size", 22)
 	plate.add_theme_color_override("font_color", Color(1.0, 0.38, 0.28))
 	plate.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.95))
-	plate.add_theme_constant_override("outline_size", 6)
+	plate.add_theme_constant_override("outline_size", 8)
 	var plate_font := ArtBank.title_font()
 	if plate_font:
 		plate.add_theme_font_override("font", plate_font)
 	enemy.add_child(plate)
+	var ring := Sprite2D.new()
+	ring.name = "BossRing"
+	ring.texture = ArtBank.particle("circle_05")
+	ring.centered = true
+	ring.modulate = Color(1.0, 0.22, 0.16, 0.7)
+	ring.position = Vector2(0, 8)
+	ring.scale = Vector2(2.4, 1.15)
+	ring.z_index = -1
+	enemy.add_child(ring)
 	var tex := _radial_boss_tex()
-	for i in 3:
+	for i in 4:
 		var light := PointLight2D.new()
 		light.texture = tex
-		light.color = Color(1.0, 0.3, 0.22)
-		light.energy = 1.4
-		light.texture_scale = 2.2
+		light.color = Color(1.0, 0.28, 0.18)
+		light.energy = 1.55
+		light.texture_scale = 2.4
 		enemy.add_child(light)
-		light.position = Vector2(cos(TAU * float(i) / 3.0), sin(TAU * float(i) / 3.0)) * 40.0
+		light.position = Vector2(cos(TAU * float(i) / 4.0), sin(TAU * float(i) / 4.0)) * 48.0
 
 
 func _radial_boss_tex() -> Texture2D:
@@ -556,12 +619,18 @@ func _spawn_artifact_orb(enemy: Node) -> void:
 
 func _on_wave_cleared() -> void:
 	SignalBus.wave_cleared.emit(_wave_index)
-	_heal_player_between_waves(0.22)
+	_heal_player_between_waves(_between_wave_heal())
 	var next := _wave_index + 1
 	if next >= wave_set.wave_count():
 		_on_all_waves_cleared()
 	else:
 		_begin_wave(next)
+
+
+func _between_wave_heal() -> float:
+	if wave_set and wave_set.between_wave_heal > 0.0:
+		return wave_set.between_wave_heal
+	return 0.22
 
 
 func _heal_player_between_waves(fraction: float) -> void:
@@ -609,6 +678,7 @@ func _show_exit() -> void:
 		return
 	var exit_node: Node2D = get_node(exit_marker_path) as Node2D
 	exit_node.visible = true
+	_dress_exit_marker()
 	if exit_node is Area2D:
 		(exit_node as Area2D).monitoring = true
 		if not exit_node.body_entered.is_connected(_on_exit_body_entered):

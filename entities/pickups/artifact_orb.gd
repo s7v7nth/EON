@@ -77,16 +77,23 @@ func _ready() -> void:
 	if font:
 		_label.add_theme_font_override("font", font)
 	add_child(_label)
+	var plaque := PanelContainer.new()
+	plaque.name = "PricePlaque"
+	plaque.visible = false
+	plaque.position = Vector2(-58, 18)
+	plaque.custom_minimum_size = Vector2(116, 28)
+	plaque.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	plaque.add_theme_stylebox_override("panel", ArtBank.panel_style(&"card", Color(1.0, 0.88, 0.4, 0.95)))
+	add_child(plaque)
 	_price_label = Label.new()
-	_price_label.position = Vector2(-50, 22)
 	_price_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_price_label.custom_minimum_size = Vector2(140, 18)
-	_price_label.add_theme_font_size_override("font_size", 15)
+	_price_label.custom_minimum_size = Vector2(110, 18)
+	_price_label.add_theme_font_size_override("font_size", 14)
 	_price_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
 	_price_label.add_theme_constant_override("outline_size", 4)
 	if font:
 		_price_label.add_theme_font_override("font", font)
-	add_child(_price_label)
+	plaque.add_child(_price_label)
 	_light = PointLight2D.new()
 	var grad := Gradient.new()
 	grad.colors = PackedColorArray([Color(1, 0.85, 0.4, 1), Color(1, 0.85, 0.4, 0)])
@@ -141,20 +148,26 @@ func _apply_preset_look() -> void:
 func _refresh_price() -> void:
 	if _price_label == null:
 		return
+	var plaque := get_node_or_null("PricePlaque") as CanvasItem
 	if price_gold <= 0:
 		_price_label.text = "FREE"
 		_price_label.add_theme_color_override("font_color", Color(0.75, 0.9, 0.7))
 		_price_label.visible = false
+		if plaque:
+			plaque.visible = false
 		var coin := get_node_or_null("PriceCoin") as Sprite2D
 		if coin:
 			coin.visible = false
 		return
 	_price_label.visible = true
+	if plaque:
+		plaque.visible = true
 	_price_label.text = "%d GOLD" % price_gold
 	_price_label.add_theme_color_override("font_color", Color(1.0, 0.86, 0.32))
 	var coin_on := get_node_or_null("PriceCoin") as Sprite2D
 	if coin_on:
 		coin_on.visible = true
+		coin_on.position = Vector2(-72, 32)
 
 
 func _process(delta: float) -> void:
@@ -188,6 +201,9 @@ func try_claim(player: Player) -> bool:
 		if _price_label:
 			_price_label.text = "NEED %d G" % price_gold
 			_price_label.add_theme_color_override("font_color", Color(1.0, 0.35, 0.32))
+		var plaque := get_node_or_null("PricePlaque") as CanvasItem
+		if plaque:
+			plaque.visible = true
 		if FeelAudio:
 			FeelAudio.play_error()
 		return false

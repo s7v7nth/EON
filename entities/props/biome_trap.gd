@@ -1,6 +1,6 @@
 class_name BiomeTrap
 extends Area2D
-## Greybox biome hazard — ticks damage/status on the player while overlapping.
+## Floor hazard — Kenney splat only, no greybox polygons.
 
 @export var damage_per_tick: float = 4.0
 @export var tick_interval: float = 0.45
@@ -11,8 +11,7 @@ extends Area2D
 var _accum: float = 0.0
 var _player: Player
 var _pulse: Tween
-var _fill: Polygon2D
-var _rim: Polygon2D
+var _splat: Sprite2D
 
 
 func _ready() -> void:
@@ -21,6 +20,7 @@ func _ready() -> void:
 	monitorable = false
 	collision_layer = 0
 	collision_mask = 2 # player
+	add_to_group("biome_traps")
 	if not body_entered.is_connected(_on_body_entered):
 		body_entered.connect(_on_body_entered)
 	if not body_exited.is_connected(_on_body_exited):
@@ -70,46 +70,37 @@ func _scan_overlap() -> void:
 
 
 func _ensure_visual() -> void:
-	# Legacy solid rect from early greybox — replace with puddle fill + rim.
-	var legacy := get_node_or_null("Visual") as Polygon2D
-	if legacy and legacy.name == "Visual":
-		legacy.name = "Fill"
-	_fill = get_node_or_null("Fill") as Polygon2D
-	if _fill == null:
-		_fill = Polygon2D.new()
-		_fill.name = "Fill"
-		add_child(_fill)
-	_rim = get_node_or_null("Rim") as Polygon2D
-	if _rim == null:
-		_rim = Polygon2D.new()
-		_rim.name = "Rim"
-		add_child(_rim)
-		move_child(_rim, 0)
+	var fill := get_node_or_null("Fill") as CanvasItem
+	if fill:
+		fill.visible = false
+	var rim := get_node_or_null("Rim") as CanvasItem
+	if rim:
+		rim.visible = false
+	var legacy := get_node_or_null("Visual") as CanvasItem
+	if legacy:
+		legacy.visible = false
 
-	var puddle := _puddle_poly()
-	_fill.polygon = puddle
-	_fill.color = Color(trap_color.r, trap_color.g, trap_color.b, 0.28)
-	_fill.z_index = 0
-
-	_rim.polygon = _ring_poly(puddle, 4.0)
-	_rim.color = Color(trap_color.r, trap_color.g, trap_color.b, 0.55).lightened(0.25)
-	_rim.z_index = 1
-
-	var splat := get_node_or_null("Splat") as Sprite2D
-	if splat == null:
-		splat = Sprite2D.new()
-		splat.name = "Splat"
-		splat.centered = true
-		splat.z_index = 2
-		splat.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
-		add_child(splat)
-	splat.texture = ArtBank.tex("res://assets/kenney/splat/splat03.png")
-	if splat.texture == null:
-		splat.texture = ArtBank.particle("smoke_06")
-	if splat.texture:
-		ArtBank.fit_height(splat, 62.0, false)
-		splat.modulate = Color(trap_color.r, trap_color.g, trap_color.b, 0.78)
-		splat.rotation = 0.4
+	_splat = get_node_or_null("Splat") as Sprite2D
+	if _splat == null:
+		_splat = Sprite2D.new()
+		_splat.name = "Splat"
+		_splat.centered = true
+		_splat.z_index = 2
+		_splat.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+		add_child(_splat)
+	var splat_path := "res://assets/kenney/splat/splat03.png"
+	if trap_color.g > trap_color.r:
+		splat_path = "res://assets/kenney/splat/splat05.png"
+	elif trap_color.b > trap_color.r:
+		splat_path = "res://assets/kenney/splat/splat01.png"
+	_splat.texture = ArtBank.tex(splat_path)
+	if _splat.texture == null:
+		_splat.texture = ArtBank.particle("smoke_06")
+	if _splat.texture:
+		ArtBank.fit_height(_splat, 68.0, false)
+		_splat.modulate = Color(trap_color.r, trap_color.g, trap_color.b, 0.88)
+		_splat.rotation = 0.35
+		_splat.visible = true
 
 	var shape_node := get_node_or_null("CollisionShape2D") as CollisionShape2D
 	if shape_node == null:
@@ -120,56 +111,27 @@ func _ensure_visual() -> void:
 	if rect == null:
 		rect = RectangleShape2D.new()
 		shape_node.shape = rect
-	rect.size = Vector2(52, 34)
+	rect.size = Vector2(48, 30)
 
 
 func _start_pulse() -> void:
-	if _fill == null:
+	if _splat == null:
 		return
 	if _pulse:
 		_pulse.kill()
-	_fill.scale = Vector2.ONE
-	var base_a := _fill.color.a
+	_splat.scale = _splat.scale
+	var base := _splat.scale
 	_pulse = create_tween().set_loops()
-	_pulse.tween_property(_fill, "scale", Vector2(1.05, 1.03), 0.65).set_trans(Tween.TRANS_SINE)
-	_pulse.parallel().tween_property(_fill, "color:a", minf(base_a + 0.12, 0.75), 0.65)
-	_pulse.tween_property(_fill, "scale", Vector2(0.97, 0.98), 0.65).set_trans(Tween.TRANS_SINE)
-	_pulse.parallel().tween_property(_fill, "color:a", base_a, 0.65)
+	_pulse.tween_property(_splat, "scale", base * 1.08, 0.7).set_trans(Tween.TRANS_SINE)
+	_pulse.parallel().tween_property(_splat, "modulate:a", 0.98, 0.7)
+	_pulse.tween_property(_splat, "scale", base * 0.94, 0.7).set_trans(Tween.TRANS_SINE)
+	_pulse.parallel().tween_property(_splat, "modulate:a", 0.72, 0.7)
 
 
 func _flash_hit() -> void:
-	if _fill == null:
+	if _splat == null:
 		return
-	var base := _fill.color
-	var flash := Color(1.0, 1.0, 1.0, minf(base.a + 0.35, 0.95))
+	var base := _splat.modulate
 	var t := create_tween()
-	t.tween_property(_fill, "color", flash, 0.05)
-	t.tween_property(_fill, "color", base, 0.12)
-
-
-func _puddle_poly() -> PackedVector2Array:
-	## Irregular iso puddle — reads as a floor hazard, not a debug tile.
-	return PackedVector2Array([
-		Vector2(-8, -16),
-		Vector2(10, -14),
-		Vector2(24, -6),
-		Vector2(26, 6),
-		Vector2(14, 15),
-		Vector2(-6, 16),
-		Vector2(-22, 8),
-		Vector2(-26, -2),
-		Vector2(-18, -12),
-	])
-
-
-func _ring_poly(inner: PackedVector2Array, outset: float) -> PackedVector2Array:
-	## Simple outward offset of the puddle silhouette for a bright rim.
-	var out := PackedVector2Array()
-	var center := Vector2.ZERO
-	for p in inner:
-		center += p
-	center /= float(inner.size())
-	for p in inner:
-		var dir := (p - center).normalized()
-		out.append(p + dir * outset)
-	return out
+	t.tween_property(_splat, "modulate", Color(1.0, 1.0, 1.0, 1.0), 0.05)
+	t.tween_property(_splat, "modulate", base, 0.14)

@@ -33,6 +33,16 @@ func flash(color: Color = Color(1, 1, 1, 0.55), duration: float = 0.08) -> void:
 	tween.tween_callback(layer.queue_free)
 
 
+func punch_zoom(amount: float = 0.12, duration: float = 0.5) -> void:
+	var cam: Camera2D = get_viewport().get_camera_2d() if get_viewport() else null
+	if cam == null:
+		return
+	var base := cam.zoom
+	var tw := create_tween()
+	tw.tween_property(cam, "zoom", base * (1.0 + amount), 0.08).set_trans(Tween.TRANS_QUAD)
+	tw.tween_property(cam, "zoom", base, maxf(duration, 0.12)).set_trans(Tween.TRANS_SINE)
+
+
 func _process(delta: float) -> void:
 	var cam: Camera2D = get_viewport().get_camera_2d()
 	if cam != _camera:

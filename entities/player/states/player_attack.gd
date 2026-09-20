@@ -221,8 +221,7 @@ func _aim_hitbox_at_cursor() -> void:
 		player.hitbox_pivot.rotation = 0.0
 		_aim_angle = player.get_aim_direction().angle()
 		return
-	var mouse := player.get_global_mouse_position()
-	var aim := mouse - player.global_position
+	var aim := player.get_aim_direction()
 	if aim == Vector2.ZERO:
 		aim = player.facing_direction
 	_aim_angle = aim.angle()

@@ -23,10 +23,15 @@ var _route: VBoxContainer
 var _offer_buttons: Array[Button] = []
 var _boss_banner: Label
 var _boss_tween: Tween
+var _dimmer: ColorRect
+var _last_style_rank: String = ""
+var _style_tween: Tween
 
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	_ensure_dimmer()
+	_skin_panel(&"glass", Color(0.85, 0.9, 1.0, 0.96))
 	_panel.visible = false
 	_rewards.visible = false
 	_craft.visible = false
@@ -36,6 +41,13 @@ func _ready() -> void:
 	_wave_label.text = ""
 	if _style_banner:
 		_style_banner.text = ""
+		_style_banner.modulate.a = 0.0
+		_style_banner.set_anchors_preset(Control.PRESET_TOP_WIDE)
+		_style_banner.offset_top = 86.0
+		_style_banner.offset_bottom = 128.0
+		_style_banner.offset_left = 0.0
+		_style_banner.offset_right = 0.0
+		_style_banner.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	SignalBus.player_died.connect(_on_player_died)
 	SignalBus.wave_started.connect(_on_wave_started)
 	SignalBus.wave_cleared.connect(_on_wave_cleared)
@@ -52,12 +64,18 @@ func _ready() -> void:
 	_ensure_boss_banner()
 	SignalBus.boss_spawned.connect(_on_boss_spawned)
 	SignalBus.boss_phase.connect(_on_boss_phase)
-	var font := ArtBank.ui_font()
-	if font:
-		_title.add_theme_font_override("font", font)
-		_wave_label.add_theme_font_override("font", font)
+	var ui_font := ArtBank.ui_font()
+	var title_font := ArtBank.title_font()
+	if title_font:
+		_title.add_theme_font_override("font", title_font)
+	if ui_font:
+		_subtitle.add_theme_font_override("font", ui_font)
+		_wave_label.add_theme_font_override("font", ui_font)
 		if _style_banner:
-			_style_banner.add_theme_font_override("font", font)
+			_style_banner.add_theme_font_override("font", title_font if title_font else ui_font)
+	_title.add_theme_font_size_override("font_size", 32)
+	_title.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
+	_title.add_theme_constant_override("outline_size", 6)
 
 
 func _ensure_route_box() -> void:
@@ -97,6 +115,41 @@ func _is_restart_key(event: InputEvent) -> bool:
 	return false
 
 
+func _ensure_dimmer() -> void:
+	_dimmer = get_node_or_null("Dimmer") as ColorRect
+	if _dimmer:
+		return
+	_dimmer = ColorRect.new()
+	_dimmer.name = "Dimmer"
+	_dimmer.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_dimmer.color = Color(0.02, 0.03, 0.05, 0.62)
+	_dimmer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_dimmer.visible = false
+	add_child(_dimmer)
+	move_child(_dimmer, 0)
+
+
+func _skin_panel(kind: StringName, tint: Color) -> void:
+	if _panel == null:
+		return
+	_panel.add_theme_stylebox_override("panel", ArtBank.panel_style(kind, tint))
+
+
+func _skin_button(btn: Button, tint: Color = Color(0.95, 0.97, 1.0, 1)) -> void:
+	if btn == null:
+		return
+	btn.add_theme_stylebox_override("normal", ArtBank.button_style(false, tint))
+	btn.add_theme_stylebox_override("hover", ArtBank.button_style(true, tint.lightened(0.12)))
+	btn.add_theme_stylebox_override("pressed", ArtBank.button_style(true, tint.darkened(0.08)))
+	btn.add_theme_color_override("font_color", Color(0.94, 0.96, 1.0))
+	btn.add_theme_color_override("font_hover_color", Color.WHITE)
+	var font := ArtBank.ui_font()
+	if font:
+		btn.add_theme_font_override("font", font)
+	btn.add_theme_font_size_override("font_size", 15)
+	btn.custom_minimum_size.y = maxf(btn.custom_minimum_size.y, 44.0)
+
+
 func _ensure_boss_banner() -> void:
 	_boss_banner = get_node_or_null("BossBanner") as Label
 	if _boss_banner:
@@ -104,13 +157,13 @@ func _ensure_boss_banner() -> void:
 	_boss_banner = Label.new()
 	_boss_banner.name = "BossBanner"
 	_boss_banner.set_anchors_preset(Control.PRESET_TOP_WIDE)
-	_boss_banner.offset_top = 72.0
-	_boss_banner.offset_bottom = 128.0
+	_boss_banner.offset_top = 64.0
+	_boss_banner.offset_bottom = 132.0
 	_boss_banner.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_boss_banner.add_theme_font_size_override("font_size", 34)
+	_boss_banner.add_theme_font_size_override("font_size", 42)
 	_boss_banner.add_theme_color_override("font_color", Color(1.0, 0.32, 0.28))
 	_boss_banner.add_theme_color_override("font_outline_color", Color(0.05, 0, 0, 0.95))
-	_boss_banner.add_theme_constant_override("outline_size", 8)
+	_boss_banner.add_theme_constant_override("outline_size", 10)
 	var font := ArtBank.title_font()
 	if font:
 		_boss_banner.add_theme_font_override("font", font)
@@ -120,6 +173,16 @@ func _ensure_boss_banner() -> void:
 
 func _on_boss_spawned(boss_name: String) -> void:
 	_flash_boss_banner("BOSS  —  %s" % boss_name.to_upper(), Color(1.0, 0.32, 0.28))
+	if _dimmer:
+		_dimmer.visible = true
+		_dimmer.color = Color(0.18, 0.02, 0.02, 0.38)
+		var tw := create_tween()
+		tw.tween_property(_dimmer, "color:a", 0.0, 1.35)
+		tw.tween_callback(func() -> void:
+			if _dimmer and _mode == Mode.HIDDEN:
+				_dimmer.visible = false
+				_dimmer.color = Color(0.02, 0.03, 0.05, 0.62)
+		)
 
 
 func _on_boss_phase(phase: int, boss_name: String) -> void:
@@ -132,10 +195,12 @@ func _flash_boss_banner(text: String, color: Color) -> void:
 	_boss_banner.text = text
 	_boss_banner.add_theme_color_override("font_color", color)
 	_boss_banner.modulate = Color.WHITE
+	_boss_banner.scale = Vector2(1.12, 1.12)
 	if _boss_tween and _boss_tween.is_valid():
 		_boss_tween.kill()
 	_boss_tween = create_tween()
-	_boss_tween.tween_interval(1.8)
+	_boss_tween.tween_property(_boss_banner, "scale", Vector2.ONE, 0.22).set_trans(Tween.TRANS_BACK)
+	_boss_tween.tween_interval(1.6)
 	_boss_tween.tween_property(_boss_banner, "modulate:a", 0.0, 0.45)
 	_boss_tween.tween_callback(func() -> void:
 		if _boss_banner:
@@ -152,6 +217,7 @@ func _show_start_flow() -> void:
 
 
 func _on_player_died() -> void:
+	_skin_panel(&"rect", Color(0.85, 0.28, 0.24, 0.97))
 	_show(Mode.DEATH, "You Died", "Rank %s — R new run (same class) · C change class" % RunState.current_room_rank())
 	get_tree().paused = true
 
@@ -167,6 +233,7 @@ func _on_wave_cleared(index: int) -> void:
 
 
 func _on_run_won() -> void:
+	_skin_panel(&"glass", Color(1.0, 0.88, 0.45, 0.97))
 	_show(Mode.WIN, "Run Complete", "Style %s — %d pts — R again · C class select" % [
 		RunState.current_room_rank(), RunState.style_score
 	])
@@ -190,6 +257,7 @@ func _on_exit_reached() -> void:
 	if RunState.is_last_room():
 		title = "Act Clear — Rank %s" % RunState.current_room_rank()
 		loot_line = "%s — then finish the run" % loot_line
+	_skin_panel(&"glass", Color(0.92, 0.86, 0.62, 0.97))
 	_show(Mode.REWARD, title, loot_line)
 	_rewards.visible = true
 	_craft.visible = true
@@ -200,13 +268,31 @@ func _on_exit_reached() -> void:
 
 
 func _on_style_changed(score: int, multiplier: float, rank: String) -> void:
-	if _style_banner:
-		_style_banner.text = "STYLE %s  x%.1f  %d" % [rank, multiplier, score]
+	if _style_banner == null:
+		return
+	if rank == _last_style_rank:
+		return
+	var first := _last_style_rank == ""
+	_last_style_rank = rank
+	if first:
+		return
+	_style_banner.text = "STYLE  %s    ×%.1f    %d" % [rank, multiplier, score]
+	_style_banner.modulate = Color.WHITE
+	if _style_tween and _style_tween.is_valid():
+		_style_tween.kill()
+	_style_tween = create_tween()
+	_style_tween.tween_interval(1.1)
+	_style_tween.tween_property(_style_banner, "modulate:a", 0.0, 0.4)
+	_style_tween.tween_callback(func() -> void:
+		if _style_banner:
+			_style_banner.text = ""
+	)
 
 
 func _show_route_pick() -> void:
 	_ensure_route_box()
 	_populate_route_pick()
+	_skin_panel(&"glass", Color(0.82, 0.9, 1.0, 0.97))
 	_show(Mode.ROUTE_PICK, "Choose Route", "Tutorial slice or full Acts 1–4 campaign")
 	_route.visible = true
 	_arch.visible = false
@@ -224,6 +310,7 @@ func _populate_route_pick() -> void:
 		var btn := Button.new()
 		btn.text = "%s — %d rooms" % [route.display_name, route.total_rooms()]
 		btn.pressed.connect(_on_route_pressed.bind(route))
+		_skin_button(btn)
 		_route.add_child(btn)
 		_route_nodes.append(btn)
 
@@ -238,6 +325,7 @@ func _on_route_pressed(route: ActRoute) -> void:
 
 func _show_arch_pick() -> void:
 	_populate_arch_pick()
+	_skin_panel(&"glass", Color(0.9, 0.84, 0.62, 0.97))
 	_show(Mode.ARCH_PICK, "Choose Architecture", "Defines your combat language — Q = special")
 	_arch.visible = true
 	if _route:
@@ -260,6 +348,7 @@ func _populate_arch_pick() -> void:
 		var desc := arch.description if arch.description != "" else arch.display_name
 		btn.text = "%s — %s" % [arch.display_name, desc]
 		btn.pressed.connect(_on_arch_pressed.bind(arch))
+		_skin_button(btn)
 		_arch.add_child(btn)
 		_arch_nodes.append(btn)
 
@@ -275,6 +364,8 @@ func _on_arch_pressed(arch: ArchitectureData) -> void:
 		RunState.apply_to_player(player)
 	_mode = Mode.HIDDEN
 	_panel.visible = false
+	if _dimmer:
+		_dimmer.visible = false
 	_arch.visible = false
 	if _route:
 		_route.visible = false
@@ -304,6 +395,7 @@ func _populate_craft() -> void:
 		var btn := Button.new()
 		btn.text = "%s — %s" % [upgrade.display_name, upgrade.description]
 		btn.pressed.connect(_on_craft.bind(upgrade))
+		_skin_button(btn, Color(0.82, 0.9, 1.0, 1))
 		_craft.add_child(btn)
 		_craft_nodes.append(btn)
 
@@ -326,6 +418,7 @@ func _populate_reward_upgrades() -> void:
 		var skip := Button.new()
 		skip.text = "Continue"
 		skip.pressed.connect(_finish_reward)
+		_skin_button(skip)
 		_rewards.add_child(skip)
 		_reward_extra_nodes.append(skip)
 		return
@@ -354,14 +447,25 @@ func _make_boon_card(upgrade: UpgradeData, hotkey: int = 0) -> Button:
 	btn.add_theme_color_override("font_color", Color(0.94, 0.96, 1.0))
 	btn.add_theme_color_override("font_hover_color", Color.WHITE)
 	btn.add_theme_font_size_override("font_size", 15)
-	btn.add_theme_stylebox_override("normal", _card_style(tint, Color(0.06, 0.07, 0.11, 0.96)))
-	btn.add_theme_stylebox_override("hover", _card_style(tint.lightened(0.18), Color(0.12, 0.13, 0.2, 0.98)))
-	btn.add_theme_stylebox_override("pressed", _card_style(house_c, Color(0.16, 0.17, 0.24, 1)))
+	var font := ArtBank.ui_font()
+	if font:
+		btn.add_theme_font_override("font", font)
+	btn.add_theme_stylebox_override("normal", _card_style(tint, Color(0.92, 0.94, 1.0, 1)))
+	btn.add_theme_stylebox_override("hover", _card_style(tint.lightened(0.18), Color(1.05, 1.05, 1.08, 1)))
+	btn.add_theme_stylebox_override("pressed", _card_style(house_c, Color(0.9, 0.9, 1.0, 1)))
 	btn.pressed.connect(_on_reward_upgrade.bind(upgrade))
 	return btn
 
 
-func _card_style(border: Color, bg: Color) -> StyleBoxFlat:
+func _card_style(border: Color, bg: Color) -> StyleBox:
+	var tint := border.lerp(bg, 0.35)
+	var sb := ArtBank.nine_slice(ArtBank.CARD_BORDER, 22.0, tint)
+	if sb:
+		sb.content_margin_left = 16
+		sb.content_margin_right = 16
+		sb.content_margin_top = 18
+		sb.content_margin_bottom = 16
+		return sb
 	var s := StyleBoxFlat.new()
 	s.bg_color = bg
 	s.border_color = border
@@ -399,8 +503,15 @@ func _handle_reward_hotkeys(event: InputEvent) -> void:
 
 
 func _on_combo_unlocked(combo_name: String, description: String) -> void:
-	if _style_banner:
-		_style_banner.text = "COMBO  %s  —  %s" % [combo_name, description]
+	if _style_banner == null:
+		return
+	_style_banner.text = "COMBO  %s  —  %s" % [combo_name, description]
+	_style_banner.modulate = Color.WHITE
+	if _style_tween and _style_tween.is_valid():
+		_style_tween.kill()
+	_style_tween = create_tween()
+	_style_tween.tween_interval(1.6)
+	_style_tween.tween_property(_style_banner, "modulate:a", 0.0, 0.4)
 
 
 func _on_reward_upgrade(upgrade: UpgradeData) -> void:
@@ -447,6 +558,8 @@ func _take_modifier(id: StringName) -> void:
 func _finish_reward() -> void:
 	_mode = Mode.HIDDEN
 	_panel.visible = false
+	if _dimmer:
+		_dimmer.visible = false
 	_rewards.visible = false
 	_craft.visible = false
 	for node in _reward_extra_nodes:
@@ -456,11 +569,22 @@ func _finish_reward() -> void:
 	RunState.finish_room_reward()
 
 
+func is_reward_open() -> bool:
+	return _mode == Mode.REWARD
+
+
+func is_run_over() -> bool:
+	return _mode == Mode.DEATH or _mode == Mode.WIN
+
+
 func _show(mode: Mode, title: String, subtitle: String) -> void:
 	_mode = mode
 	_title.text = title
 	_subtitle.text = subtitle
 	_panel.visible = true
+	if _dimmer:
+		_dimmer.visible = true
+		_dimmer.color = Color(0.02, 0.03, 0.05, 0.62)
 	_rewards.visible = mode == Mode.REWARD
 	_craft.visible = mode == Mode.REWARD
 	_arch.visible = mode == Mode.ARCH_PICK

@@ -197,13 +197,25 @@ static func _add_floor_decals(root: Node2D, biome: BiomeDefinition, accent: Colo
 		Vector2(180, -180), Vector2(-340, 120), Vector2(90, 240),
 		Vector2(-120, -240), Vector2(320, -120)
 	]
+	var tech := biome.biome_id == GameplayEnums.BiomeId.DATA_CENTER \
+			or biome.biome_id == GameplayEnums.BiomeId.GATEWAY \
+			or biome.biome_id == GameplayEnums.BiomeId.DOWNTOWN \
+			or biome.biome_id == GameplayEnums.BiomeId.MALL
 	for i in spots.size():
-		var idx := 1 + (int(biome.biome_id) + i * 3) % 16
-		var tex := ArtBank.rts_tile(idx)
-		var spr := ArtBank.add_sprite(root, tex, spots[i] + Vector2(rng.randf_range(-18, 18), rng.randf_range(-12, 12)), 2.15, 1, true)
+		var spr: Sprite2D = null
+		if tech:
+			var idx := 1 + (int(biome.biome_id) + i * 3) % 16
+			spr = ArtBank.add_sprite(root, ArtBank.rts_tile(idx), spots[i] + Vector2(rng.randf_range(-18, 18), rng.randf_range(-12, 12)), 2.15, 1, true)
+		else:
+			var splat_idx := 1 + ((int(biome.biome_id) + i * 2) % 8)
+			var splat := ArtBank.tex("res://assets/kenney/splat/splat%02d.png" % splat_idx)
+			if splat == null:
+				splat = ArtBank.tex("res://assets/kenney/splat/splat03.png")
+			spr = ArtBank.add_fitted(root, splat, spots[i] + Vector2(rng.randf_range(-22, 22), rng.randf_range(-16, 16)), rng.randf_range(38.0, 58.0), 1, false)
 		if spr:
-			spr.modulate = Color(accent.r, accent.g, accent.b, 0.55).lightened(0.2)
-			spr.modulate.a = 0.42
+			spr.modulate = Color(accent.r, accent.g, accent.b, 0.55).lightened(0.15)
+			spr.modulate.a = 0.38 if tech else 0.5
+			spr.rotation = rng.randf_range(-0.4, 0.4)
 
 
 static func _add_edge_walls(root: Node2D, biome: BiomeDefinition) -> void:
@@ -255,6 +267,10 @@ static func _wall_piece(root: Node2D, biome: BiomeDefinition, stem: String, pos:
 			spr.modulate = Color(0.7, 0.85, 1.0, 1)
 		GameplayEnums.BiomeId.LANDFILL, GameplayEnums.BiomeId.WASTELAND:
 			spr.modulate = Color(0.75, 0.82, 0.62, 1)
+		GameplayEnums.BiomeId.JUNGLE, GameplayEnums.BiomeId.TAIGA:
+			spr.modulate = Color(0.62, 0.82, 0.58, 1)
+		GameplayEnums.BiomeId.DOWNTOWN, GameplayEnums.BiomeId.MALL, GameplayEnums.BiomeId.ALLEY:
+			spr.modulate = Color(0.82, 0.68, 0.58, 1)
 		_:
 			spr.modulate = Color(0.86, 0.88, 0.9, 1)
 
@@ -276,11 +292,44 @@ static func _add_props(root: Node2D, biome: BiomeDefinition, accent: Color) -> v
 		clusters = [Vector2(-520, -240), Vector2(530, -230), Vector2(-500, 250), Vector2(510, 240)]
 	for i in clusters.size():
 		_scatter_cluster(props, biome, clusters[i], rng, accent, i)
-	# Larger RTS silhouettes so the room isn't just barrels.
-	var landmarks: Array[Vector2] = [Vector2(-560, -40), Vector2(570, 30), Vector2(40, -340)]
-	for i in landmarks.size():
-		var struct := ArtBank.rts_struct(1 + (int(biome.biome_id) + i * 4) % 12)
-		ArtBank.add_fitted(props, struct, landmarks[i], 92.0, 2, true)
+	_add_landmarks(props, biome)
+
+
+static func _add_landmarks(props: Node2D, biome: BiomeDefinition) -> void:
+	if _is_boss_room():
+		return
+	var spots: Array[Vector2] = [Vector2(-560, -40), Vector2(570, 30), Vector2(40, -340)]
+	match biome.biome_id:
+		GameplayEnums.BiomeId.DATA_CENTER, GameplayEnums.BiomeId.GATEWAY:
+			for i in spots.size():
+				var struct := ArtBank.rts_struct(1 + (int(biome.biome_id) + i * 4) % 12)
+				ArtBank.add_fitted(props, struct, spots[i], 96.0, 2, true)
+		GameplayEnums.BiomeId.DOWNTOWN, GameplayEnums.BiomeId.MALL, GameplayEnums.BiomeId.ALLEY:
+			var urban: PackedStringArray = PackedStringArray(["structure", "machine_generatorLarge", "craft_speederA"])
+			for i in spots.size():
+				var tex := ArtBank.space_facing(urban[i % urban.size()], Vector2(1, 1))
+				ArtBank.add_fitted(props, tex, spots[i], 88.0, 2, true)
+		GameplayEnums.BiomeId.LANDFILL, GameplayEnums.BiomeId.WASTELAND:
+			var junk: PackedStringArray = PackedStringArray(["woodenCrate", "barrels", "meteor"])
+			for i in spots.size():
+				var stem: String = junk[i % junk.size()]
+				var tex := ArtBank.dungeon_facing(stem, Vector2(0, 1))
+				if tex == null:
+					tex = ArtBank.space_facing(stem, Vector2(1, 1))
+				ArtBank.add_fitted(props, tex, spots[i], 86.0, 2, true)
+		GameplayEnums.BiomeId.JUNGLE, GameplayEnums.BiomeId.TAIGA:
+			var wild: PackedStringArray = PackedStringArray(["rock_crystals", "rock", "rocks_smallA"])
+			for i in spots.size():
+				var tex := ArtBank.space_facing(wild[i % wild.size()], Vector2(1, 1))
+				if tex == null:
+					tex = ArtBank.dungeon_facing("stoneColumn", Vector2(0, 1))
+				ArtBank.add_fitted(props, tex, spots[i], 90.0, 2, true)
+		_:
+			for i in spots.size():
+				var tex := ArtBank.dungeon_facing("woodenCrate", Vector2(0, 1))
+				if tex == null:
+					tex = ArtBank.space_facing("desk_chair", Vector2(1, 1))
+				ArtBank.add_fitted(props, tex, spots[i], 78.0, 2, true)
 
 
 static func _scatter_cluster(
@@ -318,7 +367,7 @@ static func _prop_stems(biome: BiomeDefinition) -> PackedStringArray:
 				"barrel", "barrels", "rock", "meteor", "crater", "rocks_smallA", "machine_barrel"
 			])
 		GameplayEnums.BiomeId.JUNGLE, GameplayEnums.BiomeId.TAIGA:
-			return PackedStringArray(["rock_crystals", "rock", "rocks_smallA", "barrel"])
+			return PackedStringArray(["rock_crystals", "rock", "rocks_smallA", "barrel", "woodenCrate"])
 		GameplayEnums.BiomeId.DOWNTOWN, GameplayEnums.BiomeId.MALL, GameplayEnums.BiomeId.ALLEY:
 			return PackedStringArray([
 				"barrels", "structure", "desk_computer", "machine_generatorLarge", "craft_speederA"
@@ -336,6 +385,11 @@ static func _add_centerpiece(root: Node2D, biome: BiomeDefinition, accent: Color
 	var spr := ArtBank.add_fitted(root, plat, Vector2(0, 18), scale_h, 1, false)
 	if spr:
 		spr.modulate = Color(0.75, 0.8, 0.9).lerp(accent, 0.35)
+	if biome.biome_id == GameplayEnums.BiomeId.LANDFILL or biome.biome_id == GameplayEnums.BiomeId.WASTELAND:
+		var pile := ArtBank.space_facing("barrels", Vector2(1, 1))
+		ArtBank.add_fitted(root, pile, Vector2(-70, 8), 54.0, 2, true)
+		var crate := ArtBank.dungeon_facing("woodenCrate", Vector2(0, 1))
+		ArtBank.add_fitted(root, crate, Vector2(64, 14), 50.0, 2, true)
 	if boss:
 		var ring := ArtBank.particle("circle_05")
 		var glow := ArtBank.add_sprite(root, ring, Vector2(0, 8), 1.8, 2, true)
