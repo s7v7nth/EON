@@ -315,7 +315,7 @@ func _dress_exit_marker() -> void:
 		var font := ArtBank.body_bold()
 		if font:
 			lab.add_theme_font_override("font", font)
-		lab.text = "Door open"
+		lab.text = "Exit"
 		plaque.add_child(lab)
 		exit_node.add_child(plaque)
 	var shape_node := exit_node.get_node_or_null("ExitShape") as CollisionShape2D
