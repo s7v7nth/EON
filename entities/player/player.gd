@@ -428,10 +428,14 @@ func grant_temp_crit(amount: float, duration: float) -> void:
 
 
 func grant_second_wind_iframes() -> void:
+	grant_iframes(0.8)
+	CameraFx.add_trauma(0.45)
+
+
+func grant_iframes(duration: float) -> void:
 	if hurtbox:
 		hurtbox.set_invincible(true, false)
-	_iframe_bonus_left = 0.8
-	CameraFx.add_trauma(0.45)
+	_iframe_bonus_left = maxf(_iframe_bonus_left, duration)
 
 
 func restore_resource(amount: float) -> void:

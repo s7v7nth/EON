@@ -104,6 +104,12 @@ func try_special(host: Node) -> bool:
 	_vent_blast(host, dumped, ratio)
 	heat = 0.0
 	_weapon_lock = vent_cooldown_base + dumped * vent_cooldown_per_heat
+	if host.has_method("grant_iframes"):
+		host.call("grant_iframes", 0.55)
+	var status: StatusComponent = host.get("status") as StatusComponent
+	if status:
+		status.remove_status(StatusComponent.STATUS_BURN)
+		status.remove_status(StatusComponent.STATUS_ACID)
 	var attack_cd: Timer = host.get("attack_cooldown") as Timer
 	var ranged_cd: Timer = host.get("ranged_cooldown") as Timer
 	if attack_cd:
