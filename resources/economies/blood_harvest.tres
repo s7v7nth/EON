@@ -5,11 +5,11 @@
 [resource]
 script = ExtResource("1")
 policy = 1
-hp_drain_percent_per_sec = 0.04
-life_steal = 0.14
-heal_on_kill = 8.0
+hp_drain_percent_per_sec = 0.022
+life_steal = 0.2
+heal_on_kill = 16.0
 dash_hp_cost_percent = 0.04
-special_hp_cost_percent = 0.12
+special_hp_cost_percent = 0.06
 special_radius = 100.0
 special_damage = 14.0
-min_hp_from_drain = 1.0
+min_hp_from_drain = 8.0

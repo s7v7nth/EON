@@ -2,14 +2,14 @@ class_name EconomyBloodHarvest
 extends "res://systems/economy/resource_economy.gd"
 ## Hive: no energy. Passive HP drain fuels the swarm; hits/kills restore HP.
 
-@export var hp_drain_percent_per_sec: float = 0.03
-@export var life_steal: float = 0.18
-@export var heal_on_kill: float = 12.0
+@export var hp_drain_percent_per_sec: float = 0.022
+@export var life_steal: float = 0.20
+@export var heal_on_kill: float = 16.0
 @export var dash_hp_cost_percent: float = 0.04
-@export var special_hp_cost_percent: float = 0.08
+@export var special_hp_cost_percent: float = 0.06
 @export var special_radius: float = 100.0
 @export var special_damage: float = 14.0
-@export var min_hp_from_drain: float = 1.0
+@export var min_hp_from_drain: float = 8.0
 
 
 func _init() -> void:
@@ -36,6 +36,8 @@ func tick(host: Node, delta: float) -> void:
 		return
 	var max_hp := health.get_max_health()
 	if max_hp <= 0.0 or health.current_health <= min_hp_from_drain:
+		return
+	if not _enemy_in_range(host, 240.0):
 		return
 	var drain := max_hp * hp_drain_percent_per_sec * delta
 	health.current_health = maxf(health.current_health - drain, min_hp_from_drain)
@@ -149,3 +151,20 @@ func _spend_hp_percent(host: Node, percent: float) -> void:
 	var max_hp := health.get_max_health()
 	health.current_health = maxf(health.current_health - max_hp * percent, min_hp_from_drain)
 	health.health_changed.emit(health.current_health, max_hp)
+
+
+func _enemy_in_range(host: Node, radius: float) -> bool:
+	if host is not Node2D:
+		return false
+	var parent := (host as Node2D).get_parent()
+	if parent == null:
+		return false
+	var origin := (host as Node2D).global_position
+	for child in parent.get_children():
+		if child == host or child is not Node2D:
+			continue
+		if not child.has_method("apply_chase_movement"):
+			continue
+		if origin.distance_to((child as Node2D).global_position) <= radius:
+			return true
+	return false

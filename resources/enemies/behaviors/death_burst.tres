@@ -5,7 +5,7 @@
 [resource]
 script = ExtResource("1")
 behavior_id = &"death_burst"
-radius = 96.0
-damage = 14.0
-acid_buildup = 55.0
-knockback = 180.0
+radius = 78.0
+damage = 8.0
+acid_buildup = 22.0
+knockback = 160.0

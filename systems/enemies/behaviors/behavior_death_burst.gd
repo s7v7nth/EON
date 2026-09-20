@@ -2,10 +2,10 @@ class_name BehaviorDeathBurst
 extends "res://systems/enemies/enemy_behavior.gd"
 ## Bio-mutant death cloud: AOE damage + acid buildup on nearby bodies.
 
-@export var radius: float = 96.0
-@export var damage: float = 14.0
-@export var acid_buildup: float = 55.0
-@export var knockback: float = 180.0
+@export var radius: float = 78.0
+@export var damage: float = 8.0
+@export var acid_buildup: float = 22.0
+@export var knockback: float = 160.0
 
 
 func _init() -> void:
