@@ -487,11 +487,23 @@ func _spawn_artifact_orb(enemy: Node) -> void:
 
 func _on_wave_cleared() -> void:
 	SignalBus.wave_cleared.emit(_wave_index)
+	_heal_player_between_waves(0.22)
 	var next := _wave_index + 1
 	if next >= wave_set.wave_count():
 		_on_all_waves_cleared()
 	else:
 		_begin_wave(next)
+
+
+func _heal_player_between_waves(fraction: float) -> void:
+	if player_path == NodePath() or not has_node(player_path):
+		return
+	var player := get_node(player_path) as Player
+	if player == null or player.health == null:
+		return
+	var amount := player.health.get_max_health() * maxf(fraction, 0.0)
+	if amount > 0.0:
+		player.health.heal(amount)
 
 
 func _on_all_waves_cleared() -> void:

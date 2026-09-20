@@ -57,8 +57,8 @@ enemy_definition = ExtResource("6_bruiser")
 
 [sub_resource type="Resource" id="wave_3"]
 script = ExtResource("2_def")
-delay = 0.95
-spawns = Array[ExtResource("3_group")]([SubResource("spawn_w3"), SubResource("spawn_w3b")])
+delay = 1.1
+spawns = Array[ExtResource("3_group")]([SubResource("spawn_w3")])
 
 [resource]
 script = ExtResource("1_set")
