@@ -59,24 +59,17 @@ func _check_synthetic_inputs() -> bool:
 		transition_to(&"Block")
 		return true
 
-	if Input.is_action_just_pressed("attack") and player.attack_ready():
-		player.begin_attack_hold_tracking()
-	elif player.consume_buffered(&"attack") and player.attack_ready():
+	if player.consume_melee_press():
 		_resolve_attack_tap()
 		return true
-
-	if player.is_tracking_attack_hold():
-		if player.attack_hold_exceeded():
-			var seed := player.get_attack_hold_time()
-			player.clear_attack_hold_tracking()
-			if not player.blade_in_flight():
-				transition_to(&"ChargeThrow", {"seed": seed})
-				return true
-		elif Input.is_action_just_released("attack"):
-			player.clear_attack_hold_tracking()
-			if player.attack_ready():
-				_resolve_attack_tap()
-				return true
+	if player.consume_buffered(&"attack") and player.attack_ready():
+		_resolve_attack_tap()
+		return true
+	if player.wants_charge_throw():
+		var seed := player.get_attack_hold_time()
+		player.clear_attack_hold_tracking()
+		transition_to(&"ChargeThrow", {"seed": seed})
+		return true
 	return false
 
 

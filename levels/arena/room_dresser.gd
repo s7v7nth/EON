@@ -222,33 +222,17 @@ static func _add_lighting(arena: Node2D, biome: BiomeDefinition) -> void:
 	var grade := CanvasModulate.new()
 	grade.name = "Grade"
 	## Slight cool night, never a crushed voxel wash.
-	grade.color = Color(0.90, 0.92, 0.97, 1)
+	grade.color = Color(0.96, 0.97, 1.0, 1)
 	layer.add_child(grade)
 	var tex := ArtBank.radial_light()
 	var moon := PointLight2D.new()
 	moon.name = "Moon"
 	moon.position = Vector2(-80, -220)
 	moon.texture = tex
-	moon.color = Color(0.55, 0.72, 1.0, 1)
-	moon.energy = 0.55
-	moon.texture_scale = 5.2
+	moon.color = Color(0.72, 0.8, 0.95, 1)
+	moon.energy = 0.18
+	moon.texture_scale = 6.0
 	layer.add_child(moon)
-	var neon := PointLight2D.new()
-	neon.name = "Neon"
-	neon.position = Vector2(220, 40)
-	neon.texture = tex
-	neon.color = Color(0.35, 0.85, 1.0, 1)
-	neon.energy = 0.7 if not _is_boss_room() else 0.9
-	neon.texture_scale = 2.8
-	layer.add_child(neon)
-	if _is_boss_room():
-		var ember := PointLight2D.new()
-		ember.position = Vector2(0, 20)
-		ember.texture = tex
-		ember.color = Color(0.95, 0.22, 0.18, 1)
-		ember.energy = 0.85
-		ember.texture_scale = 3.2
-		layer.add_child(ember)
 	_add_vignette(arena)
 
 
@@ -267,16 +251,16 @@ static func _add_vignette(arena: Node2D) -> void:
 	rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	rect.stretch_mode = TextureRect.STRETCH_SCALE
 	var grad := Gradient.new()
-	grad.colors = PackedColorArray([Color(0, 0, 0, 0), Color(0.02, 0.03, 0.05, 0.38)])
+	grad.colors = PackedColorArray([Color(0, 0, 0, 0), Color(0.02, 0.03, 0.05, 0.12)])
 	grad.offsets = PackedFloat32Array([0.42, 1.0])
-	var tex := GradientTexture2D.new()
-	tex.gradient = grad
-	tex.width = 256
-	tex.height = 256
-	tex.fill = GradientTexture2D.FILL_RADIAL
-	tex.fill_from = Vector2(0.5, 0.5)
-	tex.fill_to = Vector2(0.5, 0.0)
-	rect.texture = tex
+	var vtex := GradientTexture2D.new()
+	vtex.gradient = grad
+	vtex.width = 256
+	vtex.height = 256
+	vtex.fill = GradientTexture2D.FILL_RADIAL
+	vtex.fill_from = Vector2(0.5, 0.5)
+	vtex.fill_to = Vector2(0.5, 0.0)
+	rect.texture = vtex
 	canvas.add_child(rect)
 
 

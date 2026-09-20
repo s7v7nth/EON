@@ -63,17 +63,8 @@ func _try_combo_finish_attack() -> bool:
 	if not player.combo_expects(&"attack"):
 		return false
 
-	if Input.is_action_just_pressed("attack"):
-		player.begin_attack_hold_tracking()
-	if not player.is_tracking_attack_hold():
+	if not player.consume_melee_press() and not player.consume_buffered(&"attack"):
 		return false
-	if player.attack_hold_exceeded():
-		player.clear_attack_hold_tracking()
-		return false
-	if not Input.is_action_just_released("attack"):
-		return false
-
-	player.clear_attack_hold_tracking()
 	if not player.attack_ready():
 		return false
 	var result := player.push_combo_input(&"attack")

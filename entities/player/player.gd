@@ -957,6 +957,25 @@ func _tick_attack_hold(delta: float) -> void:
 	_attack_hold_time += delta
 
 
+func consume_melee_press() -> bool:
+	## Hits on click. Synthetic still tracks the same press for a later hold-throw.
+	if not Input.is_action_just_pressed("attack") or not attack_ready():
+		return false
+	if uses_synthetic_kit():
+		begin_attack_hold_tracking()
+	return true
+
+
+func wants_charge_throw() -> bool:
+	return (
+		uses_synthetic_kit()
+		and is_tracking_attack_hold()
+		and attack_hold_exceeded()
+		and Input.is_action_pressed("attack")
+		and not blade_in_flight()
+	)
+
+
 func begin_attack_hold_tracking() -> void:
 	_attack_hold_time = 0.0
 

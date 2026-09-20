@@ -15,7 +15,6 @@ static func spawn_at(
 	var dir: Vector2 = impact_dir.normalized() if impact_dir != Vector2.ZERO else Vector2.RIGHT
 	var s: float = maxf(impact_scale, 0.35)
 	_flash_ring(world, global_pos, damage_type, s)
-	_sprite_impact(world, global_pos, dir, damage_type, s)
 	match damage_type:
 		GameplayEnums.DamageType.ELECTRICITY:
 			_burst(world, global_pos, dir, Color(0.55, 0.52, 0.38, 1), int(10 * s), 120.0 * s, 0.28, true, 1.1 * s)
@@ -72,7 +71,6 @@ static func spawn_prism_explode(world: Node, origin: Vector2, color: Color = Col
 	spawn_optic_ring(world, origin, Color(color.r, color.g, color.b, 0.9), 1.6)
 	_burst(world, origin, Vector2.UP, color, 22, 180.0, 0.4, true, 1.7)
 	_burst(world, origin, Vector2.RIGHT, Color(1, 1, 1, 1), 12, 130.0, 0.28, true, 1.2)
-	_sprite_impact(world, origin, Vector2.UP, GameplayEnums.DamageType.GLITCH, 1.4)
 
 
 static func _flash_ring(

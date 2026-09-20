@@ -25,6 +25,22 @@ func _run() -> void:
 	assert(muzzle_r.x > 0.0, "muzzle must sit on the aim side")
 	var wspr := player.combat_visual.weapon.get_node_or_null("Sprite") as Sprite2D
 	assert(wspr == null or not wspr.visible, "prototype slash/laser weapon sprite must stay hidden")
+	assert(CombatVisualComponent.MIN_WINDUP_VISUAL <= 0.02, "player windup visual must match AttackData")
+	assert(CombatVisualComponent.MIN_SWING_VISUAL <= 0.02, "player swing visual must match AttackData")
+	var nano_arch := load("res://resources/architectures/nanomachines.tres") as ArchitectureData
+	player.combat_visual.apply_architecture_look(nano_arch)
+	await get_tree().process_frame
+	var body := player.get_node_or_null("Visual") as StylizedBodyVisual
+	assert(body != null and body.current_stem() == "hero", "Hive kit must be the clone, not the sweeper")
+	assert(ArtBank.portrait("hive") != null)
+	assert(ArtBank.portrait("hive") != ArtBank.illustrated("hive_boss"), "class portraits must not be The Hive sweeper")
+	assert(ArtBank.portrait("train") != ArtBank.illustrated("enemy_scrap"), "Parovoz portrait must not be scrap robot")
+	assert(ArtBank.portrait("neuro") != ArtBank.illustrated("enemy_nano"), "Neuro portrait must not be nano robot")
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 7
+	var floor_tex := IllustratedSet.floor_tex(rng, true)
+	assert(floor_tex != ArtBank.illustrated("floor_toxic"), "room floor must not be acid")
+	assert(floor_tex != ArtBank.illustrated("floor_street_c"), "room floor must not be acid puddle tile")
 	player.queue_free()
 	await get_tree().process_frame
 
@@ -60,5 +76,5 @@ func _run() -> void:
 	assert(grade.color.r < 0.98, "grade should still read as night")
 	var vignette := arena.find_child("Vignette", true, false)
 	assert(vignette != null, "vignette should exist")
-	print("FACING_ATMOSPHERE_OK weapon hand + iso walls + night grade")
+	print("FACING_ATMOSPHERE_OK weapon hand + iso walls + night grade + clone kit")
 	get_tree().quit(0)

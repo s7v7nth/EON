@@ -5,7 +5,8 @@
 ## Старт / архитектуры
 - [ ] Boot: opening the **Godot app / editor** then F5/Play reaches splash → class select in **seconds** (Compatibility / OpenGL), not a minutes-long gray hang. No Forward+. Unused Kenney packs are not imported.
 - [ ] В начале рана есть выбор маршрута: Tutorial (3) / Campaign (Acts 1–4) / **Procedural (12)**
-- [ ] Виден выбор всех 4 архитектур (Синтетик / Улей / Паровоз / Нейро-хакер)
+- [ ] Class-select portraits are the **same visor clone** with a kit overlay (Synthetic grey + energy blade · Hive nano veins · Parovoz rail plates · Neuro wires) — never The Hive sweeper, never Kenney robots
+- [ ] In-room player is that clone for every architecture; The Hive sweeper is the **boss**, not the Hive player
 - [ ] Синтетик открыт всегда; Улей / Паровоз / Нейро **закрыты** до Hive / Warden / remnant hub talk
 - [ ] Class-select lock lines: Улей «The sweeper still has the swarm. Take it off The Hive.» · Паровоз «Roundhouse is sealed. Warden's sitting on the last heat valve.» · Нейро «Core bricked the wires. The stall has the last live node. Talk first.»
 - [ ] Клавиши 2–4 и читерский клик по locked-карте **не** экипируют закрытый кит (город отказывает той же строкой)
@@ -13,7 +14,8 @@
 - [ ] **Q (special)** работает у всех 4 архитектур (Улей swarm / Паровоз Vent / Нейро drone / Синтетик Lattice Collapse)
 
 ## Синтетик
-- [ ] LMB tap — взмах энергомеча; тратит Energy
+- [ ] LMB tap — удар регистрируется **в момент клика** (не после отпускания); hold после свинга всё ещё charge-throw
+- [ ] Swing/blade/hit/projectile — energy polygons, не Kenney-кубы / метеоры / splat sheets
 - [ ] Зажать LMB → **быстрый** заряд (нога: синяя полоска заряда + луч прицела), отпустить — бросок меча к курсору; возвращается после попадания/стены; частичный заряд слабее/короче
 - [ ] RMB зажат — щит; отпущен — щита нет; в блоке урон снижен
 - [ ] Первые ~0.18с блока = парирование (полный null + stagger врагу); dedicated Parry остаётся ~0.22с
@@ -100,7 +102,7 @@
 - [ ] Улей-босс в графе (campaign/procedural); kill пишет meta unlock
 - [ ] Hive tells: slam = dark wet-asphalt circle then mass (выйти из круга); nano-bile = toxic spit line then lasting **dark nanite slurry with a magenta rim** (не комнатный neon drain stain); flesh-hook = **nano cable with a barb** (not a clean orange laser), kiss = pull (sidestep the line); swarm chunks fall off — kill or they crawl back and the sweeper gets thicker
 - [ ] The Hive stands in the room, not stuffed in the door; slam circle has a cyan/toxic rim you can actually see on the night floor
-- [ ] Комнаты — dying-city isometric **sci-fi** (concrete sidewalks, **shopfronts on island edges**, wet neon, toxic green, rim-lit machines) **без** Diablo/castlevania dungeon, hooded-cape paladin portraits, starfield, Kenney-вокселей / Roblox-dim / 1:1 клона улицы с clone-pod
+- [ ] Комнаты — dying-city isometric **sci-fi** (wet concrete, shopfronts, readable night). **Не** radioactive acid as the whole floor, **не** grainy crushed grade, **не** Kenney-воксели / 80s fantasy. Hive boss stain is a dark tell, not a neon slime sea.
 - [ ] HUD — thin cyan night glass (not gold parchment / rust plate); Energy cyan, Adrenaline **magenta** (not gold); class select uses city night + architecture machines, not a gold wordmark on a galaxy
 - [ ] Переход через дверь: короткий fade (без резкого чёрного кадра / hard cut)
 - [ ] У дверей есть проём в стене + рамка коридора (не сплошная стена с оверлеем); столбы стоят по бокам дыры, не в центре
@@ -128,7 +130,7 @@
 - [ ] Bio-mutant при смерти взрывается кислотным облаком
 
 ## Combat feel
-- [ ] На `levels/feel_arena.tscn`: light / mid / finisher ощущаются разным весом (hitstop + shake)
+- [ ] На `levels/feel_arena.tscn`: LMB клик сразу читается; light / mid / finisher всё ещё разные, без floaty windup
 - [ ] Во время свинга движение заметно замедлено; после конца строки есть короткий endlag (recovery)
 - [ ] Dash всё ещё отменяет атаку
 - [ ] Floating damage numbers всплывают на хит; stagger-crit заметно желтее/крупнее

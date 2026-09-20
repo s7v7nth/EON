@@ -69,7 +69,7 @@ func _build() -> void:
 
 	var glow := ColorRect.new()
 	glow.set_anchors_preset(PRESET_FULL_RECT)
-	glow.color = Color(0.02, 0.06, 0.1, 0.38)
+	glow.color = Color(0.02, 0.05, 0.08, 0.16)
 	add_child(glow)
 
 	var margin := MarginContainer.new()
@@ -280,21 +280,23 @@ func _button_style(path: String) -> StyleBoxTexture:
 
 
 func _portrait_for(arch: ArchitectureData) -> Texture2D:
-	if arch == null:
-		return ArtBank.illustrated("hero_SE")
-	match arch.architecture_id:
-		GameplayEnums.ArchitectureId.NANOMACHINES:
-			var hive := ArtBank.illustrated("hive_boss")
-			return hive if hive else ArtBank.portrait("hive")
-		GameplayEnums.ArchitectureId.ELECTRO_TRAIN:
-			var scrap := ArtBank.illustrated("enemy_scrap")
-			return scrap if scrap else ArtBank.portrait("train")
-		GameplayEnums.ArchitectureId.NEURO_HACKER:
-			var nano := ArtBank.illustrated("enemy_nano")
-			return nano if nano else ArtBank.portrait("neuro")
-		_:
-			var hero := ArtBank.illustrated("hero_SE")
-			return hero if hero else ArtBank.portrait("synthetic")
+	## One human clone. Architecture is a kit overlay, never a sweeper/robot species.
+	var stem := "synthetic"
+	if arch:
+		match arch.architecture_id:
+			GameplayEnums.ArchitectureId.NANOMACHINES:
+				stem = "hive"
+			GameplayEnums.ArchitectureId.ELECTRO_TRAIN:
+				stem = "train"
+			GameplayEnums.ArchitectureId.NEURO_HACKER:
+				stem = "neuro"
+			_:
+				stem = "synthetic"
+	var portrait := ArtBank.portrait(stem)
+	if portrait:
+		return portrait
+	var hero := ArtBank.illustrated("hero_SE")
+	return hero if hero else ArtBank.portrait("synthetic")
 
 
 func _select_route_by_id(route_id: StringName) -> void:

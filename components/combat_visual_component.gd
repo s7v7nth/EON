@@ -33,22 +33,29 @@ func _ready() -> void:
 
 
 func _process(_delta: float) -> void:
-	_hide_illustrated_weapon_poly()
+	_hide_kenney_weapon_sprite()
 	if _pose_locked:
 		return
 	var dir := _aim_from_host()
 	if dir.length_squared() > 0.01:
 		hold_aim(dir)
+	if _is_illustrated_body():
+		## Clone sprites already paint a blade; keep the extra poly off at rest.
+		if weapon:
+			weapon.visible = false
 
 
-func _hide_illustrated_weapon_poly() -> void:
+func _is_illustrated_body() -> bool:
+	return body != null and body.has_method("uses_illustrated") and bool(body.call("uses_illustrated"))
+
+
+func _hide_kenney_weapon_sprite() -> void:
 	if weapon == null:
 		return
-	if body and body.has_method("uses_illustrated") and bool(body.call("uses_illustrated")):
-		weapon.visible = false
-		var wspr := weapon.get_node_or_null("Sprite") as Sprite2D
-		if wspr:
-			wspr.visible = false
+	var wspr := weapon.get_node_or_null("Sprite") as Sprite2D
+	if wspr:
+		wspr.visible = false
+		wspr.texture = null
 
 
 func _resolve_body() -> void:
@@ -231,27 +238,12 @@ func _apply_held_prop(dir: Vector2) -> void:
 	if weapon == null:
 		return
 	var wspr := weapon.get_node_or_null("Sprite") as Sprite2D
-	if _uses_iso_gun():
-		weapon.rotation = 0.0
-		weapon.color = Color(weapon.color.r, weapon.color.g, weapon.color.b, 0.0)
-		if wspr:
-			var stem := "weapon_rifle" if _shape_tag == "mortar" else "weapon_gun"
-			var tex := ArtBank.space_facing(stem, dir)
-			if tex == null:
-				tex = ArtBank.space_facing("weapon_gun", dir)
-			wspr.texture = tex
-			wspr.visible = tex != null
-			wspr.position = Vector2.ZERO
-			wspr.rotation = 0.0
-			wspr.modulate = Color(0.58, 0.48, 0.38, 1)
-			if tex:
-				ArtBank.fit_height(wspr, 26.0, false)
-	else:
-		weapon.rotation = dir.angle()
-		if weapon.color.a < 0.4:
-			weapon.color.a = 1.0
-		if wspr:
-			wspr.visible = false
+	if wspr:
+		wspr.visible = false
+		wspr.texture = null
+	weapon.rotation = dir.angle()
+	if weapon.color.a < 0.4:
+		weapon.color.a = 1.0
 
 
 func hold_aim(dir: Vector2) -> void:
@@ -305,7 +297,9 @@ func apply_weapon_look(weapon_data: WeaponData, arch: ArchitectureData = null) -
 		_accent = _element_color_from_tag(weapon_data.element_tag)
 	_shape_tag = String(weapon_data.shape_tag)
 	var steel := Color(0.42, 0.38, 0.32).lerp(tint, 0.4)
-	weapon.color = steel
+	if _shape_tag == "blade" or _shape_tag == "":
+		steel = Color(0.38, 0.92, 1.0, 1.0).lerp(tint, 0.2)
+	weapon.color = Color(steel.r, steel.g, steel.b, 1.0)
 	weapon.modulate = Color.WHITE
 	match _shape_tag:
 		"whip":
@@ -369,9 +363,10 @@ func apply_faction_look(faction: GameplayEnums.Faction, base_color: Color) -> vo
 ## Melee pose variants — combo index / enemy attack style.
 ## 0 slash, 1 reverse, 2 overhead, 3 thrust, 4 rising.
 const MELEE_VARIANT_COUNT := 5
-const MIN_WINDUP_VISUAL := 0.22
-const MIN_SWING_VISUAL := 0.28
-const MIN_HOSTILE_WINDUP := 0.32
+## Player visuals follow AttackData. Hostile tells stay readable.
+const MIN_WINDUP_VISUAL := 0.0
+const MIN_SWING_VISUAL := 0.0
+const MIN_HOSTILE_WINDUP := 0.28
 
 
 func play_melee_windup(aim_angle: float, duration: float, variant: int = 0) -> void:
@@ -398,9 +393,9 @@ func play_melee_windup(aim_angle: float, duration: float, variant: int = 0) -> v
 	swing_arc.modulate.a = 0.0
 	_sync_body_facing(fwd)
 	_tween = create_tween()
-	var wind := maxf(duration, MIN_WINDUP_VISUAL)
-	_tween.tween_property(weapon, "rotation", pose.wind_to, wind * 0.75).set_trans(Tween.TRANS_BACK)
-	_tween.parallel().tween_property(telegraph, "color:a", 0.55, wind)
+	var wind := maxf(duration, 0.02)
+	_tween.tween_property(weapon, "rotation", pose.wind_to, wind).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	_tween.parallel().tween_property(telegraph, "color:a", 0.35, wind)
 	_tween.parallel().tween_property(telegraph, "scale", pose.tele_scale, wind)
 
 
@@ -480,7 +475,7 @@ func play_melee_swing(
 	_apply_weapon_depth(aim_angle)
 	_sync_body_facing(fwd)
 	_tween = create_tween()
-	var active := maxf(duration, MIN_SWING_VISUAL)
+	var active := maxf(duration, 0.04)
 	_tween.tween_property(weapon, "rotation", pose.swing_to, active).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	_tween.parallel().tween_property(weapon, "position", hold + fwd * 10.0, active)
 	_tween.parallel().tween_property(swing_arc, "rotation", pose.arc_to, active)
@@ -495,13 +490,13 @@ func _melee_pose(aim_angle: float, variant: int) -> Dictionary:
 	match variant:
 		1: # Reverse slash (counter-clockwise) — big opposite arc
 			return {
-				"wind_from": aim_angle + 1.35,
-				"wind_to": aim_angle + 1.85,
-				"swing_from": aim_angle + 1.7,
-				"swing_to": aim_angle - 1.25,
-				"arc_from": aim_angle + 1.2,
-				"arc_to": aim_angle - 1.0,
-				"arc_poly": _arc_poly_signed(78.0, true),
+				"wind_from": aim_angle + 0.5,
+				"wind_to": aim_angle + 0.7,
+				"swing_from": aim_angle + 0.62,
+				"swing_to": aim_angle - 0.85,
+				"arc_from": aim_angle + 0.7,
+				"arc_to": aim_angle - 0.7,
+				"arc_poly": _arc_poly_signed(58.0, true),
 				"arc_pos": Vector2(10, -14),
 				"weapon_pos": rest + fwd * 2.0,
 				"weapon_end_pos": rest + fwd * 10.0,
@@ -519,13 +514,13 @@ func _melee_pose(aim_angle: float, variant: int) -> Dictionary:
 			}
 		2: # Overhead chop — vertical, very readable
 			return {
-				"wind_from": aim_angle - 2.35,
-				"wind_to": aim_angle - 2.7,
-				"swing_from": aim_angle - 2.5,
-				"swing_to": aim_angle + 0.55,
-				"arc_from": aim_angle - 2.0,
-				"arc_to": aim_angle + 0.7,
-				"arc_poly": _arc_poly(82.0),
+				"wind_from": aim_angle - 1.15,
+				"wind_to": aim_angle - 1.35,
+				"swing_from": aim_angle - 1.25,
+				"swing_to": aim_angle + 0.35,
+				"arc_from": aim_angle - 1.1,
+				"arc_to": aim_angle + 0.4,
+				"arc_poly": _arc_poly(62.0),
 				"arc_pos": Vector2(2, -24),
 				"weapon_pos": rest + Vector2(0, -16),
 				"weapon_end_pos": rest + fwd * 14.0 + Vector2(0, 6),
@@ -567,13 +562,13 @@ func _melee_pose(aim_angle: float, variant: int) -> Dictionary:
 			}
 		4: # Rising slash — low to high
 			return {
-				"wind_from": aim_angle + 1.6,
-				"wind_to": aim_angle + 2.05,
-				"swing_from": aim_angle + 1.85,
-				"swing_to": aim_angle - 1.1,
-				"arc_from": aim_angle + 1.45,
-				"arc_to": aim_angle - 0.9,
-				"arc_poly": _arc_poly_signed(80.0, true),
+				"wind_from": aim_angle + 0.7,
+				"wind_to": aim_angle + 0.9,
+				"swing_from": aim_angle + 0.8,
+				"swing_to": aim_angle - 0.7,
+				"arc_from": aim_angle + 0.7,
+				"arc_to": aim_angle - 0.55,
+				"arc_poly": _arc_poly_signed(60.0, true),
 				"arc_pos": Vector2(8, -4),
 				"weapon_pos": rest + Vector2(0, 12),
 				"weapon_end_pos": rest + fwd * 10.0 + Vector2(0, -14),
@@ -591,13 +586,13 @@ func _melee_pose(aim_angle: float, variant: int) -> Dictionary:
 			}
 		_: # Classic horizontal slash
 			return {
-				"wind_from": aim_angle - 1.25,
-				"wind_to": aim_angle - 1.65,
-				"swing_from": aim_angle - 1.45,
-				"swing_to": aim_angle + 1.15,
-				"arc_from": aim_angle - 1.1,
-				"arc_to": aim_angle + 0.9,
-				"arc_poly": _arc_poly(76.0),
+				"wind_from": aim_angle - 0.45,
+				"wind_to": aim_angle - 0.62,
+				"swing_from": aim_angle - 0.55,
+				"swing_to": aim_angle + 0.85,
+				"arc_from": aim_angle - 0.7,
+				"arc_to": aim_angle + 0.75,
+				"arc_poly": _arc_poly(58.0),
 				"arc_pos": Vector2(12, -14),
 				"weapon_pos": rest,
 				"weapon_end_pos": rest + fwd * 8.0,

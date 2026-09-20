@@ -198,41 +198,25 @@ func _ensure_visuals() -> void:
 		bolt.centered = true
 		bolt.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 		add_child(bolt)
-	var shard := ArtBank.shooter("meteorGrey_small1")
-	if shard == null:
-		shard = ArtBank.shooter("meteorBrown_small1")
-	if attack_data and attack_data.returning:
-		shard = ArtBank.shooter("meteorGrey_med2")
-	bolt.texture = shard
-	ArtBank.apply_opaque_region(bolt)
-	bolt.rotation = 0.0
-	ArtBank.fit_height(bolt, 22.0 if (attack_data and attack_data.returning) else 16.0, false)
-	bolt.modulate = Color(0.55, 0.46, 0.34, 1)
-	if attack_data and attack_data.damage_type == GameplayEnums.DamageType.GLITCH:
-		bolt.modulate = Color(0.48, 0.3, 0.36, 1)
-	if attack_data and attack_data.leaves_puddle:
-		var glob := ArtBank.particle("circle_05")
-		if glob:
-			bolt.texture = glob
-			ArtBank.fit_height(bolt, 30.0, false)
-		bolt.modulate = Color(0.38, 0.92, 0.22, 1.0)
+	bolt.visible = false
+	bolt.texture = null
 	if _visual:
-		_visual.modulate.a = 0.0
+		_visual.modulate.a = 1.0
 	if _core:
-		_core.modulate.a = 0.0
+		_core.modulate.a = 1.0
 
 
 func _apply_visual_style() -> void:
 	var col: Color = tint
 	if col.a <= 0.0 or col.r + col.g + col.b < 0.35:
 		col = Color(1.0, 0.55, 0.35, 1.0)
-	_visual.color = Color(col.r * 0.45, col.g * 0.4, col.b * 0.32, 0.0)
+	_visual.color = Color(col.r * 0.85, col.g * 0.95, col.b * 1.0, 0.95)
 	_visual.modulate = Color.WHITE
 	_visual.z_index = 1
 	_visual.polygon = PackedVector2Array([
 		Vector2(16, 0), Vector2(-8, -5), Vector2(-4, 0), Vector2(-8, 5)
 	])
-	_core.color = Color(0.55, 0.42, 0.28, 0.0)
+	_core.color = Color(0.85, 0.98, 1.0, 0.95)
 	_core.modulate = Color.WHITE
 	_core.z_index = 2
 	_core.polygon = PackedVector2Array([
@@ -243,6 +227,10 @@ func _apply_visual_style() -> void:
 		_core.polygon = PackedVector2Array([
 			Vector2(18, 0), Vector2(-6, -5), Vector2(2, 0), Vector2(-6, 5)
 		])
+		_visual.color = Color(0.4, 0.92, 1.0, 0.95)
+	if attack_data and attack_data.leaves_puddle:
+		_visual.color = Color(0.28, 0.72, 0.32, 0.9)
+		_core.color = Color(0.45, 0.95, 0.4, 0.9)
 
 
 func _spawn_trail() -> void:

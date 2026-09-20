@@ -1,6 +1,6 @@
 class_name StylizedBodyVisual
 extends Node2D
-## Illustrated isometric body (hero / scrap / nano / hive) with facing + walk bob.
+## One human clone body. Architecture kits are overlays on `hero`, never a new species.
 ## Duck-types Polygon2D API (color / polygon / scale / modulate) for CombatVisual.
 
 enum BodyStyle {
@@ -32,6 +32,7 @@ var polygon: PackedVector2Array = PackedVector2Array([
 		body_style = value
 		_refresh_stem()
 		_apply_texture()
+		_refresh_kit_overlay()
 
 var _phase: float = 0.0
 var _walk_amount: float = 0.0
@@ -40,6 +41,7 @@ var _combat_locked: bool = false
 var _sprite: Sprite2D
 var _shadow: Sprite2D
 var _rim: PointLight2D
+var _kit_fx: Node2D
 var _stem: String = "hero"
 var _target_h: float = 92.0
 var _last_dir_key: String = ""
@@ -57,6 +59,7 @@ func _ready() -> void:
 	_refresh_stem()
 	_apply_texture()
 	_apply_tint()
+	_refresh_kit_overlay()
 	queue_redraw()
 
 
@@ -108,6 +111,10 @@ func sprite_node() -> Sprite2D:
 	return _sprite
 
 
+func current_stem() -> String:
+	return _stem
+
+
 func _ensure_sprites() -> void:
 	_sprite = get_node_or_null("Sprite") as Sprite2D
 	if _sprite == null:
@@ -130,8 +137,9 @@ func _ensure_sprites() -> void:
 		_rim = PointLight2D.new()
 		_rim.name = "RimLight"
 		_rim.texture = ArtBank.radial_light()
-		_rim.energy = 0.95
-		_rim.texture_scale = 1.35
+		_rim.energy = 0.0
+		_rim.enabled = false
+		_rim.texture_scale = 1.1
 		_rim.position = Vector2(10, -28)
 		add_child(_rim)
 
@@ -141,13 +149,8 @@ func _refresh_stem() -> void:
 		_stem = _custom_stem
 		return
 	match body_style:
-		BodyStyle.NANO:
-			_stem = "hero"
-			_target_h = 92.0
-		BodyStyle.TRAIN:
-			_stem = "hero"
-			_target_h = 94.0
-		BodyStyle.NEURO:
+		BodyStyle.NANO, BodyStyle.TRAIN, BodyStyle.NEURO, BodyStyle.PLAYER:
+			## Player kits share the clone silhouette.
 			_stem = "hero"
 			_target_h = 92.0
 		BodyStyle.ANDROID:
@@ -188,9 +191,10 @@ func _process(delta: float) -> void:
 	_walk_amount = lerpf(_walk_amount, target_walk, 1.0 - exp(-12.0 * delta))
 	var rate := lerpf(2.2, 9.0, _walk_amount)
 	_phase += delta * rate
-	_apply_texture()
+	var key := "%s:%s" % [_stem, ArtBank.dir8_from(_facing)]
+	if key != _last_dir_key:
+		_apply_texture()
 	_bob()
-	queue_redraw()
 
 
 func _apply_texture() -> void:
@@ -213,7 +217,7 @@ func _apply_texture() -> void:
 		_shadow.scale = Vector2(sc * 0.92, sc * 0.28)
 		_shadow.centered = true
 		_shadow.offset = Vector2(0.0, 6.0)
-		_shadow.modulate = Color(0, 0, 0, 0.48)
+		_shadow.modulate = Color(0, 0, 0, 0.4)
 	_tune_rim()
 
 
@@ -232,41 +236,94 @@ func _illustrated_tex() -> Texture2D:
 func _tune_rim() -> void:
 	if _rim == null:
 		return
+	## Compatibility 2D lights grain the floor on Mac. Player kits stay unlit.
+	var is_player_kit := body_style == BodyStyle.PLAYER or body_style == BodyStyle.NANO or body_style == BodyStyle.TRAIN or body_style == BodyStyle.NEURO
+	if is_player_kit:
+		_rim.enabled = false
+		_rim.energy = 0.0
+		return
+	_rim.enabled = true
 	match body_style:
-		BodyStyle.NANO, BodyStyle.SAVAGE, BodyStyle.BEAST:
-			_rim.color = Color(0.55, 1.0, 0.32, 1)
-			_rim.energy = 1.15
-		BodyStyle.ANDROID, BodyStyle.NEURO:
-			_rim.color = Color(0.35, 0.9, 1.0, 1)
-			_rim.energy = 1.05
-		BodyStyle.CYBORG, BodyStyle.TRAIN:
-			_rim.color = Color(1.0, 0.35, 0.22, 1)
-			_rim.energy = 1.2
+		BodyStyle.SAVAGE, BodyStyle.BEAST:
+			_rim.color = Color(0.55, 0.9, 0.4, 1)
+			_rim.energy = 0.28
+		BodyStyle.ANDROID:
+			_rim.color = Color(0.45, 0.85, 1.0, 1)
+			_rim.energy = 0.22
+		BodyStyle.CYBORG:
+			_rim.color = Color(1.0, 0.45, 0.28, 1)
+			_rim.energy = 0.25
 		_:
-			_rim.color = Color(0.55, 0.85, 1.0, 1)
-			_rim.energy = 0.9
+			_rim.enabled = false
+			_rim.energy = 0.0
 
 
 func _apply_tint() -> void:
 	if _sprite == null:
 		return
-	## Kit tints ride on illustrated paint; never a grey voxel wash.
-	_sprite.modulate = Color.WHITE.lerp(color, 0.28)
+	## Keep the clone paint; kit color is an overlay, not a wash.
+	_sprite.modulate = Color.WHITE.lerp(color, 0.1)
 
 
 func _bob() -> void:
 	if _sprite == null:
 		return
-	var bob := sin(_phase * TAU) * (1.2 + _walk_amount * 2.4)
-	if _combat_locked:
-		bob *= 0.22
+	if _walk_amount < 0.08 or _combat_locked:
+		_sprite.position = Vector2.ZERO
+		return
+	var bob := sin(_phase * TAU) * (0.35 + _walk_amount * 0.45)
 	_sprite.position = Vector2(0.0, bob)
+
+
+func _refresh_kit_overlay() -> void:
+	if _sprite == null:
+		_ensure_sprites()
+	if _kit_fx and is_instance_valid(_kit_fx):
+		_kit_fx.queue_free()
+	_kit_fx = null
+	if _sprite == null:
+		return
+	_kit_fx = Node2D.new()
+	_kit_fx.name = "KitFx"
+	_kit_fx.z_index = 1
+	_sprite.add_child(_kit_fx)
+	match body_style:
+		BodyStyle.NANO:
+			_kit_poly(_kit_fx, PackedVector2Array([
+				Vector2(-5, -40), Vector2(5, -38), Vector2(3, -18), Vector2(-4, -20)
+			]), Color(0.32, 0.95, 0.42, 0.32))
+			_kit_poly(_kit_fx, PackedVector2Array([
+				Vector2(-7, -52), Vector2(6, -50), Vector2(5, -44), Vector2(-6, -46)
+			]), Color(0.4, 1.0, 0.55, 0.4))
+		BodyStyle.TRAIN:
+			_kit_poly(_kit_fx, PackedVector2Array([
+				Vector2(-16, -42), Vector2(-3, -46), Vector2(-5, -28), Vector2(-17, -26)
+			]), Color(0.92, 0.42, 0.16, 0.5))
+			_kit_poly(_kit_fx, PackedVector2Array([
+				Vector2(3, -44), Vector2(16, -40), Vector2(15, -24), Vector2(2, -28)
+			]), Color(0.95, 0.38, 0.14, 0.5))
+		BodyStyle.NEURO:
+			_kit_poly(_kit_fx, PackedVector2Array([
+				Vector2(-8, -52), Vector2(-6, -18), Vector2(-4, -18), Vector2(-6, -52)
+			]), Color(0.45, 0.92, 1.0, 0.5))
+			_kit_poly(_kit_fx, PackedVector2Array([
+				Vector2(5, -50), Vector2(10, -20), Vector2(8, -20), Vector2(3, -50)
+			]), Color(0.55, 0.8, 1.0, 0.4))
+		_:
+			pass
+
+
+func _kit_poly(parent: Node2D, poly: PackedVector2Array, col: Color) -> void:
+	var p := Polygon2D.new()
+	p.polygon = poly
+	p.color = col
+	parent.add_child(p)
 
 
 func _draw() -> void:
 	draw_colored_polygon(
 		PackedVector2Array([
-			Vector2(-18, 2), Vector2(18, 2), Vector2(13, 10), Vector2(-13, 10)
+			Vector2(-16, 2), Vector2(16, 2), Vector2(12, 8), Vector2(-12, 8)
 		]),
-		Color(0, 0, 0, 0.38)
+		Color(0, 0, 0, 0.28)
 	)

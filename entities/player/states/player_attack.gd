@@ -58,7 +58,7 @@ func enter(msg: Dictionary = {}) -> void:
 		else:
 			player.combat_visual.play_melee_windup(
 				_aim_angle,
-				maxf(_attack.windup / speed, CombatVisualComponent.MIN_WINDUP_VISUAL),
+				_attack.windup / speed,
 				_melee_anim_variant()
 			)
 	if not player.hitbox.hit_landed.is_connected(_on_hit_landed):
@@ -104,7 +104,7 @@ func physics_update(delta: float) -> void:
 						swing_color = Color(0.72, 0.28, 1.0, 1.0)
 					player.combat_visual.play_melee_swing(
 						_aim_angle,
-						maxf(_attack.active_duration / speed, CombatVisualComponent.MIN_SWING_VISUAL),
+						_attack.active_duration / speed,
 						_attack.damage_type,
 						swing_color,
 						_melee_anim_variant()
@@ -160,23 +160,27 @@ func _poll_synthetic_combo() -> void:
 
 	if Input.is_action_just_pressed("attack"):
 		player.begin_attack_hold_tracking()
-	elif (
+		if _phase == Phase.RECOVER:
+			_resolve_buffered_attack_tap()
+			return
+		if _attack and _attack.combo_next:
+			_combo_buffered = true
+		return
+	if (
 		not player.is_tracking_attack_hold()
 		and player.consume_buffered(&"attack")
 	):
-		_resolve_buffered_attack_tap()
+		if _phase == Phase.RECOVER:
+			_resolve_buffered_attack_tap()
+		elif _attack and _attack.combo_next:
+			_combo_buffered = true
 		return
 
-	if player.is_tracking_attack_hold():
-		if player.attack_hold_exceeded():
-			var seed := player.get_attack_hold_time()
-			player.clear_attack_hold_tracking()
-			if not player.blade_in_flight():
-				transition_to(&"ChargeThrow", {"seed": seed})
-			return
-		if Input.is_action_just_released("attack"):
-			player.clear_attack_hold_tracking()
-			_resolve_buffered_attack_tap()
+	if player.wants_charge_throw() and _phase == Phase.RECOVER:
+		var seed := player.get_attack_hold_time()
+		player.clear_attack_hold_tracking()
+		transition_to(&"ChargeThrow", {"seed": seed})
+		return
 
 
 func _resolve_buffered_attack_tap() -> void:
@@ -263,6 +267,11 @@ func _return_to_locomotion() -> void:
 	# Flush buffered follow-ups at end of recovery.
 	if player.pressed_or_buffered(&"dash") and player.mobility_ready():
 		transition_to(player.mobility_state_name())
+		return
+	if player.wants_charge_throw():
+		var seed := player.get_attack_hold_time()
+		player.clear_attack_hold_tracking()
+		transition_to(&"ChargeThrow", {"seed": seed})
 		return
 	if player.uses_synthetic_kit() and player.consume_buffered(&"ranged_attack"):
 		if player.combo_expects(&"ranged_attack"):

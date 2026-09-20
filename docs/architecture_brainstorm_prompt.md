@@ -16,7 +16,7 @@
 ═══════════════════════════════════════
 - Жанр: isometric action-roguelike / run-based arena combat.
 - Референсы ощущения: Hades (изометрия, «ноги на полу», Y-sort) + Hotline Miami (style score / ранг комнаты).
-- Combat feel (P0): вес удара через move_mult/recovery/lunge, per-attack HitStop + camera trauma, poise→flinch на врагах (отдельно от stagger crit-окна). Энкаунтеры/элиты/боссы — отдельный слой, не feel.
+- Combat feel (P0): prototype-snappy player melee (hit on click, visual duration = AttackData). Weight still via move_mult/recovery/lunge + HitStop. Hostile telegraphs stay readable. Encounters/elites/bosses — отдельный слой.
 - Стек: Godot 4, GDScript. Контент data-driven (.tres + плагины эффектов).
 - Стадия: playable vertical slice; каркас расширяемости уже есть (Phase A–F).
 - Feel-тюнинг: `levels/feel_arena.tscn` + `docs/combat_feel.md`.
@@ -54,7 +54,8 @@ Campaign Acts:
 - Hub clerk: remnant still running municipal issue in a plaza stall just inside the remnant door. Dry, tired, not a bit. Hades scraps — one tap, one line on a **bottom HUD banner** (stall stays visible). First visit 12 sequential; repeats 3; Neuro hand-off: «Fine. Drawer node. Don't jack it in the plaza. Core still thinks it's starving the swarm. You get to be the lie.» Clerk will not give Улей.
 - Boss rooms: **The Hive** is a municipal nanobot street-sweeper that never clocked out (grey chassis, sweeper drums, toxic tanks, red rim-light — not a demon / Pudge butcher). It stands in the island, not the doorway. Occupancy stays on the sweeper island while you stand on those tiles (neighbor remnant does not quiet-heal or respawn a second Hive). Tells: slam dark wet-asphalt circle (cyan/toxic rim on night concrete) then mass; nano-bile toxic spit line then lasting dark nanite slurry with a magenta rim (not the room's neon drain stain); flesh-hook nano cable with a barb (kiss = pull), not a clean orange laser; swarm chunks fall off and crawl home or the sweeper thickens. Warden still has `boss_encounter_waves`. The Hive is never faction-rolled into a trash mob.
 - HUD: thin cyan dying-city frame (HP / Energy cyan / Adrenaline magenta / Style / Gold); Isaac minimap on every dungeon graph. No gold parchment / rust plate.
-- Look: dying-city isometric **sci-fi** — wet concrete, shopfronts, neon vs toxic, rim-lit machines/people, contrasty night. Not Diablo/Castlevania (no hooded-cape paladin portraits, no starfield, no purple dungeon cobble). Not Kenney voxels. Not a 1:1 clone of the street refs.
+- Look: dying-city isometric **sci-fi** — wet concrete, shopfronts, readable night lighting. Not Diablo/Castlevania. Not Kenney voxels. Not a 1:1 clone of the street refs. Not radioactive acid as the whole floor. Not grainy crushed contrast.
+- Player body: **one human clone silhouette**. Each architecture is a reskin / tech overlay of that body (Synthetic grey suit + energy blade; Hive nano/integrity veins; Parovoz heat/rail plates; Neuro glitch/wires). Class-select portraits are that clone-with-kit. The Hive municipal sweeper is the **boss**, never the Hive player.
 
 Биомы (BiomeId): JUNGLE, DATA_CENTER, DOWNTOWN, RESIDENTIAL, TAIGA, ALLEY, LANDFILL, MALL, WASTELAND, GATEWAY.
 
@@ -103,7 +104,7 @@ Economy: ENERGY_ADRENALINE (EconomyAdrenaline)
 - Ideal dash возвращает стоимость. Вне боя adrenaline → 0 + slow Energy trickle; в бою baseline adrenaline + Energy regen (не attack speed). Растёт от хитов, HP-урона, parry, ideal dash.
 - Geometry of Reflections — **opt-in craft tree**. Base kit не ставит зеркала с parry.
 Combat:
-- LMB tap — melee swing (combo). LMB hold — snappy charge returning blade throw (feet blue charge bar + aim beam).
+- LMB tap — melee swing **on press** (combo). LMB hold through/after the swing — snappy charge returning blade throw (feet blue charge bar + aim beam).
 - RMB hold — energy shield (−50% dmg); first ~0.18s raise-parry (full negate + stagger); dedicated Parry stays ~0.22s.
 - Perfect parry leaves an **Energy Mirror** at the impact midpoint (cap 3; **action budget 3**, no timer).
 - Room `+damage` boon: first 2 picks ×1.2, further picks soft-cap ×1.08.

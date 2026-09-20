@@ -141,7 +141,9 @@ func _make_hall(root: Node2D, a: DungeonRoom, b: DungeonRoom, dir: Vector2i) -> 
 	floor.color = Color(0.08, 0.09, 0.1, 1)
 	hall.add_child(floor)
 	var tile := Sprite2D.new()
-	tile.texture = ArtBank.illustrated("floor_street")
+	tile.texture = ArtBank.illustrated("floor_city")
+	if tile.texture == null:
+		tile.texture = ArtBank.illustrated("floor_street_b")
 	if tile.texture == null:
 		tile.texture = ArtBank.illustrated("floor_ruin")
 	if tile.texture:
@@ -172,15 +174,15 @@ func _add_floor_atmosphere() -> void:
 	add_child(layer)
 	var grade := CanvasModulate.new()
 	grade.name = "Grade"
-	grade.color = Color(0.90, 0.92, 0.97, 1)
+	grade.color = Color(0.96, 0.97, 1.0, 1)
 	layer.add_child(grade)
 	var moon := PointLight2D.new()
 	moon.name = "Moon"
 	moon.position = Vector2(-40, -180)
 	moon.texture = ArtBank.radial_light()
-	moon.color = Color(0.5, 0.72, 1.0, 1)
-	moon.energy = 0.5
-	moon.texture_scale = 6.0
+	moon.color = Color(0.72, 0.8, 0.95, 1)
+	moon.energy = 0.16
+	moon.texture_scale = 6.5
 	layer.add_child(moon)
 	_add_floor_vignette()
 
@@ -199,7 +201,7 @@ func _add_floor_vignette() -> void:
 	rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	rect.stretch_mode = TextureRect.STRETCH_SCALE
 	var grad := Gradient.new()
-	grad.colors = PackedColorArray([Color(0, 0, 0, 0), Color(0.02, 0.03, 0.06, 0.36)])
+	grad.colors = PackedColorArray([Color(0, 0, 0, 0), Color(0.02, 0.03, 0.06, 0.12)])
 	grad.offsets = PackedFloat32Array([0.44, 1.0])
 	var tex := GradientTexture2D.new()
 	tex.gradient = grad

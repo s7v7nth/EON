@@ -153,30 +153,32 @@ func _die() -> void:
 
 
 func _ensure_visual() -> void:
-	var visual := get_node_or_null("Visual") as Node2D
-	if visual is Polygon2D:
-		visual.visible = false
+	var visual := get_node_or_null("Visual") as Polygon2D
+	if visual == null:
+		visual = Polygon2D.new()
+		visual.name = "Visual"
+		add_child(visual)
+	visual.visible = true
+	visual.polygon = PackedVector2Array([
+		Vector2(10, 0), Vector2(2, -8), Vector2(-12, -2), Vector2(2, 8)
+	])
+	visual.color = Color(0.45, 0.88, 1.0, 0.95)
+	visual.z_index = 1
 	var spr := get_node_or_null("Sprite") as Sprite2D
-	if spr == null:
-		spr = Sprite2D.new()
-		spr.name = "Sprite"
-		spr.centered = true
-		spr.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
-		add_child(spr)
-	spr.texture = ArtBank.space("satelliteDish_SE")
-	if spr.texture == null:
-		spr.texture = ArtBank.rts_unit(8)
-	ArtBank.fit_height(spr, 76.0, true)
-	spr.modulate = Color(0.55, 0.5, 0.48, 1)
-	var ring := get_node_or_null("Halo") as Sprite2D
+	if spr:
+		spr.visible = false
+		spr.texture = null
+	var ring := get_node_or_null("Halo") as Polygon2D
 	if ring == null:
-		ring = Sprite2D.new()
+		var old := get_node_or_null("Halo")
+		if old:
+			old.queue_free()
+		ring = Polygon2D.new()
 		ring.name = "Halo"
-		ring.centered = true
 		ring.z_index = -1
-		ring.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 		add_child(ring)
 		move_child(ring, 0)
-	ring.texture = ArtBank.particle("circle_05")
-	ring.scale = Vector2(0.08, 0.08)
-	ring.modulate = Color(0.45, 0.28, 0.22, 0.35)
+	ring.polygon = PackedVector2Array([
+		Vector2(14, 0), Vector2(0, 10), Vector2(-14, 0), Vector2(0, -10)
+	])
+	ring.color = Color(0.35, 0.75, 0.95, 0.28)

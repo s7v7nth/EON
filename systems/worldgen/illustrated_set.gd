@@ -1,25 +1,30 @@
 class_name IllustratedSet
 extends RefCounted
-## EON dying-city pack. Wet concrete, shopfronts, neon vs toxic — not dungeon ruin, not a 1:1 street clone.
+## EON dying-city pack. Wet concrete, shopfronts, readable night — not acid floors, not dungeon ruin, not a 1:1 street clone.
 
 const TILE_SCALE := 1.0
 const TILE_W := 256.0
 const TILE_H := 128.0
 
 
-static func floor_tex(rng: RandomNumberGenerator, want_toxic: bool = false) -> Texture2D:
-	if want_toxic:
-		var toxic := ArtBank.illustrated("floor_street_c")
-		return toxic if toxic else ArtBank.illustrated("floor_toxic")
+static func floor_tex(rng: RandomNumberGenerator, _want_toxic: bool = false) -> Texture2D:
+	## Wet concrete only. Acid tiles are hazards / boss tells, never the room floor.
 	var roll := rng.randf() if rng else randf()
-	if roll < 0.28:
-		var b := ArtBank.illustrated("floor_street_b")
-		return b if b else ArtBank.illustrated("floor_ruin_b")
-	if roll < 0.52:
-		var c := ArtBank.illustrated("floor_street_c")
-		return c if c else ArtBank.illustrated("floor_ruin_c")
-	var a := ArtBank.illustrated("floor_street")
-	return a if a else ArtBank.illustrated("floor_ruin")
+	if roll < 0.38:
+		var city := ArtBank.illustrated("floor_city")
+		if city:
+			return city
+	if roll < 0.7:
+		var city_b := ArtBank.illustrated("floor_city_b")
+		if city_b:
+			return city_b
+	var city_c := ArtBank.illustrated("floor_city_c")
+	if city_c:
+		return city_c
+	var b := ArtBank.illustrated("floor_street_b")
+	if b:
+		return b
+	return ArtBank.illustrated("floor_ruin_b")
 
 
 static func place_floor(
@@ -41,8 +46,7 @@ static func place_floor(
 			var p := Vector2((ix - iy) * TILE_W * 0.5, (ix + iy) * TILE_H * 0.5)
 			if not bool(allow.call(p)):
 				continue
-			var toxic := rng.randf() < _toxic_chance(biome)
-			var tex := floor_tex(rng, toxic)
+			var tex := floor_tex(rng, false)
 			_floor_sprite(tiles, tex, p)
 
 
@@ -60,7 +64,6 @@ static func place_dressing(
 	_lamps(parent, rng, biome, keep_center_clear)
 	_pylons(parent, rng, biome, keep_center_clear)
 	_ruin_growth(parent, rng, biome, keep_center_clear)
-	_toxic_pools(parent, rng, biome, keep_center_clear)
 
 
 static func wall_tex(facing: String) -> Texture2D:
@@ -78,18 +81,8 @@ static func dusk_sky() -> Texture2D:
 	return ArtBank.illustrated("sky_dusk")
 
 
-static func _toxic_chance(biome: BiomeDefinition) -> float:
-	if biome == null:
-		return 0.12
-	match biome.biome_id:
-		GameplayEnums.BiomeId.LANDFILL, GameplayEnums.BiomeId.WASTELAND, GameplayEnums.BiomeId.JUNGLE:
-			return 0.26
-		GameplayEnums.BiomeId.DATA_CENTER, GameplayEnums.BiomeId.GATEWAY:
-			return 0.06
-		GameplayEnums.BiomeId.ALLEY, GameplayEnums.BiomeId.MALL, GameplayEnums.BiomeId.DOWNTOWN:
-			return 0.16
-		_:
-			return 0.12
+static func _toxic_chance(_biome: BiomeDefinition) -> float:
+	return 0.0
 
 
 static func _is_data(biome: BiomeDefinition) -> bool:
@@ -136,7 +129,6 @@ static func _lamps(parent: Node2D, rng: RandomNumberGenerator, biome: BiomeDefin
 			continue
 		p += Vector2(rng.randf_range(-10, 10), rng.randf_range(-8, 8))
 		ArtBank.add_fitted(parent, tex, p, rng.randf_range(110.0, 138.0), 4, true)
-		_point_light(parent, p + Vector2(0, -36), Color(0.35, 0.95, 1.0, 1), 0.9, 2.2)
 
 
 static func _pylons(parent: Node2D, rng: RandomNumberGenerator, biome: BiomeDefinition, keep_center_clear: bool) -> void:
@@ -151,7 +143,6 @@ static func _pylons(parent: Node2D, rng: RandomNumberGenerator, biome: BiomeDefi
 		if keep_center_clear and p.length() < 170.0:
 			continue
 		ArtBank.add_fitted(parent, tex, p, rng.randf_range(128.0, 168.0), 4, true)
-		_point_light(parent, p + Vector2(0, -48), Color(0.35, 0.85, 1.0, 1), 1.15, 2.6)
 
 
 static func _ruin_growth(parent: Node2D, rng: RandomNumberGenerator, biome: BiomeDefinition, keep_center_clear: bool) -> void:
@@ -167,20 +158,9 @@ static func _ruin_growth(parent: Node2D, rng: RandomNumberGenerator, biome: Biom
 		ArtBank.add_fitted(parent, tex, p, rng.randf_range(140.0, 190.0), 3, true)
 
 
-static func _toxic_pools(parent: Node2D, rng: RandomNumberGenerator, biome: BiomeDefinition, keep_center_clear: bool = false) -> void:
-	if biome and not _is_organic(biome) and biome.biome_id != GameplayEnums.BiomeId.ALLEY:
-		return
-	var tex := ArtBank.illustrated("floor_toxic")
-	var spots: Array[Vector2] = [
-		Vector2(-140, 80), Vector2(180, 40), Vector2(60, 160), Vector2(-280, -40)
-	]
-	for p in spots:
-		if keep_center_clear and p.length() < 240.0:
-			continue
-		if rng.randf() < 0.32:
-			continue
-		_floor_sprite(parent, tex, p, 0.72, 1)
-		_point_light(parent, p, Color(0.42, 0.95, 0.28, 1), 0.7, 1.8)
+static func _toxic_pools(_parent: Node2D, _rng: RandomNumberGenerator, _biome: BiomeDefinition, _keep_center_clear: bool = false) -> void:
+	## Acid is a hazard tell, not room dressing.
+	return
 
 
 static func _floor_sprite(
