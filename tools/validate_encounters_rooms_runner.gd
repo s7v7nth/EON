@@ -64,8 +64,8 @@ func _run() -> void:
 	assert(stock.size() == 3, "shop stock should be a 3-card roll")
 	var holder := Node2D.new()
 	add_child(holder)
-	var orb_a := ArtifactOrb.spawn_at(holder, Vector2(-40, 0), stock[0])
-	var orb_b := ArtifactOrb.spawn_at(holder, Vector2(40, 0), stock[1])
+	var orb_a := ArtifactOrb.spawn_at(holder, Vector2(420, 280), stock[0])
+	var orb_b := ArtifactOrb.spawn_at(holder, Vector2(520, 280), stock[1])
 	orb_a.exclusive_group = [orb_a, orb_b]
 	orb_b.exclusive_group = [orb_a, orb_b]
 	var player: Player = (load("res://entities/player/player.tscn") as PackedScene).instantiate() as Player
@@ -83,7 +83,7 @@ func _run() -> void:
 	assert(priced.size() >= 1)
 	var shop_holder := Node2D.new()
 	add_child(shop_holder)
-	var paid := ArtifactOrb.spawn_at(shop_holder, Vector2.ZERO, priced[0])
+	var paid := ArtifactOrb.spawn_at(shop_holder, Vector2(420, 280), priced[0])
 	paid.price_gold = RunState.shop_price_for(priced[0])
 	paid._refresh_price()
 	var buyer: Player = (load("res://entities/player/player.tscn") as PackedScene).instantiate() as Player

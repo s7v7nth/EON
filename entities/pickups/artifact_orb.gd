@@ -141,7 +141,7 @@ func _process(delta: float) -> void:
 
 func _on_body(body: Node2D) -> void:
 	if body is Player:
-		try_claim(body as Player)
+		call_deferred("try_claim", body)
 
 
 func try_claim(player: Player) -> bool:
