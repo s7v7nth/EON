@@ -194,24 +194,24 @@ func _ensure_swarm(host: Node) -> void:
 		return
 	_swarm = (host as Node2D).get_node_or_null("SwarmCloud") as Node2D
 	if _swarm == null:
-	_swarm = Node2D.new()
-	_swarm.name = "SwarmCloud"
-	_swarm.z_index = 6
-	(host as Node2D).add_child(_swarm)
-	var tex := ArtBank.particle("magic_05")
-	if tex == null:
-		tex = ArtBank.particle("flare_01")
-	for i in 10:
-		var mote := Sprite2D.new()
-		mote.name = "Mote%d" % i
-		mote.texture = tex
-		mote.centered = true
-		mote.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
-		mote.modulate = Color(0.32, 1.0, 0.48, 0.95)
-		mote.z_index = 6
-		# Soft particle sheets have empty opaque rects; never use fit_height here.
-		mote.scale = Vector2(0.085, 0.085)
-		_swarm.add_child(mote)
+		_swarm = Node2D.new()
+		_swarm.name = "SwarmCloud"
+		_swarm.z_index = 6
+		(host as Node2D).add_child(_swarm)
+		var tex := ArtBank.particle("magic_05")
+		if tex == null:
+			tex = ArtBank.particle("flare_01")
+		for i in 10:
+			var mote := Sprite2D.new()
+			mote.name = "Mote%d" % i
+			mote.texture = tex
+			mote.centered = true
+			mote.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+			mote.modulate = Color(0.32, 1.0, 0.48, 0.95)
+			mote.z_index = 6
+			# Soft particle sheets have empty opaque rects; never use fit_height here.
+			mote.scale = Vector2(0.085, 0.085)
+			_swarm.add_child(mote)
 	_siphon = (host as Node2D).get_node_or_null("SwarmSiphon") as Line2D
 	if _siphon:
 		return
