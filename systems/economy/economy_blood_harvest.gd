@@ -3,8 +3,8 @@ extends "res://systems/economy/resource_economy.gd"
 ## Hive: no energy. Passive HP drain fuels the swarm; hits/kills restore HP.
 
 @export var hp_drain_percent_per_sec: float = 0.03
-@export var life_steal: float = 0.14
-@export var heal_on_kill: float = 10.0
+@export var life_steal: float = 0.18
+@export var heal_on_kill: float = 12.0
 @export var dash_hp_cost_percent: float = 0.04
 @export var special_hp_cost_percent: float = 0.06
 @export var special_radius: float = 100.0
@@ -217,7 +217,7 @@ func _ensure_swarm(host: Node) -> void:
 		return
 	_siphon = Line2D.new()
 	_siphon.name = "SwarmSiphon"
-	_siphon.width = 3.5
+	_siphon.width = 5.0
 	_siphon.default_color = Color(0.28, 1.0, 0.42, 0.0)
 	_siphon.z_index = 5
 	_siphon.joint_mode = Line2D.LINE_JOINT_ROUND
@@ -243,7 +243,7 @@ func _spin_swarm(host: Node, delta: float) -> void:
 		var ang := _swarm_spin + TAU * float(i) / float(maxi(kids.size(), 1))
 		mote.position = Vector2(cos(ang) * radius, sin(ang) * radius * 0.55 - 20.0)
 		mote.modulate = Color(0.38, 1.0, 0.5, 1.0 if hungry else 0.55)
-		mote.scale = Vector2(0.1, 0.1) if hungry else Vector2(0.072, 0.072)
+		mote.scale = Vector2(0.12, 0.12) if hungry else Vector2(0.078, 0.078)
 	if _siphon and is_instance_valid(_siphon) and host is Node2D:
 		if hungry and prey is Node2D:
 			_siphon.points = PackedVector2Array([

@@ -6,12 +6,12 @@
 script = ExtResource("1")
 policy = 2
 heat_max = 100.0
-heat_gain_per_action = 22.0
-heat_decay_per_sec = 4.5
+heat_gain_per_action = 14.0
+heat_decay_per_sec = 3.2
 yellow_threshold = 50.0
 yellow_damage_mult = 1.5
 red_damage_mult = 2.0
-red_self_dps = 1.6
+red_self_dps = 0.8
 vent_base_damage = 20.0
 vent_radius = 120.0
 vent_cooldown_base = 0.6

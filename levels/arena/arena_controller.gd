@@ -748,7 +748,7 @@ func _stabilize_player_after_clear() -> void:
 	if player.status:
 		player.status.clear_all()
 	if player.health:
-		player.health.heal(player.health.get_max_health() * 0.12)
+		player.health.heal(player.health.get_max_health() * 0.08)
 	for trap in get_tree().get_nodes_in_group("biome_traps"):
 		if trap is Area2D:
 			(trap as Area2D).monitoring = false

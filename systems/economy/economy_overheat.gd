@@ -4,12 +4,12 @@ extends "res://systems/economy/resource_economy.gd"
 ## Special (Vent) dumps heat into an AoE and locks weapons briefly.
 
 @export var heat_max: float = 100.0
-@export var heat_gain_per_action: float = 22.0
-@export var heat_decay_per_sec: float = 4.5
+@export var heat_gain_per_action: float = 14.0
+@export var heat_decay_per_sec: float = 3.2
 @export var yellow_threshold: float = 50.0
 @export var yellow_damage_mult: float = 1.5
 @export var red_damage_mult: float = 2.0
-@export var red_self_dps: float = 1.6
+@export var red_self_dps: float = 0.8
 @export var vent_base_damage: float = 20.0
 @export var vent_radius: float = 120.0
 @export var vent_cooldown_base: float = 0.6
@@ -53,7 +53,7 @@ func tick(host: Node, delta: float) -> void:
 	elif heat > 0.0:
 		var decay := heat_decay_per_sec
 		if heat >= yellow_threshold:
-			decay *= 0.45
+			decay *= 0.35
 		heat = maxf(heat - decay * delta, 0.0)
 	_paint_heat_aura(host)
 	_spin_stack(host, delta)
@@ -118,7 +118,10 @@ func try_special(host: Node) -> bool:
 	_vent_fx = 0.7
 	_weapon_lock = vent_cooldown_base + dumped * vent_cooldown_per_heat
 	if host.has_method("grant_iframes"):
-		host.call("grant_iframes", 0.55)
+		host.call("grant_iframes", 0.7)
+	var health: HealthComponent = host.get("health") as HealthComponent
+	if health and dumped >= yellow_threshold:
+		health.heal(health.get_max_health() * 0.1)
 	var status: StatusComponent = host.get("status") as StatusComponent
 	if status:
 		status.remove_status(StatusComponent.STATUS_BURN)
@@ -242,7 +245,7 @@ func _ensure_stack(host: Node) -> void:
 		puff.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 		puff.modulate = Color(1.0, 0.55, 0.18, 0.0)
 		puff.z_index = 7
-		puff.scale = Vector2(0.11, 0.11)
+		puff.scale = Vector2(0.16, 0.16)
 		_stack.add_child(puff)
 
 
@@ -269,7 +272,7 @@ func _spin_stack(host: Node, delta: float) -> void:
 			puff.modulate = Color(1.0, 0.72, 0.18, a)
 		else:
 			puff.modulate = Color(0.55, 0.8, 1.0, a * 0.6)
-		puff.scale = Vector2(0.1, 0.1) * (0.8 + ratio * 0.9)
+		puff.scale = Vector2(0.15, 0.15) * (0.8 + ratio * 0.85)
 		puff.visible = ratio > 0.04
 
 
