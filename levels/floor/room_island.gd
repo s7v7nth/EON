@@ -374,7 +374,7 @@ func _add_boss_stain(root: Node2D) -> void:
 	stain.centered = true
 	stain.modulate = Color(0.55, 0.22, 0.18, 0.4)
 	if room and room.boss_id == &"hive":
-		stain.modulate = Color(0.22, 0.38, 0.24, 0.38)
+		stain.modulate = Color(0.16, 0.17, 0.16, 0.42)
 	stain.scale = Vector2(1.15, 0.75)
 	stain.z_index = -3
 	root.add_child(stain)

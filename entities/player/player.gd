@@ -133,25 +133,10 @@ func _fit_hurtbox_to_body() -> void:
 
 
 func _attach_body_light() -> void:
-	if get_node_or_null("BodyLight") != null:
-		return
-	var light := PointLight2D.new()
-	light.name = "BodyLight"
-	var grad := Gradient.new()
-	grad.colors = PackedColorArray([Color(1, 1, 1, 1), Color(1, 1, 1, 0)])
-	var tex := GradientTexture2D.new()
-	tex.gradient = grad
-	tex.width = 128
-	tex.height = 128
-	tex.fill = GradientTexture2D.FILL_RADIAL
-	tex.fill_from = Vector2(0.5, 0.5)
-	tex.fill_to = Vector2(0.5, 0.0)
-	light.texture = tex
-	light.energy = 0.72
-	light.color = Color(0.55, 0.82, 1.0, 1)
-	light.texture_scale = 1.8
-	light.position = Vector2(0, -22)
-	add_child(light)
+	## Compatibility PointLight2D grains the floor on Mac. Clone stays unlit.
+	var existing := get_node_or_null("BodyLight")
+	if existing:
+		existing.queue_free()
 
 
 func _physics_process(delta: float) -> void:

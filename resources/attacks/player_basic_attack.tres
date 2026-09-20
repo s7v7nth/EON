@@ -6,9 +6,9 @@
 [resource]
 script = ExtResource("1")
 damage = 10.0
-cooldown = 0.16
-windup = 0.04
-active_duration = 0.12
+cooldown = 0.12
+windup = 0.0
+active_duration = 0.10
 knockback_force = 220.0
 damage_type = 0
 status_chance = 0.15

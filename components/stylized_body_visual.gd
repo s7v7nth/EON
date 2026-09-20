@@ -133,15 +133,9 @@ func _ensure_sprites() -> void:
 		_shadow.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 		add_child(_shadow)
 	_rim = get_node_or_null("RimLight") as PointLight2D
-	if _rim == null:
-		_rim = PointLight2D.new()
-		_rim.name = "RimLight"
-		_rim.texture = ArtBank.radial_light()
-		_rim.energy = 0.0
-		_rim.enabled = false
-		_rim.texture_scale = 1.1
-		_rim.position = Vector2(10, -28)
-		add_child(_rim)
+	if _rim:
+		_rim.queue_free()
+		_rim = null
 
 
 func _refresh_stem() -> void:
@@ -236,79 +230,71 @@ func _illustrated_tex() -> Texture2D:
 func _tune_rim() -> void:
 	if _rim == null:
 		return
-	## Compatibility 2D lights grain the floor on Mac. Player kits stay unlit.
-	var is_player_kit := body_style == BodyStyle.PLAYER or body_style == BodyStyle.NANO or body_style == BodyStyle.TRAIN or body_style == BodyStyle.NEURO
-	if is_player_kit:
-		_rim.enabled = false
-		_rim.energy = 0.0
-		return
-	_rim.enabled = true
-	match body_style:
-		BodyStyle.SAVAGE, BodyStyle.BEAST:
-			_rim.color = Color(0.55, 0.9, 0.4, 1)
-			_rim.energy = 0.28
-		BodyStyle.ANDROID:
-			_rim.color = Color(0.45, 0.85, 1.0, 1)
-			_rim.energy = 0.22
-		BodyStyle.CYBORG:
-			_rim.color = Color(1.0, 0.45, 0.28, 1)
-			_rim.energy = 0.25
-		_:
-			_rim.enabled = false
-			_rim.energy = 0.0
+	## Compatibility 2D lights grain the floor on Mac. Nobody gets a PointLight2D.
+	_rim.enabled = false
+	_rim.energy = 0.0
 
 
 func _apply_tint() -> void:
 	if _sprite == null:
 		return
-	## Keep the clone paint; kit color is an overlay, not a wash.
-	_sprite.modulate = Color.WHITE.lerp(color, 0.1)
+	## Keep the clone paint. Kit color is overlay geometry, not a slime wash.
+	_sprite.modulate = Color.WHITE
 
 
 func _bob() -> void:
 	if _sprite == null:
 		return
-	if _walk_amount < 0.08 or _combat_locked:
-		_sprite.position = Vector2.ZERO
-		return
-	var bob := sin(_phase * TAU) * (0.35 + _walk_amount * 0.45)
-	_sprite.position = Vector2(0.0, bob)
+	## No floaty walk cycle. Facing swap is the only motion.
+	_sprite.position = Vector2.ZERO
 
 
 func _refresh_kit_overlay() -> void:
-	if _sprite == null:
-		_ensure_sprites()
 	if _kit_fx and is_instance_valid(_kit_fx):
 		_kit_fx.queue_free()
 	_kit_fx = null
-	if _sprite == null:
-		return
+	## Sit on the Visual (92px body space), never as a child of the scaled sprite.
 	_kit_fx = Node2D.new()
 	_kit_fx.name = "KitFx"
-	_kit_fx.z_index = 1
-	_sprite.add_child(_kit_fx)
+	_kit_fx.z_index = 2
+	add_child(_kit_fx)
 	match body_style:
 		BodyStyle.NANO:
+			## Same clone; integrity visor + faint veins. Not a pudge, not a sweeper.
 			_kit_poly(_kit_fx, PackedVector2Array([
-				Vector2(-5, -40), Vector2(5, -38), Vector2(3, -18), Vector2(-4, -20)
-			]), Color(0.32, 0.95, 0.42, 0.32))
+				Vector2(-7, -80), Vector2(7, -80), Vector2(6, -70), Vector2(-6, -70)
+			]), Color(0.28, 0.95, 0.42, 0.42))
 			_kit_poly(_kit_fx, PackedVector2Array([
-				Vector2(-7, -52), Vector2(6, -50), Vector2(5, -44), Vector2(-6, -46)
-			]), Color(0.4, 1.0, 0.55, 0.4))
+				Vector2(-2, -68), Vector2(0, -36), Vector2(2, -36), Vector2(1, -68)
+			]), Color(0.35, 0.9, 0.45, 0.28))
+			_kit_poly(_kit_fx, PackedVector2Array([
+				Vector2(-8, -58), Vector2(-11, -28), Vector2(-9, -28), Vector2(-6, -58)
+			]), Color(0.3, 0.85, 0.4, 0.22))
 		BodyStyle.TRAIN:
 			_kit_poly(_kit_fx, PackedVector2Array([
-				Vector2(-16, -42), Vector2(-3, -46), Vector2(-5, -28), Vector2(-17, -26)
-			]), Color(0.92, 0.42, 0.16, 0.5))
+				Vector2(-18, -62), Vector2(-6, -66), Vector2(-7, -46), Vector2(-18, -44)
+			]), Color(0.92, 0.42, 0.14, 0.5))
 			_kit_poly(_kit_fx, PackedVector2Array([
-				Vector2(3, -44), Vector2(16, -40), Vector2(15, -24), Vector2(2, -28)
-			]), Color(0.95, 0.38, 0.14, 0.5))
+				Vector2(6, -64), Vector2(18, -60), Vector2(17, -42), Vector2(5, -46)
+			]), Color(0.95, 0.38, 0.12, 0.5))
+			_kit_poly(_kit_fx, PackedVector2Array([
+				Vector2(-6, -80), Vector2(6, -80), Vector2(5, -70), Vector2(-5, -70)
+			]), Color(1.0, 0.55, 0.15, 0.4))
 		BodyStyle.NEURO:
 			_kit_poly(_kit_fx, PackedVector2Array([
-				Vector2(-8, -52), Vector2(-6, -18), Vector2(-4, -18), Vector2(-6, -52)
-			]), Color(0.45, 0.92, 1.0, 0.5))
+				Vector2(-9, -82), Vector2(-7, -30), Vector2(-5, -30), Vector2(-7, -82)
+			]), Color(0.45, 0.9, 1.0, 0.45))
 			_kit_poly(_kit_fx, PackedVector2Array([
-				Vector2(5, -50), Vector2(10, -20), Vector2(8, -20), Vector2(3, -50)
-			]), Color(0.55, 0.8, 1.0, 0.4))
+				Vector2(5, -80), Vector2(10, -32), Vector2(8, -32), Vector2(3, -80)
+			]), Color(0.55, 0.78, 1.0, 0.35))
+			_kit_poly(_kit_fx, PackedVector2Array([
+				Vector2(-6, -80), Vector2(6, -80), Vector2(5, -70), Vector2(-5, -70)
+			]), Color(0.4, 0.85, 1.0, 0.35))
+		BodyStyle.PLAYER:
+			## Grey suit already paints the visor; tiny energy edge so Synthetic reads.
+			_kit_poly(_kit_fx, PackedVector2Array([
+				Vector2(-6, -80), Vector2(6, -80), Vector2(5, -71), Vector2(-5, -71)
+			]), Color(0.45, 0.92, 1.0, 0.28))
 		_:
 			pass
 

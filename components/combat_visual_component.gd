@@ -34,6 +34,16 @@ func _ready() -> void:
 
 func _process(_delta: float) -> void:
 	_hide_kenney_weapon_sprite()
+	if _is_clone_kit():
+		if weapon:
+			weapon.visible = false
+		if _pose_locked:
+			return
+		var dir := _aim_from_host()
+		if dir.length_squared() > 0.01:
+			_sync_body_facing(dir.normalized())
+			_last_aim = dir.normalized()
+		return
 	if _pose_locked:
 		return
 	var dir := _aim_from_host()
@@ -47,6 +57,13 @@ func _process(_delta: float) -> void:
 
 func _is_illustrated_body() -> bool:
 	return body != null and body.has_method("uses_illustrated") and bool(body.call("uses_illustrated"))
+
+
+func _is_clone_kit() -> bool:
+	## Player architectures share the hero clone. Extra poly blades fight the painted sword.
+	if body != null and body.has_method("current_stem"):
+		return String(body.call("current_stem")) == "hero"
+	return false
 
 
 func _hide_kenney_weapon_sprite() -> void:
@@ -162,27 +179,19 @@ func apply_architecture_look(arch: ArchitectureData) -> void:
 		GameplayEnums.ArchitectureId.NANOMACHINES:
 			_set_body_polygon(_nano_body_poly())
 			_set_body_style(&"nano")
-			aura.color = Color(0.28, 0.42, 0.26, 0.18)
-			aura.polygon = _ring_poly(18.0, 28.0)
-			aura.visible = true
+			aura.visible = false
 		GameplayEnums.ArchitectureId.ELECTRO_TRAIN:
 			_set_body_polygon(_train_body_poly())
 			_set_body_style(&"train")
-			aura.color = Color(0.45, 0.32, 0.16, 0.22)
-			aura.polygon = _ring_poly(16.0, 30.0)
-			aura.visible = true
+			aura.visible = false
 		GameplayEnums.ArchitectureId.NEURO_HACKER:
 			_set_body_polygon(_default_body_poly())
 			_set_body_style(&"neuro")
-			aura.color = Color(0.38, 0.22, 0.42, 0.18)
-			aura.polygon = _ring_poly(15.0, 26.0)
-			aura.visible = true
+			aura.visible = false
 		_:
 			_set_body_polygon(_default_body_poly())
 			_set_body_style(&"player")
-			aura.color = Color(0.4, 0.38, 0.32, 0.12)
-			aura.polygon = _ring_poly(14.0, 22.0)
-			aura.visible = true
+			aura.visible = false
 	if "polygon" in body:
 		_body_rest_poly = body.polygon
 	_kill_tween()
@@ -190,10 +199,6 @@ func apply_architecture_look(arch: ArchitectureData) -> void:
 		_aura_tween.kill()
 	aura.scale = Vector2.ONE
 	aura.modulate = Color.WHITE
-	# Pulse alpha only — kit economies own aura scale (swarm / heat / drones).
-	_aura_tween = create_tween().set_loops()
-	_aura_tween.tween_property(aura, "modulate:a", 0.78, 0.55).set_trans(Tween.TRANS_SINE)
-	_aura_tween.tween_property(aura, "modulate:a", 1.0, 0.55).set_trans(Tween.TRANS_SINE)
 
 
 func set_kit_aura(color: Color, aura_scale: Vector2, enabled: bool) -> void:
@@ -251,6 +256,16 @@ func hold_aim(dir: Vector2) -> void:
 		return
 	var aim := dir.normalized()
 	_last_aim = aim
+	if _is_clone_kit():
+		var ang := aim.angle()
+		var hold := _hand_pos(ang)
+		weapon.visible = false
+		weapon.position = hold
+		weapon.rotation = ang
+		weapon.scale = Vector2.ONE
+		_weapon_rest_pos = hold
+		_sync_body_facing(aim)
+		return
 	var ang := aim.angle()
 	var hold := _hand_pos(ang)
 	weapon.visible = true
@@ -370,9 +385,22 @@ const MIN_HOSTILE_WINDUP := 0.28
 
 
 func play_melee_windup(aim_angle: float, duration: float, variant: int = 0) -> void:
+	if _is_clone_kit() and duration <= 0.02:
+		## Hit on click — skip a fake windup pose.
+		_last_aim = Vector2.from_angle(aim_angle)
+		_sync_body_facing(_last_aim)
+		if weapon:
+			weapon.visible = false
+		return
 	_lock_pose()
 	_set_body_combat_lock(true)
 	rotation = 0.0
+	if _is_clone_kit():
+		if weapon:
+			weapon.visible = false
+		_last_aim = Vector2.from_angle(aim_angle)
+		_sync_body_facing(_last_aim)
+		return
 	weapon.visible = true
 	var v := posmod(variant, MELEE_VARIANT_COUNT)
 	var pose := _melee_pose(aim_angle, v)
@@ -455,6 +483,9 @@ func play_melee_swing(
 	_lock_pose()
 	var col := accent_override if accent_override.a > 0.0 else _element_color(damage_type)
 	_accent = col
+	if _is_clone_kit():
+		_play_clone_slash(aim_angle, duration, col, variant)
+		return
 	var v := posmod(variant, MELEE_VARIANT_COUNT)
 	var pose := _melee_pose(aim_angle, v)
 	var hold := _hand_pos(aim_angle)
@@ -481,6 +512,38 @@ func play_melee_swing(
 	_tween.parallel().tween_property(swing_arc, "rotation", pose.arc_to, active)
 	_tween.parallel().tween_property(swing_arc, "modulate:a", 0.0, active).set_ease(Tween.EASE_IN)
 	_tween.parallel().tween_property(weapon, "scale", Vector2.ONE, active)
+	_tween.tween_callback(_unlock_pose)
+
+
+func _play_clone_slash(aim_angle: float, duration: float, col: Color, variant: int) -> void:
+	## Painted clone already holds a blade. One snappy energy arc — no extra sword, no BACK ease.
+	if weapon:
+		weapon.visible = false
+	var fwd := Vector2.from_angle(aim_angle)
+	_last_aim = fwd
+	_sync_body_facing(fwd)
+	var from_a := aim_angle - 0.55
+	var to_a := aim_angle + 0.6
+	match posmod(variant, MELEE_VARIANT_COUNT):
+		1:
+			from_a = aim_angle + 0.55
+			to_a = aim_angle - 0.6
+		2:
+			from_a = aim_angle - 0.85
+			to_a = aim_angle + 0.35
+		_:
+			pass
+	swing_arc.polygon = _arc_poly(44.0)
+	swing_arc.rotation = from_a
+	swing_arc.position = Vector2(0, -20)
+	swing_arc.color = Color(col.r * 0.55 + 0.2, col.g * 0.7 + 0.25, col.b * 0.85 + 0.15, 0.9)
+	swing_arc.modulate.a = 1.0
+	if telegraph:
+		telegraph.color.a = 0.0
+	_tween = create_tween()
+	var active := maxf(duration, 0.06)
+	_tween.tween_property(swing_arc, "rotation", to_a, active).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	_tween.parallel().tween_property(swing_arc, "modulate:a", 0.0, active).set_ease(Tween.EASE_IN)
 	_tween.tween_callback(_unlock_pose)
 
 
@@ -916,14 +979,18 @@ func play_circle_slash(duration: float) -> void:
 	swing_arc.polygon = _arc_poly(78.0)
 	swing_arc.position = Vector2.ZERO
 	swing_arc.rotation = -PI
-	swing_arc.color = Color(0.62, 0.42, 0.28, 0.8)
+	swing_arc.color = Color(0.45, 0.85, 1.0, 0.85)
 	swing_arc.modulate.a = 1.0
-	weapon.visible = true
-	weapon.position = hold
-	_apply_held_prop(fwd)
+	if _is_clone_kit():
+		if weapon:
+			weapon.visible = false
+	else:
+		weapon.visible = true
+		weapon.position = hold
+		_apply_held_prop(fwd)
 	_tween = create_tween()
 	_tween.tween_property(swing_arc, "rotation", PI, active).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	if not _uses_iso_gun():
+	if not _is_clone_kit() and not _uses_iso_gun():
 		_tween.parallel().tween_property(weapon, "rotation", weapon.rotation + TAU, active)
 	_tween.parallel().tween_property(swing_arc, "modulate:a", 0.0, active)
 	_tween.tween_callback(_unlock_pose)

@@ -1,6 +1,6 @@
 class_name HitVFX
 extends RefCounted
-## Impact dust / rust / blood using Kenney splat and spark sheets.
+## Impact flash / burst using polygons only — no Kenney splat/spark sheets in the mix.
 
 
 static func spawn_at(

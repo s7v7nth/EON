@@ -25,7 +25,7 @@
 - [ ] **Q (Lattice Collapse)** тратит Energy и взрывает все активные зеркала; без зеркал Q не срабатывает
 - [ ] Perfect parry **не** ставит зеркало, пока не взят Geometry craft (opt-in)
 - [ ] Адреналин **не** ускоряет атаки: вне боя падает + Energy trickle; в бою baseline + Energy regen; удар/урон качают адреналин; каждое боевое действие жрёт Energy
-- [ ] Комбо LMB→LMB→LMB — 3-ударная цепочка с **заметно разными** анимациями (slash → reverse → overhead); **3-й удар фиолетовый**
+- [ ] Комбо LMB→LMB→LMB — 3-ударная цепочка; хитбокс **на клике**; energy slash (не Kenney swing); 3-й удар читается сильнее / фиолетовый
 - [ ] Комбо LMB→RMB→LMB — круговая атака с расталкиванием
 - [ ] Energy max ~50; dash стоит Energy, кулдаун заметно короче; идеальный дэш возвращает стоимость
 - [ ] Вне боя адреналин со временем → 0, но **пока адреналин высокий — Energy регенится**; в бою baseline + бонус от адреналина
@@ -102,7 +102,7 @@
 - [ ] Улей-босс в графе (campaign/procedural); kill пишет meta unlock
 - [ ] Hive tells: slam = dark wet-asphalt circle then mass (выйти из круга); nano-bile = toxic spit line then lasting **dark nanite slurry with a magenta rim** (не комнатный neon drain stain); flesh-hook = **nano cable with a barb** (not a clean orange laser), kiss = pull (sidestep the line); swarm chunks fall off — kill or they crawl back and the sweeper gets thicker
 - [ ] The Hive stands in the room, not stuffed in the door; slam circle has a cyan/toxic rim you can actually see on the night floor
-- [ ] Комнаты — dying-city isometric **sci-fi** (wet concrete, shopfronts, readable night). **Не** radioactive acid as the whole floor, **не** grainy crushed grade, **не** Kenney-воксели / 80s fantasy. Hive boss stain is a dark tell, not a neon slime sea.
+- [ ] Комнаты — dying-city isometric **sci-fi** (wet concrete, shopfronts, readable night). **Не** radioactive acid as the whole floor, **не** grainy PointLight2D / crushed grade, **не** Kenney-воксели / 80s fantasy. Hive boss stain is a dark tell, not a neon slime sea.
 - [ ] HUD — thin cyan night glass (not gold parchment / rust plate); Energy cyan, Adrenaline **magenta** (not gold); class select uses city night + architecture machines, not a gold wordmark on a galaxy
 - [ ] Переход через дверь: короткий fade (без резкого чёрного кадра / hard cut)
 - [ ] У дверей есть проём в стене + рамка коридора (не сплошная стена с оверлеем); столбы стоят по бокам дыры, не в центре

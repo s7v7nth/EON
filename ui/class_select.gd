@@ -69,7 +69,7 @@ func _build() -> void:
 
 	var glow := ColorRect.new()
 	glow.set_anchors_preset(PRESET_FULL_RECT)
-	glow.color = Color(0.02, 0.05, 0.08, 0.16)
+	glow.color = Color(0.03, 0.04, 0.06, 0.22)
 	add_child(glow)
 
 	var margin := MarginContainer.new()
@@ -88,7 +88,7 @@ func _build() -> void:
 	title.text = "EON"
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.add_theme_font_size_override("font_size", 64)
-	title.add_theme_color_override("font_color", Color(0.45, 0.95, 1.0))
+	title.add_theme_color_override("font_color", Color(0.86, 0.9, 0.94))
 	title.add_theme_color_override("font_outline_color", Color(0.02, 0.08, 0.12, 0.9))
 	title.add_theme_constant_override("outline_size", 8)
 	var title_font := ArtBank.title_font()
@@ -103,7 +103,7 @@ func _build() -> void:
 	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	sub.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	sub.add_theme_font_size_override("font_size", 16)
-	sub.add_theme_color_override("font_color", Color(0.62, 0.78, 0.86))
+	sub.add_theme_color_override("font_color", Color(0.68, 0.72, 0.76))
 	var sub_font := ArtBank.body_font()
 	if sub_font:
 		sub.add_theme_font_override("font", sub_font)

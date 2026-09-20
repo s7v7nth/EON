@@ -25,8 +25,10 @@ func _run() -> void:
 	assert(muzzle_r.x > 0.0, "muzzle must sit on the aim side")
 	var wspr := player.combat_visual.weapon.get_node_or_null("Sprite") as Sprite2D
 	assert(wspr == null or not wspr.visible, "prototype slash/laser weapon sprite must stay hidden")
+	assert(player.combat_visual.weapon.visible == false, "clone already paints a blade — extra poly stays off")
 	assert(CombatVisualComponent.MIN_WINDUP_VISUAL <= 0.02, "player windup visual must match AttackData")
 	assert(CombatVisualComponent.MIN_SWING_VISUAL <= 0.02, "player swing visual must match AttackData")
+	assert(player.get_node_or_null("BodyLight") == null, "player PointLight2D grains Compatibility")
 	var nano_arch := load("res://resources/architectures/nanomachines.tres") as ArchitectureData
 	player.combat_visual.apply_architecture_look(nano_arch)
 	await get_tree().process_frame

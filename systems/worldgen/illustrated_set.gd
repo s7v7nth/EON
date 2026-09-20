@@ -8,13 +8,13 @@ const TILE_H := 128.0
 
 
 static func floor_tex(rng: RandomNumberGenerator, _want_toxic: bool = false) -> Texture2D:
-	## Wet concrete only. Acid tiles are hazards / boss tells, never the room floor.
+	## Wet concrete only. Acid / neon tiles are hazards, never the room floor.
 	var roll := rng.randf() if rng else randf()
-	if roll < 0.38:
+	if roll < 0.62:
 		var city := ArtBank.illustrated("floor_city")
 		if city:
 			return city
-	if roll < 0.7:
+	if roll < 0.88:
 		var city_b := ArtBank.illustrated("floor_city_b")
 		if city_b:
 			return city_b
@@ -177,7 +177,7 @@ static func _floor_sprite(
 	s.position = pos
 	s.centered = true
 	s.z_index = z
-	s.modulate = Color.WHITE
+	s.modulate = Color(0.9, 0.9, 0.91, 1)
 	s.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 	parent.add_child(s)
 	var sz := ArtBank.apply_opaque_region(s)
@@ -186,14 +186,8 @@ static func _floor_sprite(
 	return s
 
 
-static func _point_light(parent: Node2D, pos: Vector2, color: Color, energy: float, tex_scale: float) -> void:
-	var light := PointLight2D.new()
-	light.position = pos
-	light.texture = radial()
-	light.color = color
-	light.energy = energy
-	light.texture_scale = tex_scale
-	parent.add_child(light)
+static func _point_light(_parent: Node2D, _pos: Vector2, _color: Color, _energy: float, _tex_scale: float) -> void:
+	## Compatibility PointLight2D grains the floor. Skip.
 
 
 static func radial() -> Texture2D:

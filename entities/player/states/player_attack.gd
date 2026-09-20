@@ -52,19 +52,37 @@ func enter(msg: Dictionary = {}) -> void:
 	player.configure_hitbox_for_attack(_attack)
 	_aim_hitbox_at_cursor()
 	var speed := player.get_attack_speed_multiplier()
+	var wind := _attack.windup / speed
 	if player.combat_visual:
 		if _circular:
 			player.combat_visual.play_circle_slash(_attack.active_duration / speed)
-		else:
+		elif wind > 0.02:
 			player.combat_visual.play_melee_windup(
 				_aim_angle,
-				_attack.windup / speed,
+				wind,
 				_melee_anim_variant()
 			)
 	if not player.hitbox.hit_landed.is_connected(_on_hit_landed):
 		player.hitbox.hit_landed.connect(_on_hit_landed)
 	if FeelAudio:
 		FeelAudio.play_swing()
+	if not _circular and wind <= 0.02:
+		## Prototype contract: the hitbox is live on the click.
+		_phase = Phase.ACTIVE
+		_elapsed = 0.0
+		_apply_lunge()
+		player.hitbox.activate()
+		if player.combat_visual:
+			var swing_color := Color(0, 0, 0, 0)
+			if _combo_index >= 2:
+				swing_color = Color(0.72, 0.28, 1.0, 1.0)
+			player.combat_visual.play_melee_swing(
+				_aim_angle,
+				_attack.active_duration / speed,
+				_attack.damage_type,
+				swing_color,
+				_melee_anim_variant()
+			)
 
 
 func physics_update(delta: float) -> void:

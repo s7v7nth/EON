@@ -166,15 +166,7 @@ static func _iso_corner(parent: Node2D, biome: BiomeDefinition, pos: Vector2, fa
 
 
 static func _iso_arch(parent: Node2D, biome: BiomeDefinition, pos: Vector2, facing: String, tile_scale: float) -> void:
-	var spr := _place_iso_piece(parent, _IllustratedSet.wall_tex(facing), pos, tile_scale * 0.92, Color(0.55, 0.9, 1.0, 1), 1)
-	if spr:
-		var light := PointLight2D.new()
-		light.position = pos + Vector2(0, -20)
-		light.texture = ArtBank.radial_light()
-		light.color = Color(0.4, 0.85, 1.0, 1)
-		light.energy = 0.85
-		light.texture_scale = 1.6
-		parent.add_child(light)
+	_place_iso_piece(parent, _IllustratedSet.wall_tex(facing), pos, tile_scale * 0.92, Color(0.72, 0.74, 0.76, 1), 1)
 
 
 static func _place_iso_piece(
@@ -205,11 +197,11 @@ static func _wall_modulate(biome: BiomeDefinition) -> Color:
 		return Color.WHITE
 	match biome.biome_id:
 		GameplayEnums.BiomeId.DATA_CENTER, GameplayEnums.BiomeId.GATEWAY:
-			return Color(0.82, 0.92, 1.0, 1)
+			return Color(0.86, 0.88, 0.9, 1)
 		GameplayEnums.BiomeId.LANDFILL, GameplayEnums.BiomeId.WASTELAND:
-			return Color(0.9, 0.96, 0.92, 1)
+			return Color(0.84, 0.84, 0.85, 1)
 		GameplayEnums.BiomeId.JUNGLE, GameplayEnums.BiomeId.TAIGA:
-			return Color(0.82, 0.94, 0.78, 1)
+			return Color(0.82, 0.84, 0.8, 1)
 		_:
 			return Color.WHITE
 
@@ -224,15 +216,7 @@ static func _add_lighting(arena: Node2D, biome: BiomeDefinition) -> void:
 	## Slight cool night, never a crushed voxel wash.
 	grade.color = Color(0.96, 0.97, 1.0, 1)
 	layer.add_child(grade)
-	var tex := ArtBank.radial_light()
-	var moon := PointLight2D.new()
-	moon.name = "Moon"
-	moon.position = Vector2(-80, -220)
-	moon.texture = tex
-	moon.color = Color(0.72, 0.8, 0.95, 1)
-	moon.energy = 0.18
-	moon.texture_scale = 6.0
-	layer.add_child(moon)
+	## No PointLight2D — Compatibility dithers them into grain on Mac.
 	_add_vignette(arena)
 
 

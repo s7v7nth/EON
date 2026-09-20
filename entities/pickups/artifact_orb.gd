@@ -42,16 +42,13 @@ func _ready() -> void:
 	ArtBank.fit_height(_sprite, 42.0, false)
 	_sprite_base_scale = _sprite.scale
 	add_child(_sprite)
-	var pedestal := Sprite2D.new()
+	var pedestal := Polygon2D.new()
 	pedestal.name = "Pedestal"
-	pedestal.texture = ArtBank.dungeon("woodenCrate_S")
-	if pedestal.texture == null:
-		pedestal.texture = ArtBank.space("platform_small_SE")
-	pedestal.centered = true
-	pedestal.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	pedestal.polygon = PackedVector2Array([
+		Vector2(-20, 6), Vector2(0, 14), Vector2(20, 6), Vector2(0, -2)
+	])
+	pedestal.color = Color(0.12, 0.13, 0.15, 0.9)
 	pedestal.z_index = -1
-	ArtBank.fit_height(pedestal, 36.0, true)
-	pedestal.modulate = Color(0.85, 0.8, 0.7, 0.95)
 	add_child(pedestal)
 	var coin := Sprite2D.new()
 	coin.name = "PriceCoin"
@@ -107,21 +104,7 @@ func _ready() -> void:
 	if price_font:
 		_price_label.add_theme_font_override("font", price_font)
 	plaque.add_child(_price_label)
-	_light = PointLight2D.new()
-	var grad := Gradient.new()
-	grad.colors = PackedColorArray([Color(1, 0.85, 0.4, 1), Color(1, 0.85, 0.4, 0)])
-	var tex := GradientTexture2D.new()
-	tex.gradient = grad
-	tex.width = 128
-	tex.height = 128
-	tex.fill = GradientTexture2D.FILL_RADIAL
-	tex.fill_from = Vector2(0.5, 0.5)
-	tex.fill_to = Vector2(0.5, 0.0)
-	_light.texture = tex
-	_light.energy = 1.1
-	_light.texture_scale = 1.4
-	_light.color = Color(1.0, 0.8, 0.35)
-	add_child(_light)
+	_light = null
 	_apply_preset_look()
 	_refresh_price()
 

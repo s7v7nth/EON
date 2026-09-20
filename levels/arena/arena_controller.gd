@@ -634,37 +634,16 @@ func _present_boss(enemy: EnemyDummy) -> void:
 		plate.add_theme_font_override("font", plate_font)
 	plate_wrap.add_child(plate)
 	enemy.add_child(plate_wrap)
-	var ring := Sprite2D.new()
+	var ring := Polygon2D.new()
 	ring.name = "BossRing"
-	ring.texture = ArtBank.particle("circle_05")
-	ring.centered = true
-	ring.modulate = Color(1.0, 0.22, 0.16, 0.7)
+	ring.polygon = PackedVector2Array([
+		Vector2(-42, 8), Vector2(0, 22), Vector2(42, 8), Vector2(0, -6)
+	])
+	ring.color = Color(0.55, 0.12, 0.1, 0.55)
 	ring.position = Vector2(0, 8)
-	ring.scale = Vector2(2.4, 1.15)
 	ring.z_index = -1
 	enemy.add_child(ring)
-	var tex := _radial_boss_tex()
-	for i in 4:
-		var light := PointLight2D.new()
-		light.texture = tex
-		light.color = Color(1.0, 0.28, 0.18)
-		light.energy = 1.55
-		light.texture_scale = 2.4
-		enemy.add_child(light)
-		light.position = Vector2(cos(TAU * float(i) / 4.0), sin(TAU * float(i) / 4.0)) * 48.0
-
-
-func _radial_boss_tex() -> Texture2D:
-	var grad := Gradient.new()
-	grad.colors = PackedColorArray([Color(1, 1, 1, 1), Color(1, 1, 1, 0)])
-	var tex := GradientTexture2D.new()
-	tex.gradient = grad
-	tex.width = 128
-	tex.height = 128
-	tex.fill = GradientTexture2D.FILL_RADIAL
-	tex.fill_from = Vector2(0.5, 0.5)
-	tex.fill_to = Vector2(0.5, 0.0)
-	return tex
+	## No PointLight2D — Compatibility grains the floor around the boss.
 
 
 func _alert_wave_at_player() -> void:

@@ -4,9 +4,9 @@
 
 ## Цель
 
-Удары игрока должны **регистрироваться по клику**, как в первом прототипе: visual windup/swing = `AttackData` (без искусственных 0.22/0.28). Synthetic hold-throw начинается с того же press, но сам удар не ждёт release.
+Удары игрока должны **регистрироваться по клику**, как в первом прототипе: light-attack `windup = 0` (хитбокс живой в том же enter), visual swing = `AttackData` (без искусственных 0.22/0.28). Clone не рисует второй меч — только короткий energy arc. Synthetic hold-throw начинается с того же press, но сам удар не ждёт release.
 
-Вес остаётся через `move_mult` / короткий recovery / lunge / HitStop. «Пластик» = нет: скольжение на полной скорости, нулевой endlag, одинаковый микро-hitstop, враг-скользящий hitbox без flinch. «Медуза» = нет: floaty bob, late swing vs click, Kenney-кубы в миксе с city pack.
+Вес остаётся через `move_mult` / короткий recovery / lunge / HitStop. «Пластик» = нет: скольжение на полной скорости, нулевой endlag, одинаковый микро-hitstop, враг-скользящий hitbox без flinch. «Медуза» = нет: floaty bob, late swing vs click, второй полигон-меч поверх нарисованного клинка, Kenney-кубы в миксе с city pack, PointLight2D grain на Compatibility.
 
 **Гипотеза тюнинга:** если 30 секунд на dummy-арене «мясные» — тот же feel переносится на любой контент. Давление арены / паттерны / элиты **не** переносятся сами и делаются позже.
 

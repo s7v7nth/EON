@@ -20,13 +20,13 @@ func _run() -> void:
 	player.state_machine.transition_to(&"Attack")
 	await get_tree().process_frame
 	assert(player.state_machine.current_state.name == "Attack")
-	# Windup is ~0.04s. A slow frame may already open the hitbox — that's the snappy contract.
+	# Windup is 0 on light attacks — hitbox is live on the click.
 	await get_tree().create_timer(attack.windup + 0.03).timeout
 	await get_tree().physics_frame
 	assert(player.hitbox.monitoring)
 
-	# After active window, leave Attack and start cooldown.
-	await get_tree().create_timer(attack.active_duration + 0.05).timeout
+	# After active + recovery, leave Attack and start cooldown.
+	await get_tree().create_timer(attack.active_duration + attack.recovery + 0.08).timeout
 	await get_tree().process_frame
 	assert(player.state_machine.current_state.name != "Attack")
 	assert(not player.hitbox.monitoring)

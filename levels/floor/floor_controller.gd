@@ -149,7 +149,7 @@ func _make_hall(root: Node2D, a: DungeonRoom, b: DungeonRoom, dir: Vector2i) -> 
 	if tile.texture:
 		tile.centered = true
 		tile.z_index = -18
-		tile.modulate = Color(0.92, 1.02, 1.06, 1)
+		tile.modulate = Color(0.88, 0.88, 0.9, 1)
 		hall.add_child(tile)
 		var sz := ArtBank.apply_opaque_region(tile)
 		tile.scale = Vector2((length + 36.0) / maxf(sz.x, 1.0), (hw * 2.2) / maxf(sz.y, 1.0))
@@ -176,14 +176,6 @@ func _add_floor_atmosphere() -> void:
 	grade.name = "Grade"
 	grade.color = Color(0.96, 0.97, 1.0, 1)
 	layer.add_child(grade)
-	var moon := PointLight2D.new()
-	moon.name = "Moon"
-	moon.position = Vector2(-40, -180)
-	moon.texture = ArtBank.radial_light()
-	moon.color = Color(0.72, 0.8, 0.95, 1)
-	moon.energy = 0.16
-	moon.texture_scale = 6.5
-	layer.add_child(moon)
 	_add_floor_vignette()
 
 
