@@ -31,9 +31,9 @@ godot --headless --path . res://tools/validate_hub_hive.tscn
 Open the Godot **app** (editor) with Compatibility, then F5 / Play. On macOS:
 
 ```bash
-/Applications/Godot.app/Contents/MacOS/Godot --rendering-method gl_compatibility --editor --path .
+/Applications/Godot.app/Contents/MacOS/Godot --rendering-method gl_compatibility --rendering-driver opengl3 --editor --path .
 # F5 equivalent:
-/Applications/Godot.app/Contents/MacOS/Godot --rendering-method gl_compatibility --path .
+/Applications/Godot.app/Contents/MacOS/Godot --rendering-method gl_compatibility --rendering-driver opengl3 --path .
 ```
 
 `godot --path .` already uses Compatibility from `project.godot` (`rendering_method` and `rendering_method.editor`). On some VMs also pass `--rendering-driver opengl3`.
