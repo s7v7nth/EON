@@ -368,10 +368,27 @@ func _add_boss_stain(root: Node2D) -> void:
 func _spawn_remnant() -> void:
 	var npc := _RemnantNpc.new()
 	npc.name = "Remnant"
-	npc.position = Vector2(-40, -30)
-	if not Geometry2D.is_point_in_polygon(npc.position, _poly):
-		npc.position = Vector2(0, 20)
+	npc.position = _stall_spot()
 	add_child(npc)
+
+
+func _stall_spot() -> Vector2:
+	## Park the stall just inside a door so the plaza does not hide the clerk.
+	var candidates: Array[Vector2] = []
+	if room and room.footprint:
+		for dir in [Vector2i(0, -1), Vector2i(0, 1), Vector2i(-1, 0), Vector2i(1, 0)]:
+			if not bool(room.doors.get(dir, false)):
+				continue
+			var door := room.footprint.door_local(dir, room.door_offset(dir))
+			var inward := -Vector2(dir) * 96.0
+			candidates.append(door + inward)
+			candidates.append(door + inward + Vector2(48, 24))
+	candidates.append(Vector2(0, 36))
+	candidates.append(Vector2(-40, -30))
+	for pos in candidates:
+		if Geometry2D.is_point_in_polygon(pos, _poly):
+			return pos
+	return Vector2.ZERO
 
 
 func _point_on_segment(p: Vector2, a: Vector2, b: Vector2, slop: float) -> bool:

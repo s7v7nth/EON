@@ -91,7 +91,7 @@
 - [ ] Мини-карта на всех маршрутах с графом: current / visited / fog; boss / shop / cache / remnant маркеры; тонкая dying-city рамка (не chrome клона рефа)
 - [ ] Overlay после clear **не телепортирует** — выходишь пешком в коридор
 - [ ] Quiet rooms (remnant / shop / cache): двери сразу проходимы из коридора — не нужно «войти в occupancy чтобы открыть»
-- [ ] Campaign: F9 на старте → юг Remnant (stall clerk, **E = one scrap**) → восток **The Hive**
+- [ ] Campaign: F9 на старте → pick reward if it pops → юг Remnant (**stall just inside the door**, **E = one scrap** on a bottom banner) → восток **The Hive**
 - [ ] Clerk: first visit — 12 sequential Hades scraps as a **bottom line** (stall stays visible, не speech dump, не auto-talk от overlap); потом node line «Fine. Drawer node…» → Нейро unlock; repeat visit — 3 scraps
 - [ ] Clerk **не** выдаёт Улей; kit снимаешь с The Hive
 - [ ] Улей-босс в графе (campaign/procedural); kill пишет meta unlock
