@@ -10,7 +10,9 @@ extends "res://systems/economy/resource_economy.gd"
 @export var yellow_damage_mult: float = 1.5
 @export var red_damage_mult: float = 2.0
 @export var red_self_dps: float = 0.8
-@export var hull_incoming_mult: float = 0.78
+@export var hull_incoming_mult: float = 0.55
+@export var yellow_incoming_mult: float = 0.42
+@export var yellow_regen_per_sec: float = 8.0
 @export var vent_base_damage: float = 20.0
 @export var vent_radius: float = 120.0
 @export var vent_cooldown_base: float = 0.6
@@ -56,6 +58,8 @@ func tick(host: Node, delta: float) -> void:
 		if heat >= yellow_threshold:
 			decay *= 0.35
 		heat = maxf(heat - decay * delta, 0.0)
+	if health and heat >= yellow_threshold and heat < heat_max and yellow_regen_per_sec > 0.0:
+		health.heal(yellow_regen_per_sec * delta)
 	_paint_heat_aura(host)
 	_spin_stack(host, delta)
 
@@ -96,6 +100,8 @@ func damage_multiplier(_host: Node) -> float:
 
 
 func incoming_multiplier(_host: Node) -> float:
+	if heat >= yellow_threshold:
+		return yellow_incoming_mult
 	return hull_incoming_mult
 
 
@@ -123,10 +129,10 @@ func try_special(host: Node) -> bool:
 	_vent_fx = 0.7
 	_weapon_lock = vent_cooldown_base + dumped * vent_cooldown_per_heat
 	if host.has_method("grant_iframes"):
-		host.call("grant_iframes", 0.7)
+		host.call("grant_iframes", 1.05)
 	var health: HealthComponent = host.get("health") as HealthComponent
 	if health and dumped >= yellow_threshold:
-		health.heal(health.get_max_health() * 0.1)
+		health.heal(health.get_max_health() * 0.18)
 	var status: StatusComponent = host.get("status") as StatusComponent
 	if status:
 		status.remove_status(StatusComponent.STATUS_BURN)
@@ -250,7 +256,7 @@ func _ensure_stack(host: Node) -> void:
 		puff.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 		puff.modulate = Color(1.0, 0.55, 0.18, 0.0)
 		puff.z_index = 7
-		puff.scale = Vector2(0.16, 0.16)
+		puff.scale = Vector2(0.22, 0.22)
 		_stack.add_child(puff)
 
 
@@ -269,15 +275,15 @@ func _spin_stack(host: Node, delta: float) -> void:
 		if puff == null:
 			continue
 		var t := _stack_t + float(i) * 0.7
-		puff.position = Vector2(sin(t * 2.2) * 6.0, -28.0 - float(i) * 10.0 - sin(t * 3.1) * 4.0)
-		var a := ratio * (0.85 if heat >= yellow_threshold else 0.45)
+		puff.position = Vector2(sin(t * 2.2) * 8.0, -30.0 - float(i) * 12.0 - sin(t * 3.1) * 5.0)
+		var a := ratio * (0.95 if heat >= yellow_threshold else 0.55)
 		if heat >= heat_max:
 			puff.modulate = Color(1.0, 0.28, 0.12, a)
 		elif heat >= yellow_threshold or _vent_fx > 0.0:
 			puff.modulate = Color(1.0, 0.72, 0.18, a)
 		else:
-			puff.modulate = Color(0.55, 0.8, 1.0, a * 0.6)
-		puff.scale = Vector2(0.15, 0.15) * (0.8 + ratio * 0.85)
+			puff.modulate = Color(0.55, 0.8, 1.0, a * 0.7)
+		puff.scale = Vector2(0.2, 0.2) * (0.85 + ratio * 0.9)
 		puff.visible = ratio > 0.04
 
 

@@ -178,6 +178,5 @@ func _ensure_visual() -> void:
 		add_child(ring)
 		move_child(ring, 0)
 	ring.texture = ArtBank.particle("circle_05")
-	if ring.texture:
-		ArtBank.fit_height(ring, 54.0, false)
-	ring.modulate = Color(0.72, 0.42, 1.0, 0.55)
+	ring.scale = Vector2(0.18, 0.18)
+	ring.modulate = Color(0.72, 0.42, 1.0, 0.7)

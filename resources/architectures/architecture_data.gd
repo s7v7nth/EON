@@ -11,6 +11,7 @@ extends Resource
 @export var primitives: Array[WeaponData] = []
 @export var starting_tags: PackedStringArray = PackedStringArray()
 @export var visual_tint: Color = Color(0.55, 0.58, 0.62, 1)
+@export var bonus_max_health: float = 0.0
 
 @export_group("Base Resists")
 @export_range(-1.0, 0.9, 0.01) var resist_physical: float = 0.0

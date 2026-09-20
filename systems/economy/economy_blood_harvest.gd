@@ -86,7 +86,7 @@ func on_hit(host: Node, _target: Node) -> void:
 	var healed := life_steal * 10.0
 	health.heal(healed)
 	var now := Time.get_ticks_msec()
-	if host is Node2D and now - _last_vamp_ms > 380:
+	if host is Node2D and now - _last_vamp_ms > 220:
 		_last_vamp_ms = now
 		DamagePop.spawn_label(
 			(host as Node2D).get_parent(),
@@ -201,7 +201,7 @@ func _ensure_swarm(host: Node) -> void:
 		var tex := ArtBank.particle("magic_05")
 		if tex == null:
 			tex = ArtBank.particle("flare_01")
-		for i in 10:
+		for i in 12:
 			var mote := Sprite2D.new()
 			mote.name = "Mote%d" % i
 			mote.texture = tex
@@ -210,14 +210,14 @@ func _ensure_swarm(host: Node) -> void:
 			mote.modulate = Color(0.32, 1.0, 0.48, 0.95)
 			mote.z_index = 6
 			# Soft particle sheets have empty opaque rects; never use fit_height here.
-			mote.scale = Vector2(0.085, 0.085)
+			mote.scale = Vector2(0.11, 0.11)
 			_swarm.add_child(mote)
 	_siphon = (host as Node2D).get_node_or_null("SwarmSiphon") as Line2D
 	if _siphon:
 		return
 	_siphon = Line2D.new()
 	_siphon.name = "SwarmSiphon"
-	_siphon.width = 5.0
+	_siphon.width = 7.0
 	_siphon.default_color = Color(0.28, 1.0, 0.42, 0.0)
 	_siphon.z_index = 5
 	_siphon.joint_mode = Line2D.LINE_JOINT_ROUND
@@ -233,8 +233,8 @@ func _spin_swarm(host: Node, delta: float) -> void:
 		return
 	var prey := _nearest_enemy(host, 240.0)
 	var hungry := prey != null
-	_swarm_spin += delta * (4.2 if hungry else 1.6)
-	var radius := 40.0 if hungry else 26.0
+	_swarm_spin += delta * (4.8 if hungry else 1.8)
+	var radius := 46.0 if hungry else 30.0
 	var kids := _swarm.get_children()
 	for i in kids.size():
 		var mote := kids[i] as Node2D
@@ -242,15 +242,15 @@ func _spin_swarm(host: Node, delta: float) -> void:
 			continue
 		var ang := _swarm_spin + TAU * float(i) / float(maxi(kids.size(), 1))
 		mote.position = Vector2(cos(ang) * radius, sin(ang) * radius * 0.55 - 20.0)
-		mote.modulate = Color(0.38, 1.0, 0.5, 1.0 if hungry else 0.55)
-		mote.scale = Vector2(0.12, 0.12) if hungry else Vector2(0.078, 0.078)
+		mote.modulate = Color(0.32, 1.0, 0.46, 1.0 if hungry else 0.82)
+		mote.scale = Vector2(0.16, 0.16) if hungry else Vector2(0.11, 0.11)
 	if _siphon and is_instance_valid(_siphon) and host is Node2D:
 		if hungry and prey is Node2D:
 			_siphon.points = PackedVector2Array([
 				Vector2(0, -18),
 				(prey as Node2D).global_position - (host as Node2D).global_position + Vector2(0, -16)
 			])
-			_siphon.default_color = Color(0.3, 1.0, 0.42, 0.72)
+			_siphon.default_color = Color(0.28, 1.0, 0.4, 0.88)
 		else:
 			_siphon.points = PackedVector2Array()
 			_siphon.default_color = Color(0.3, 1.0, 0.42, 0.0)

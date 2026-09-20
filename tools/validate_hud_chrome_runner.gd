@@ -64,6 +64,9 @@ func _run() -> void:
 	assert(toast != null, "combo toast should exist")
 	assert(is_equal_approx(toast.anchor_top, 0.5), "named combo toast should land center-screen after a pick")
 	assert(toast.offset_top <= -60.0, "named combo toast should be tall enough to read over the arena")
+	var chip := overlay.find_child("ComboChip", true, false) as Control
+	assert(chip != null, "combat combo chip should exist")
+	assert(chip.offset_top >= 50.0 and chip.offset_top <= 90.0, "combat combo chip should sit under the location plaque")
 	var banner := overlay.find_child("BossBanner", true, false) as Control
 	assert(banner != null, "boss flash banner should exist")
 	assert(banner.offset_top >= 120.0, "boss flash should sit under the HP chrome, not on top of it")

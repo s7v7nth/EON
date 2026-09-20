@@ -33,6 +33,11 @@ var _combo_toast: PanelContainer
 var _combo_title: Label
 var _combo_body: Label
 var _combo_tween: Tween
+var _combo_chip: PanelContainer
+var _combo_chip_title: Label
+var _combo_chip_tween: Tween
+var _pending_combo_name: String = ""
+var _pending_combo_body: String = ""
 var _finishing_reward: bool = false
 
 
@@ -96,6 +101,7 @@ func _ready() -> void:
 	_subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_wrap_wave_plaque()
 	_ensure_combo_toast()
+	_ensure_combo_chip()
 
 
 func _wrap_wave_plaque() -> void:
@@ -264,6 +270,43 @@ func _ensure_combo_toast() -> void:
 	add_child(_combo_toast)
 
 
+func _ensure_combo_chip() -> void:
+	if _combo_chip:
+		return
+	_combo_chip = PanelContainer.new()
+	_combo_chip.name = "ComboChip"
+	_combo_chip.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_combo_chip.set_anchors_preset(Control.PRESET_CENTER_TOP)
+	_combo_chip.anchor_left = 0.5
+	_combo_chip.anchor_right = 0.5
+	_combo_chip.anchor_top = 0.0
+	_combo_chip.anchor_bottom = 0.0
+	_combo_chip.offset_left = -240.0
+	_combo_chip.offset_right = 240.0
+	_combo_chip.offset_top = 72.0
+	_combo_chip.offset_bottom = 118.0
+	_combo_chip.z_index = 70
+	_combo_chip.process_mode = Node.PROCESS_MODE_ALWAYS
+	_combo_chip.add_theme_stylebox_override("panel", ArtBank.panel_style(&"card", Color(1.0, 0.9, 0.48, 0.95)))
+	_combo_chip.modulate.a = 0.0
+	var pad := MarginContainer.new()
+	pad.add_theme_constant_override("margin_left", 12)
+	pad.add_theme_constant_override("margin_right", 12)
+	pad.add_theme_constant_override("margin_top", 6)
+	pad.add_theme_constant_override("margin_bottom", 6)
+	_combo_chip.add_child(pad)
+	_combo_chip_title = Label.new()
+	_combo_chip_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_combo_chip_title.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_combo_chip_title.add_theme_font_size_override("font_size", 18)
+	_combo_chip_title.add_theme_color_override("font_color", Color(0.12, 0.08, 0.04, 1))
+	var chip_font := ArtBank.body_heavy()
+	if chip_font:
+		_combo_chip_title.add_theme_font_override("font", chip_font)
+	pad.add_child(_combo_chip_title)
+	add_child(_combo_chip)
+
+
 func _show_combo_toast(combo_name: String, description: String) -> void:
 	_ensure_combo_toast()
 	if _combo_title:
@@ -284,6 +327,37 @@ func _show_combo_toast(combo_name: String, description: String) -> void:
 	_combo_tween.tween_property(_combo_toast, "modulate:a", 0.0, 0.45)
 	if FeelAudio:
 		FeelAudio.play_ui()
+
+
+func _show_combo_chip(combo_name: String, description: String) -> void:
+	_ensure_combo_chip()
+	if _combo_chip_title:
+		var extra := (" — %s" % description) if description.strip_edges() != "" else ""
+		_combo_chip_title.text = combo_name + extra
+	_combo_chip.visible = true
+	_combo_chip.modulate = Color.WHITE
+	if _combo_chip_tween and _combo_chip_tween.is_valid():
+		_combo_chip_tween.kill()
+	_combo_chip_tween = create_tween()
+	_combo_chip_tween.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
+	_combo_chip_tween.tween_interval(1.85)
+	_combo_chip_tween.tween_property(_combo_chip, "modulate:a", 0.0, 0.28)
+
+
+func _hide_combo_toast() -> void:
+	if _combo_tween and _combo_tween.is_valid():
+		_combo_tween.kill()
+	if _combo_toast:
+		_combo_toast.modulate.a = 0.0
+		_combo_toast.visible = false
+
+
+func _queue_named_combo(combo_name: String, description: String) -> void:
+	if _mode == Mode.REWARD or _finishing_reward:
+		_pending_combo_name = combo_name
+		_pending_combo_body = description
+		return
+	_show_combo_toast(combo_name, description)
 
 
 func _ensure_boss_banner() -> void:
@@ -308,6 +382,7 @@ func _ensure_boss_banner() -> void:
 
 
 func _on_boss_spawned(boss_name: String) -> void:
+	_hide_combo_toast()
 	_flash_boss_banner("Boss — %s" % boss_name, Color(1.0, 0.32, 0.28))
 	if _dimmer:
 		_dimmer.visible = true
@@ -727,15 +802,18 @@ func _handle_reward_hotkeys(event: InputEvent) -> void:
 
 
 func _on_combo_unlocked(combo_name: String, description: String) -> void:
-	_show_combo_toast(combo_name, description)
+	_queue_named_combo(combo_name, description)
 
 
 func _on_combo_proc(combo_name: String, description: String) -> void:
-	_show_combo_toast(combo_name, description)
+	if _mode == Mode.REWARD or _finishing_reward:
+		_queue_named_combo(combo_name, description)
+		return
+	_show_combo_chip(combo_name, description)
 
 
 func _on_synergy_triggered(_target: Node, recipe_id: StringName) -> void:
-	_show_combo_toast(ArtifactCombos.synergy_title(recipe_id), ArtifactCombos.synergy_blurb(recipe_id))
+	_show_combo_chip(ArtifactCombos.synergy_title(recipe_id), ArtifactCombos.synergy_blurb(recipe_id))
 
 
 func _on_reward_upgrade(upgrade: UpgradeData) -> void:
@@ -784,6 +862,10 @@ func _finish_reward() -> void:
 		return
 	_finishing_reward = true
 	_mode = Mode.HIDDEN
+	if _pending_combo_name != "":
+		_show_combo_toast(_pending_combo_name, _pending_combo_body)
+		_pending_combo_name = ""
+		_pending_combo_body = ""
 	var hold_toast := _combo_toast != null and _combo_toast.visible and _combo_toast.modulate.a > 0.35
 	_panel.visible = false
 	_rewards.visible = false

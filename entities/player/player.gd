@@ -390,7 +390,7 @@ func apply_run_upgrades(upgrades: Array[UpgradeData]) -> void:
 	projectile_pierce = 0
 	extra_projectiles = 0
 	second_wind_charges = 0
-	bonus_max_health = 0.0
+	bonus_max_health = architecture.bonus_max_health if architecture else 0.0
 	ranged_cooldown_mult = 1.0
 	knockback_bonus = 0.0
 	if hurtbox:
@@ -496,9 +496,36 @@ func get_input_direction() -> Vector2:
 	return Input.get_vector("move_left", "move_right", "move_up", "move_down")
 
 
+func nearest_hostile(max_dist: float = 210.0) -> Node2D:
+	var parent := get_parent()
+	if parent == null:
+		return null
+	var best: Node2D = null
+	var best_d := max_dist
+	for child in parent.get_children():
+		if child == self or child is not Node2D:
+			continue
+		if not child.is_in_group("enemies"):
+			continue
+		var hp := child.get("health") as HealthComponent
+		if hp and hp.current_health <= 0.0:
+			continue
+		var d := global_position.distance_to((child as Node2D).global_position)
+		if d <= best_d:
+			best_d = d
+			best = child as Node2D
+	return best
+
+
 func get_aim_direction() -> Vector2:
 	if aim_override != Vector2.ZERO:
 		return aim_override.normalized()
+	# Hades-style magnet: swings and shots snap to the nearest live foe.
+	var foe := nearest_hostile(210.0)
+	if foe:
+		var to_foe := foe.global_position - global_position
+		if to_foe.length() > 6.0:
+			return to_foe.normalized()
 	var aim := get_global_mouse_position() - global_position
 	if aim == Vector2.ZERO:
 		return facing_direction
@@ -628,8 +655,8 @@ func equip_weapon(index: int) -> void:
 		return
 	if hitbox:
 		hitbox.attack_data = weapon.primary
-		hitbox.position = Vector2(maxf(weapon.hitbox_reach, 52.0) * 0.55, -16.0)
-		_resize_melee_hitbox(maxf(weapon.hitbox_reach, 52.0))
+		hitbox.position = Vector2(maxf(weapon.hitbox_reach, 62.0) * 0.58, -16.0)
+		_resize_melee_hitbox(maxf(weapon.hitbox_reach, 62.0))
 	combo_root = weapon.primary
 	pending_combo = null
 	ranged_attack_data = weapon.secondary
@@ -646,9 +673,9 @@ func _resize_melee_hitbox(reach: float) -> void:
 	var shape_node := hitbox.get_node_or_null("CollisionShape2D") as CollisionShape2D
 	if shape_node == null:
 		return
-	hitbox.position = Vector2(maxf(reach, 52.0) * 0.62, -18.0)
+	hitbox.position = Vector2(maxf(reach, 62.0) * 0.58, -18.0)
 	var circle := CircleShape2D.new()
-	circle.radius = maxf(reach * 0.55, 32.0)
+	circle.radius = maxf(reach * 0.62, 38.0)
 	shape_node.shape = circle
 	shape_node.position = Vector2.ZERO
 
@@ -667,13 +694,13 @@ func configure_hitbox_for_attack(attack: AttackData) -> void:
 		shape_node.shape = circle
 		shape_node.position = Vector2.ZERO
 	else:
-		var reach := 56.0
+		var reach := 64.0
 		if not weapons.is_empty() and weapons[weapon_index]:
-			reach = maxf(weapons[weapon_index].hitbox_reach, 52.0)
+			reach = maxf(weapons[weapon_index].hitbox_reach, 62.0)
 		# Forward circle covering the blade arc (not a thin rotated rect that misses).
-		hitbox.position = Vector2(reach * 0.62, -18.0)
+		hitbox.position = Vector2(reach * 0.58, -18.0)
 		var circle := CircleShape2D.new()
-		circle.radius = maxf(reach * 0.55, 32.0)
+		circle.radius = maxf(reach * 0.62, 38.0)
 		shape_node.shape = circle
 		shape_node.position = Vector2.ZERO
 
