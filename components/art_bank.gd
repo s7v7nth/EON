@@ -2,16 +2,18 @@ class_name ArtBank
 extends RefCounted
 ## Cached CC0 textures. Missing files return null; callers must tolerate that.
 
-const SPACE := "res://assets/kenney/space-kit/"
-const DUNGEON := "res://assets/kenney/iso-dungeon/"
+## Runtime keepers only. Bulk Kenney folders are `.gdignore`d so the editor
+## does not import hundreds of unused textures on Mac open / first import.
+const SPACE := "res://assets/kenney/keep/space-kit/"
+const DUNGEON := "res://assets/kenney/keep/iso-dungeon/"
 const RTS_TILE := "res://assets/kenney/sci-fi-rts/Tile/"
-const RTS_UNIT := "res://assets/kenney/sci-fi-rts/Unit/"
+const RTS_UNIT := "res://assets/kenney/keep/sci-fi-rts/"
 const RTS_ENV := "res://assets/kenney/sci-fi-rts/Environment/"
 const RTS_STRUCT := "res://assets/kenney/sci-fi-rts/Structure/"
-const PARTICLES := "res://assets/kenney/particles/"
+const PARTICLES := "res://assets/kenney/keep/particles/"
 const SPLAT := "res://assets/kenney/splat/"
 const SMOKE := "res://assets/kenney/smoke/"
-const SHOOTER := "res://assets/kenney/space-shooter/"
+const SHOOTER := "res://assets/kenney/keep/space-shooter/"
 const SHOOTER_BG := "res://assets/kenney/space-shooter/bg/"
 const ICONS := "res://assets/kenney/icons/"
 const UI := "res://assets/kenney/ui-scifi/"

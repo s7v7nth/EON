@@ -8,7 +8,7 @@ Isometric Hades-like action roguelike (Godot 4.7). Four architectures, dash/atta
 godot --path .
 ```
 
-Main scene boots a dark splash then class select (`res://ui/class_select.tscn`). Renderer is **GL Compatibility** (not Forward+). macOS uses native `opengl3`, not ANGLE. Pick a route and an architecture, then **Begin Run**.
+Main scene boots a dark splash then class select (`res://ui/class_select.tscn`). Renderer is **GL Compatibility** for both the Godot **app / editor** and Play (not Forward+). macOS uses native `opengl3`, not ANGLE. Unused Kenney packs are skipped at editor import. Pick a route and an architecture, then **Begin Run**.
 
 - **WASD** move
 - **LMB** attack (hold to charge-throw on Синтетик)
@@ -28,7 +28,15 @@ godot --headless --path . res://tools/validate_hud_chrome.tscn
 godot --headless --path . res://tools/validate_hub_hive.tscn
 ```
 
-Default Play / `godot --path .` already uses Compatibility. Force it with `godot --rendering-method gl_compatibility --path .`. On some VMs also `godot --rendering-driver opengl3 --path .`.
+Open the Godot **app** (editor) with Compatibility, then F5 / Play. On macOS:
+
+```bash
+/Applications/Godot.app/Contents/MacOS/Godot --rendering-method gl_compatibility --editor --path .
+# F5 equivalent:
+/Applications/Godot.app/Contents/MacOS/Godot --rendering-method gl_compatibility --path .
+```
+
+`godot --path .` already uses Compatibility from `project.godot` (`rendering_method` and `rendering_method.editor`). On some VMs also pass `--rendering-driver opengl3`.
 
 ## What you can do
 
