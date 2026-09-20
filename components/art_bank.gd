@@ -50,7 +50,9 @@ static func tex(path: String) -> Texture2D:
 	if _cache.has(path):
 		return _cache[path] as Texture2D
 	var loaded: Texture2D = null
-	var prefer_png := path.contains("/portraits/") or path.contains("floor_city")
+	## Portraits skip .ctex so Mac editor import cannot stall class select.
+	## Floors use ResourceLoader — Image.load of 1024² tiles was dumping Begin Run.
+	var prefer_png := path.contains("/portraits/")
 	if not prefer_png and ResourceLoader.exists(path):
 		loaded = load(path) as Texture2D
 	if loaded == null and FileAccess.file_exists(path):

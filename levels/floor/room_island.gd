@@ -37,9 +37,14 @@ func setup(src: DungeonRoom) -> void:
 	entities.name = "Entities"
 	entities.y_sort_enabled = true
 	add_child(entities)
-	_dress()
 	if room.remnant or room.kind == DungeonRoom.RoomKind.REMNANT:
 		_spawn_remnant()
+
+
+func ensure_dressed() -> void:
+	if get_node_or_null("Dressing") != null:
+		return
+	_dress()
 
 
 func contains_point(world: Vector2) -> bool:
@@ -277,17 +282,6 @@ func _dress() -> void:
 	root.z_index = -12
 	add_child(root)
 	var seed_value := int(room.coord.x * 7919 + room.coord.y * 104729 + 11)
-	var sky := _IllustratedSet.dusk_sky()
-	if sky:
-		var bg := Sprite2D.new()
-		bg.name = "NightSky"
-		bg.texture = sky
-		bg.centered = true
-		bg.z_index = -18
-		bg.scale = Vector2(1.7, 1.7)
-		bg.modulate = Color.WHITE
-		bg.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
-		root.add_child(bg)
 	_IllustratedSet.place_floor(
 		root,
 		room.biome,

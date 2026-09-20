@@ -43,8 +43,6 @@ func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	_build()
 	print("CLASS_SELECT_READY")
-	if FeelAudio and FeelAudio.has_method("warmup"):
-		FeelAudio.call_deferred("warmup")
 	_select_route_by_id(&"tutorial")
 	var arches := RunState.get_architectures()
 	if not arches.is_empty():
@@ -371,7 +369,8 @@ func _begin_run() -> void:
 		return
 	var path := RunState.layout_scene_for_current_room()
 	if path == "":
-		path = "res://levels/rooms/room_01.tscn"
+		path = "res://levels/floor/floor_world.tscn"
+	print("BEGIN_RUN t=%d scene=%s" % [Time.get_ticks_msec(), path])
 	if FeelAudio:
 		FeelAudio.play_ui()
 	get_tree().change_scene_to_file(path)

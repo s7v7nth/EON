@@ -41,8 +41,10 @@ static func place_floor(
 	parent.add_child(tiles)
 	var rng := RandomNumberGenerator.new()
 	rng.seed = seed_value
-	for ix in range(-12, 13):
-		for iy in range(-11, 12):
+	## Tight diamond covers a room island. The old −12..13 grid spawned hundreds of
+	## 1024² sprites per room and froze Begin Run for minutes.
+	for ix in range(-6, 7):
+		for iy in range(-5, 6):
 			var p := Vector2((ix - iy) * TILE_W * 0.5, (ix + iy) * TILE_H * 0.5)
 			if not bool(allow.call(p)):
 				continue
@@ -180,8 +182,9 @@ static func _floor_sprite(
 	s.modulate = Color(0.9, 0.9, 0.91, 1)
 	s.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 	parent.add_child(s)
-	var sz := ArtBank.apply_opaque_region(s)
-	var sc := (TILE_W * TILE_SCALE * width_scale) / maxf(sz.x, 1.0)
+	## City floors are nearly opaque; skip get_image/get_used_rect on every tile.
+	var tw := float(tex.get_width())
+	var sc := (TILE_W * TILE_SCALE * width_scale) / maxf(tw, 1.0)
 	s.scale = Vector2(sc, sc)
 	return s
 

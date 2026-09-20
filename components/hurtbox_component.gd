@@ -236,7 +236,7 @@ func _apply_knockback(attack_data: AttackData, source: Node, hp_damage: float = 
 
 func _apply_impact_juice(hp_damage: float, attack_data: AttackData) -> void:
 	var max_hp: float = health_component.get_max_health() if health_component else 100.0
-	CombatImpact.apply_hit_juice(hp_damage, max_hp, attack_data)
+	CombatImpact.apply_hit_juice(hp_damage, max_hp, attack_data, get_parent() is Player)
 	var body := get_parent()
 	if body and body.get("combat_visual") is CombatVisualComponent:
 		(body.get("combat_visual") as CombatVisualComponent).play_hit_flash()

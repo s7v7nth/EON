@@ -23,6 +23,7 @@ var _economy_drives_bars: bool = false
 var _last_hp: float = -1.0
 var _artifact_label: Label
 var _hp_flash: Tween
+var _hp_trail: ProgressBar
 var _gold_label: Label
 var _boss_wrap: PanelContainer
 var _boss_name: Label
@@ -38,6 +39,7 @@ func _ready() -> void:
 	_wrap_hud_chrome()
 	_wrap_location_banner()
 	_style_bar(health_bar, HP_FILL)
+	_ensure_hp_trail()
 	_style_bar(energy_bar, ENERGY_FILL)
 	_style_bar(adrenaline_bar, ADRENALINE_FILL)
 	health_bar.modulate = Color.WHITE
@@ -67,6 +69,7 @@ func _ready() -> void:
 	adrenaline_bar.get_parent().add_child(_secondary_label)
 	adrenaline_bar.get_parent().move_child(_secondary_label, adrenaline_bar.get_index())
 	SignalBus.player_health_changed.connect(_on_health_changed)
+	SignalBus.player_hp_feedback.connect(_on_hp_feedback)
 	SignalBus.player_energy_changed.connect(_on_energy_changed)
 	SignalBus.player_adrenaline_changed.connect(_on_adrenaline_changed)
 	SignalBus.player_economy_hud_changed.connect(_on_economy_hud)
@@ -189,16 +192,95 @@ func _on_room_entered(_coord: Vector2i) -> void:
 	_refresh_location_from_run_state()
 
 
+func _ensure_hp_trail() -> void:
+	if _hp_trail or health_bar == null:
+		return
+	var parent := health_bar.get_parent()
+	if parent == null:
+		return
+	var idx := health_bar.get_index()
+	var wrap := Control.new()
+	wrap.name = "HealthStack"
+	wrap.custom_minimum_size = health_bar.custom_minimum_size
+	wrap.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	parent.remove_child(health_bar)
+	_hp_trail = ProgressBar.new()
+	_hp_trail.name = "HealthTrail"
+	_hp_trail.show_percentage = false
+	_hp_trail.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_hp_trail.max_value = health_bar.max_value
+	_hp_trail.value = health_bar.value
+	_hp_trail.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_style_bar(_hp_trail, Color(0.92, 0.18, 0.22, 0.7))
+	health_bar.set_anchors_preset(Control.PRESET_FULL_RECT)
+	health_bar.offset_left = 0
+	health_bar.offset_top = 0
+	health_bar.offset_right = 0
+	health_bar.offset_bottom = 0
+	var empty := StyleBoxEmpty.new()
+	health_bar.add_theme_stylebox_override("background", empty)
+	wrap.add_child(_hp_trail)
+	wrap.add_child(health_bar)
+	parent.add_child(wrap)
+	parent.move_child(wrap, idx)
+	set_process(true)
+
+
+func _process(delta: float) -> void:
+	if _hp_trail == null or health_bar == null:
+		return
+	if _hp_trail.value > health_bar.value:
+		var catch := maxf(health_bar.max_value * 0.85 * delta, 8.0 * delta)
+		_hp_trail.value = maxf(health_bar.value, _hp_trail.value - catch)
+	elif _hp_trail.value < health_bar.value:
+		_hp_trail.value = health_bar.value
+
+
 func _on_health_changed(current: float, max_value: float) -> void:
+	if _hp_trail:
+		_hp_trail.max_value = max_value
+		if current < health_bar.value:
+			_hp_trail.value = maxf(_hp_trail.value, health_bar.value)
+		elif current > _hp_trail.value:
+			_hp_trail.value = current
 	health_bar.max_value = max_value
 	health_bar.value = current
 	if _hp_label:
 		_hp_label.text = "HP  %d / %d" % [roundi(current), roundi(max_value)]
 	var ratio := current / max_value if max_value > 0.0 else 0.0
 	_style_bar(health_bar, HP_FILL_LOW if ratio <= 0.32 else HP_FILL)
-	if _last_hp >= 0.0 and current < _last_hp:
-		_flash_hurt()
 	_last_hp = current
+
+
+func _on_hp_feedback(kind: StringName, _current: float, _max_value: float) -> void:
+	_ensure_hp_trail()
+	match kind:
+		&"hurt":
+			_style_bar(_hp_trail, Color(0.95, 0.16, 0.2, 0.92))
+			_flash_hurt()
+		&"fuel":
+			_style_bar(_hp_trail, Color(0.95, 0.58, 0.16, 0.92))
+			if _hp_label:
+				if _hp_flash and _hp_flash.is_valid():
+					_hp_flash.kill()
+				_hp_label.modulate = Color(1.0, 0.72, 0.28)
+				_hp_flash = create_tween()
+				_hp_flash.tween_property(_hp_label, "modulate", Color.WHITE, 0.22)
+		&"heal":
+			if _hp_trail:
+				_hp_trail.value = health_bar.value
+			_style_bar(health_bar, Color(0.28, 0.92, 0.42, 1))
+			if _hp_label:
+				if _hp_flash and _hp_flash.is_valid():
+					_hp_flash.kill()
+				_hp_label.modulate = Color(0.45, 1.0, 0.55)
+				_hp_flash = create_tween()
+				_hp_flash.tween_property(_hp_label, "modulate", Color.WHITE, 0.28)
+				_hp_flash.tween_callback(
+					func() -> void:
+						var ratio := health_bar.value / health_bar.max_value if health_bar.max_value > 0.0 else 1.0
+						_style_bar(health_bar, HP_FILL_LOW if ratio <= 0.32 else HP_FILL)
+				)
 
 
 func _flash_hurt() -> void:

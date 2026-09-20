@@ -3,6 +3,7 @@ extends Node
 ## Entities emit; UI and systems listen — no direct scene coupling.
 
 signal player_health_changed(current: float, max_value: float)
+signal player_hp_feedback(kind: StringName, current: float, max_value: float)
 signal player_energy_changed(current: float, max_value: float)
 signal player_adrenaline_changed(current: float, max_value: float)
 signal player_economy_hud_changed(primary: Dictionary, secondary: Dictionary)

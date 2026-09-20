@@ -54,6 +54,7 @@ var _hive_shed_cd: float = 0.7
 
 func _ready() -> void:
 	motion_mode = MOTION_MODE_FLOATING
+	physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_ON
 	y_sort_enabled = true
 	if definition != null:
 		apply_definition(definition)
@@ -603,15 +604,32 @@ func apply_chase_movement() -> void:
 		velocity = _knockback_vector()
 		move_and_slide()
 		return
-	var direction := global_position.direction_to(target.global_position)
+	var direction := global_position.direction_to(target.global_position) + _crowd_separate()
 	# Glitch robots may briefly retarget / jitter.
 	if is_glitched() and get_meta("glitch_robot", false):
 		direction = direction.rotated(randf_range(-0.7, 0.7))
+	if direction != Vector2.ZERO:
+		direction = direction.normalized()
 	velocity = Iso.apply_velocity(direction, effective_move_speed())
 	velocity += _knockback_vector()
 	if direction != Vector2.ZERO:
-		facing_direction = direction.normalized()
+		facing_direction = direction
 	move_and_slide()
+
+
+func _crowd_separate() -> Vector2:
+	if not is_inside_tree():
+		return Vector2.ZERO
+	var push := Vector2.ZERO
+	for node in get_tree().get_nodes_in_group("enemies"):
+		if node == self or node is not Node2D:
+			continue
+		var d: Vector2 = global_position - (node as Node2D).global_position
+		var dist := d.length()
+		if dist < 1.0 or dist > 38.0:
+			continue
+		push += d.normalized() * ((38.0 - dist) / 38.0)
+	return push * 0.85
 
 
 func spawn_projectile(direction: Vector2, attack: AttackData = null) -> void:

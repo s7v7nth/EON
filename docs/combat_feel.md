@@ -13,7 +13,7 @@
 ## Пиллары
 
 1. **Weight (commitment)** — свинг сажает движение (`move_mult`), есть `recovery` на конце строки, lunge в прицел. Dash-cancel остаётся (Hades-escape).
-2. **Impact** — per-attack HitStop + knockback duration + camera trauma + VFX scale. Сильный удар может **заменить** слабый busy HitStop.
+2. **Impact** — per-attack HitStop from `AttackData.hit_stop_scale` / `hit_stop_duration` / `camera_trauma`, with a mild boost only on hard hits. No victim-max-HP floor (that froze swarms longest). Hits the player takes use a shorter freeze; shake + flash still fire.
 3. **Reaction (poise / flinch)** — враг «съедает» хит: короткий interrupt AI + поза. Stagger gauge = большое crit-окно, не замена flinch.
 4. **Readability** — telegraphs уже есть; floating damage pops; finisher/parry/perfect dodge заметно сильнее light.
 
@@ -48,4 +48,4 @@
 
 ## Критерий готовности
 
-На `levels/feel_arena.tscn`: light ≠ heavy на руках; whiff чувствуется; tank не дёргается от тычка, swarm — дёргается; finisher даёт заметный hitstop + shake; dash спасает, но свинг не «коньки».
+На `levels/feel_arena.tscn`: light ≠ heavy на руках; whiff чувствуется; tank не дёргается от тычка, swarm — дёргается; finisher даёт заметный hitstop + shake; dash спасает, но свинг не «коньки». Melee magnet is a ~70° cone toward the cursor and **locks at swing start**. Attack input buffers on every kit. Neuro aim is from body center (`global_position + (0,-22)`). Hive HP: red trailing chip on damage, amber on self-spent fuel, green flash on heals. Enemies collide with the player and each other; physics interpolation is on.

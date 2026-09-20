@@ -16,7 +16,7 @@
 ═══════════════════════════════════════
 - Жанр: isometric action-roguelike / run-based arena combat.
 - Референсы ощущения: Hades (изометрия, «ноги на полу», Y-sort) + Hotline Miami (style score / ранг комнаты).
-- Combat feel (P0): prototype-snappy player melee (hit on click, light windup 0, visual duration = AttackData, energy slash only — clone sprite already holds the blade). Weight still via move_mult/recovery/lunge + HitStop. Hostile telegraphs stay readable. Encounters/elites/bosses — отдельный слой.
+- Combat feel (P0): prototype-snappy player melee (hit on click, light windup 0, visual duration = AttackData, energy slash only — clone sprite already holds the blade). Hit-stop is authored on AttackData (mild hard-hit boost; shorter freeze when the player is hit — no victim-HP floor that freezes swarms longest). Melee magnet ~70° toward cursor, locked at swing start. Attack input buffers on every kit. Neuro aims from body center. Hive HP chips: red damage / amber self-spent fuel / green heal. Enemies collide with the player and each other; physics interpolation on. Weight still via move_mult/recovery/lunge + HitStop. Hostile telegraphs stay readable. Encounters/elites/bosses — отдельный слой.
 - Стек: Godot 4, GDScript. Контент data-driven (.tres + плагины эффектов).
 - Стадия: playable vertical slice; каркас расширяемости уже есть (Phase A–F).
 - Feel-тюнинг: `levels/feel_arena.tscn` + `docs/combat_feel.md`.
@@ -135,7 +135,7 @@ Post-room Rewards (always offerable for Synthetic, same menu as +damage/+speed):
 --- 2) УЛЕЙ (NANOMACHINES) ---
 Fantasy: нано-рой / биологический паразит-носитель.
 Economy: BLOOD_HARVEST (EconomyBloodHarvest)
-- Нет Energy. Пассивный HP drain рядом с врагами (~3% max HP/s, floor ~8 HP).
+- Нет Energy. Пассивный HP drain рядом с врагами (~3% max HP/s, floor ~8 HP). HUD: red trailing chip = damage taken; amber chip = HP spent as fuel; green flash = heals.
 - Life steal on hit + heal on kill. **Нет baked low-HP damage.**
 - Space = hold **Dissipate** (sand puddle, remnant silhouette, invincible, HP drain, puddle poison; release reforms + heal fraction). Нет dash.
 - Q = swarm burst (AoE за % HP) — целится по группе `enemies`.

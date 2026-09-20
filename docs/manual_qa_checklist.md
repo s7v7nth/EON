@@ -4,6 +4,7 @@
 
 ## Старт / архитектуры
 - [ ] Boot: opening the **Godot app / editor** then F5/Play reaches splash → class select in **seconds** (Compatibility / OpenGL), not a minutes-long gray hang. No Forward+. Unused Kenney packs are not imported.
+- [ ] **Begin Run / first room** appears in **seconds**, not minutes (current island dresses immediately; other rooms / SFX banks / campaign graph are not dumped onto that load)
 - [ ] В начале рана есть выбор маршрута: Tutorial (3) / Campaign (Acts 1–4) / **Procedural (12)**
 - [ ] Class-select portraits are the **same visor clone** with a kit overlay (Synthetic grey + energy blade · Hive nano veins · Parovoz rail plates · Neuro wires) — never The Hive sweeper, never Kenney robots
 - [ ] In-room player is that clone for every architecture; The Hive sweeper is the **boss**, not the Hive player
@@ -46,6 +47,7 @@
 
 ## Улей
 - [ ] HP медленно тикает вниз **только рядом с врагами**
+- [ ] HP chip: **red trail** when hit, **amber trail** when HP is spent as fuel (drain / dash / Q / Dissipate), **green flash** on heals — not the same tell as taking a hit
 - [ ] Хиты/киллы возвращают HP; низкий HP **не** даёт скрытый damage buff
 - [ ] Space **не dash**: зажать Space = Dissipate (лужа, remnant-силуэт, i-frames, HP tick, puddle poison); отпустить = reform + часть HP назад
 - [ ] Special (swarm burst) ощущается и бьёт врагов на острове (не только sibling nodes)
@@ -58,6 +60,7 @@
 - [ ] Крафт **Plasma Afterburn** (magnet) — после Vent короткое окно бонусного урона / меньше heat gain
 
 ## Нейро-хакер
+- [ ] Neuro LMB pistol aims from **body center**, not feet
 - [ ] Q спавнит дрона, RAM-слоты уменьшаются
 - [ ] Дрон бьёт врагов, по истечении жизни слот освобождается
 - [ ] Второй дрон блокируется, если слотов нет
@@ -139,9 +142,11 @@
 - [ ] Parry / perfect dodge дают усиленный freeze + shake
 - [ ] **Parry** — жёсткий «BAM»: длинный hitstop, flash, сильный отброс, стан со **звёздами** над головой
 - [ ] Stagger / hard stun показывают крутящиеся звёзды (Tom & Jerry)
-- [ ] Hitstop / camera shake / knockback масштабируются от % HP урона; hit flash на попадании
+- [ ] Hitstop follows **AttackData** (light ~0.04s); swarm fights do **not** freeze longer than bruisers; hits **you** take freeze less than hits you land; hit flash still fires
+- [ ] Melee magnet is ~**70° of the cursor**, not 360°; swing aim **locks at click**
 - [ ] Смерть врага: кровь/лужи + куски тела остаются валяться на арене
-- [ ] Input buffer (~0.22с): можно нажать следующую атаку/блок/dash до конца recovery
+- [ ] Input buffer (~0.22с) on **all four kits**: можно нажать следующую атаку/блок/dash до конца recovery
+- [ ] Enemies **do not walk through** the player or stack on one tile; motion interpolates (no 120Hz stutter on a 144/165Hz display)
 - [ ] Комбо **LMB→RMB→LMB** даёт круговую атаку; RMB **сразу** отменяет атаку в щит (block priority)
 - [ ] Щит по RMB встаёт сразу (без долгого «подъёма»); raise-parry окно короткое (~0.18с)
 - [ ] Третий LMB комбо можно добить из щита (не обязательно сначала отпускать RMB)

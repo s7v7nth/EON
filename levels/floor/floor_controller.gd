@@ -35,13 +35,15 @@ func _ready() -> void:
 	SignalBus.player_died.connect(_on_player_died)
 	if RunState.dungeon == null:
 		if not RunState.route_picked:
-			var routes := RunState.get_available_routes()
-			if not routes.is_empty():
-				RunState.choose_route(routes[0])
+			## Tutorial only — do not load campaign + procedural graphs here.
+			RunState.choose_route(RunState.TUTORIAL_ROUTE)
+	var t0 := Time.get_ticks_msec()
 	_build_floor()
 	_place_player()
 	_tune_camera()
+	print("FIRST_ROOM_READY ms=%d rooms=%d" % [Time.get_ticks_msec() - t0, _islands.size()])
 	call_deferred("_enter_current_room")
+	call_deferred("_dress_neighbors")
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -97,6 +99,8 @@ func _build_floor() -> void:
 	_add_floor_atmosphere()
 	var start: Node2D = _islands.get(graph.start_coord)
 	_current = start
+	if _current and _current.has_method("ensure_dressed"):
+		_current.call("ensure_dressed")
 
 
 func _build_hallways() -> void:
@@ -151,8 +155,9 @@ func _make_hall(root: Node2D, a: DungeonRoom, b: DungeonRoom, dir: Vector2i) -> 
 		tile.z_index = -18
 		tile.modulate = Color(0.88, 0.88, 0.9, 1)
 		hall.add_child(tile)
-		var sz := ArtBank.apply_opaque_region(tile)
-		tile.scale = Vector2((length + 36.0) / maxf(sz.x, 1.0), (hw * 2.2) / maxf(sz.y, 1.0))
+		var tw := float(tile.texture.get_width())
+		var th := float(tile.texture.get_height())
+		tile.scale = Vector2((length + 36.0) / maxf(tw, 1.0), (hw * 2.2) / maxf(th, 1.0))
 	var walls := StaticBody2D.new()
 	walls.collision_layer = 1
 	walls.collision_mask = 0
@@ -176,6 +181,17 @@ func _add_floor_atmosphere() -> void:
 	grade.name = "Grade"
 	grade.color = Color(0.96, 0.97, 1.0, 1)
 	layer.add_child(grade)
+	var sky := ArtBank.illustrated("sky_dusk")
+	if sky:
+		var bg := Sprite2D.new()
+		bg.name = "NightSky"
+		bg.texture = sky
+		bg.centered = true
+		bg.z_index = -40
+		bg.scale = Vector2(2.15, 2.15)
+		bg.modulate = Color.WHITE
+		bg.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+		layer.add_child(bg)
 	_add_floor_vignette()
 
 
@@ -301,9 +317,36 @@ func _on_occupancy(body: Node2D, island: Node2D) -> void:
 	_switch_room(island)
 
 
+func _dress_neighbors() -> void:
+	if _current == null:
+		call_deferred("_dress_remaining_islands")
+		return
+	var room: DungeonRoom = _current.get("room") as DungeonRoom
+	if room:
+		for dir in room.door_dirs():
+			var island: Node2D = _islands.get(room.coord + dir)
+			if island and island.has_method("ensure_dressed"):
+				island.call("ensure_dressed")
+	call_deferred("_dress_remaining_islands")
+
+
+func _dress_remaining_islands() -> void:
+	for coord in _islands.keys():
+		var island: Node2D = _islands[coord]
+		if island == null or not island.has_method("ensure_dressed"):
+			continue
+		if island.get_node_or_null("Dressing") != null:
+			continue
+		island.call("ensure_dressed")
+		call_deferred("_dress_remaining_islands")
+		return
+
+
 func _switch_room(island: Node2D) -> void:
 	if island == null:
 		return
+	if island.has_method("ensure_dressed"):
+		island.call("ensure_dressed")
 	var room: DungeonRoom = island.get("room") as DungeonRoom
 	if room == null:
 		return

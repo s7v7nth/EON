@@ -50,6 +50,8 @@ func enter(msg: Dictionary = {}) -> void:
 		return
 
 	player.configure_hitbox_for_attack(_attack)
+	var aim := player.get_aim_direction()
+	player.lock_aim(aim)
 	_aim_hitbox_at_cursor()
 	var speed := player.get_attack_speed_multiplier()
 	var wind := _attack.windup / speed
@@ -91,17 +93,15 @@ func physics_update(delta: float) -> void:
 
 	var speed := player.get_attack_speed_multiplier()
 	_elapsed += delta * speed
-	if not _circular:
-		_aim_hitbox_at_cursor()
 
 	if player.uses_synthetic_kit():
 		_poll_synthetic_combo()
 	else:
-		if Input.is_action_just_pressed("attack") and _attack and _attack.combo_next:
+		if player.pressed_or_buffered(&"attack") and _attack and _attack.combo_next:
 			_combo_buffered = true
-		if Input.is_action_just_pressed("special"):
+		if player.pressed_or_buffered(&"special"):
 			player.try_special()
-		if Input.is_action_just_pressed("parry") and player.parry_ready():
+		if player.pressed_or_buffered(&"parry") and player.parry_ready():
 			transition_to(&"Parry")
 			return
 
@@ -229,6 +229,7 @@ func _combo_has_ranged_step() -> bool:
 
 
 func exit() -> void:
+	player.unlock_aim()
 	player.hitbox.deactivate()
 	if player.hitbox.hit_landed.is_connected(_on_hit_landed):
 		player.hitbox.hit_landed.disconnect(_on_hit_landed)
@@ -318,6 +319,14 @@ func _return_to_locomotion() -> void:
 			index = maxi(n - 1, 0)
 		transition_to(&"Attack", {"combo_index": index})
 		return
+	if player.consume_buffered(&"attack"):
+		if player.uses_gun_kit() and player.ranged_ready():
+			transition_to(&"RangedAttack")
+			return
+		if player.attack_ready():
+			transition_to(&"Attack", {"combo_index": 0})
+			return
+		player.buffer_combat_input(&"attack")
 	if player.get_input_direction() != Vector2.ZERO:
 		transition_to(&"Move")
 	else:

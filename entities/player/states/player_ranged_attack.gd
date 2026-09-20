@@ -35,9 +35,6 @@ func physics_update(delta: float) -> void:
 
 	var speed := player.get_attack_speed_multiplier()
 	_elapsed += delta * speed
-	_aim = player.get_aim_direction()
-	_aim_angle = _aim.angle()
-	player.facing_direction = _aim
 
 	if not _fired:
 		if _elapsed >= player.ranged_attack_data.windup:

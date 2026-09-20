@@ -26,6 +26,8 @@ godot --headless --path . res://tools/validate_geometry_rewards.tscn
 godot --headless --path . res://tools/validate_encounters_rooms.tscn
 godot --headless --path . res://tools/validate_hud_chrome.tscn
 godot --headless --path . res://tools/validate_hub_hive.tscn
+godot --headless --path . res://tools/validate_begin_run.tscn
+godot --headless --path . res://tools/validate_combat_feel.tscn
 ```
 
 Open the Godot **app** (editor) with Compatibility, then F5 / Play. On macOS:

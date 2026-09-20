@@ -95,6 +95,7 @@ var aim_override: Vector2 = Vector2.ZERO
 
 func _ready() -> void:
 	motion_mode = MOTION_MODE_FLOATING
+	physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_ON
 	y_sort_enabled = true
 	if input_buffer.get_parent() == null:
 		input_buffer.name = "InputBuffer"
@@ -163,6 +164,7 @@ func _physics_process(delta: float) -> void:
 	_process_architecture_economy(delta)
 	_tick_upgrade_effects(delta)
 	_tick_attack_hold(delta)
+	capture_bufferable_inputs()
 	_sync_aim_facing()
 
 
@@ -259,6 +261,8 @@ func _relay_component_signals() -> void:
 	health.health_changed.connect(
 		func(current: float, max_value: float) -> void:
 			SignalBus.player_health_changed.emit(current, max_value)
+			if health.last_reason != StringName():
+				SignalBus.player_hp_feedback.emit(health.last_reason, current, max_value)
 	)
 	health.died.connect(func() -> void: SignalBus.player_died.emit())
 	energy.energy_changed.connect(
@@ -514,18 +518,57 @@ func nearest_hostile(max_dist: float = 210.0) -> Node2D:
 func get_aim_direction() -> Vector2:
 	if aim_override != Vector2.ZERO:
 		return aim_override.normalized()
-	# Melee magnet: Hive / Parovoz swings snap to the nearest live foe.
-	# Gun kits keep the cursor so Neuro can kite instead of walking into bosses.
+	var origin := global_position
+	if uses_gun_kit():
+		origin += Vector2(0, -22)
+	var cursor := get_global_mouse_position() - origin
+	if cursor == Vector2.ZERO:
+		cursor = facing_direction
+	else:
+		cursor = cursor.normalized()
+	# Melee magnet: ~70° cone toward the cursor, not omnidirectional.
 	if not uses_gun_kit():
-		var foe := nearest_hostile(210.0)
+		var foe := nearest_hostile_in_cone(210.0, cursor, deg_to_rad(35.0))
 		if foe:
 			var to_foe := foe.global_position - global_position
 			if to_foe.length() > 6.0:
 				return to_foe.normalized()
-	var aim := get_global_mouse_position() - global_position
-	if aim == Vector2.ZERO:
-		return facing_direction
-	return aim.normalized()
+	return cursor
+
+
+func nearest_hostile_in_cone(max_dist: float, cursor_dir: Vector2, half_angle: float) -> Node2D:
+	if cursor_dir == Vector2.ZERO or not is_inside_tree():
+		return null
+	var aim := cursor_dir.normalized()
+	var best: Node2D = null
+	var best_d := max_dist
+	for node in get_tree().get_nodes_in_group("enemies"):
+		if node == self or node is not Node2D:
+			continue
+		var hp := node.get("health") as HealthComponent
+		if hp and hp.current_health <= 0.0:
+			continue
+		var to_foe: Vector2 = (node as Node2D).global_position - global_position
+		var d := to_foe.length()
+		if d > best_d or d <= 6.0:
+			continue
+		if absf(aim.angle_to(to_foe)) > half_angle:
+			continue
+		best_d = d
+		best = node as Node2D
+	return best
+
+
+func lock_aim(dir: Vector2) -> void:
+	if dir == Vector2.ZERO:
+		dir = facing_direction
+	aim_override = dir.normalized()
+	if aim_override != Vector2.ZERO:
+		facing_direction = aim_override
+
+
+func unlock_aim() -> void:
+	aim_override = Vector2.ZERO
 
 
 func apply_movement(direction: Vector2) -> void:
@@ -1010,8 +1053,37 @@ func consume_buffered(action: StringName) -> bool:
 func capture_bufferable_inputs() -> void:
 	if input_buffer == null:
 		return
-	var actions: Array[StringName] = [&"attack", &"ranged_attack", &"dash"]
+	var actions: Array[StringName] = [&"attack", &"ranged_attack", &"dash", &"special", &"parry"]
 	input_buffer.capture_just_pressed(actions)
+
+
+func peek_buffered(action: StringName) -> bool:
+	return input_buffer != null and input_buffer.peek(action)
+
+
+func locomotion_combat_intent() -> Dictionary:
+	## Shared Idle/Move combat routing. Synthetic keep hold-throw in the state.
+	capture_bufferable_inputs()
+	if pressed_or_buffered(&"special"):
+		try_special()
+		return {"handled": true}
+	if pressed_or_buffered(&"dash") and mobility_ready():
+		return {"state": mobility_state_name()}
+	if pressed_or_buffered(&"parry") and parry_ready():
+		return {"state": &"Parry"}
+	if uses_synthetic_kit():
+		return {}
+	if consume_buffered(&"attack"):
+		if uses_gun_kit() and ranged_ready():
+			return {"state": &"RangedAttack"}
+		if attack_ready():
+			return {"state": &"Attack", "msg": {"combo_index": 0}}
+		buffer_combat_input(&"attack")
+	if consume_buffered(&"ranged_attack"):
+		if ranged_ready():
+			return {"state": &"RangedAttack"}
+		buffer_combat_input(&"ranged_attack")
+	return {}
 
 
 func pressed_or_buffered(action: StringName) -> bool:

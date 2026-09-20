@@ -51,8 +51,7 @@ func tick(host: Node, delta: float) -> void:
 	if not _enemy_in_range(host, 240.0):
 		return
 	var drain := max_hp * hp_drain_percent_per_sec * delta
-	health.current_health = maxf(health.current_health - drain, min_hp_from_drain)
-	health.health_changed.emit(health.current_health, max_hp)
+	health.spend_as_fuel(drain, min_hp_from_drain)
 
 
 func can_afford(host: Node, action: StringName, _cost: float = 0.0) -> bool:
@@ -121,8 +120,7 @@ func tick_dissipate(host: Node, delta: float) -> float:
 	if room <= 0.05:
 		return 0.0
 	drain = minf(drain, room)
-	health.current_health = maxf(health.current_health - drain, min_hp_from_drain)
-	health.health_changed.emit(health.current_health, max_hp)
+	health.spend_as_fuel(drain, min_hp_from_drain)
 	return drain
 
 
@@ -198,8 +196,7 @@ func _spend_hp_percent(host: Node, percent: float) -> void:
 	if health == null:
 		return
 	var max_hp := health.get_max_health()
-	health.current_health = maxf(health.current_health - max_hp * percent, min_hp_from_drain)
-	health.health_changed.emit(health.current_health, max_hp)
+	health.spend_as_fuel(max_hp * percent, min_hp_from_drain)
 
 
 func _enemy_in_range(host: Node, radius: float) -> bool:

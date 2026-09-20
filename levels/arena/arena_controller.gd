@@ -50,12 +50,20 @@ func _ready() -> void:
 	SignalBus.player_died.connect(_on_player_died)
 	SignalBus.route_chosen.connect(_on_route_chosen)
 	SignalBus.architecture_changed.connect(_on_architecture_changed)
-	_apply_biome()
+	_apply_biome(false)
 	is_final_room = RunState.is_last_room()
 	_place_player()
 	_setup_exits()
 	_dress_exit_marker()
-	call_deferred("_try_start_combat")
+	print("ARENA_FIRST_PAINT t=%d" % Time.get_ticks_msec())
+	call_deferred("_dress_then_start")
+
+
+func _dress_then_start() -> void:
+	if biome:
+		_RoomDresser.dress(self, biome)
+		_spawn_biome_traps()
+	_try_start_combat()
 
 
 func _on_route_chosen(_route_id: StringName) -> void:
@@ -433,7 +441,7 @@ func _make_door(dir: Vector2i) -> Area2D:
 	return door
 
 
-func _apply_biome() -> void:
+func _apply_biome(visuals: bool = true) -> void:
 	var resolved := RunState.biome_for_current_room()
 	if resolved:
 		biome = resolved
@@ -446,8 +454,9 @@ func _apply_biome() -> void:
 	if floor_poly:
 		floor_poly.color = biome.get_floor_color()
 	_tint_wall_visuals()
-	_RoomDresser.dress(self, biome)
-	_spawn_biome_traps()
+	if visuals:
+		_RoomDresser.dress(self, biome)
+		_spawn_biome_traps()
 	SignalBus.biome_changed.emit(biome.biome_id)
 
 

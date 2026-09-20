@@ -51,100 +51,95 @@ func _ready() -> void:
 		SignalBus.room_cleared.connect(_on_room_cleared)
 
 
-var _banks_loaded: bool = false
+const _PATHS_HITS: PackedStringArray = [
+	"res://assets/sfx/impact/impactPunch_medium_000.ogg",
+	"res://assets/sfx/impact/impactPunch_medium_001.ogg",
+	"res://assets/sfx/impact/impactPunch_heavy_000.ogg",
+	"res://assets/sfx/impact/impactMetal_medium_000.ogg",
+	"res://assets/sfx/impact/impactMetal_medium_001.ogg",
+	"res://assets/sfx/sci-fi/impactMetal_000.ogg",
+	"res://assets/sfx/rpg-pack/swing.wav",
+]
+const _PATHS_HURTS: PackedStringArray = [
+	"res://assets/sfx/impact/impactGeneric_light_000.ogg",
+	"res://assets/sfx/impact/impactPlate_medium_000.ogg",
+	"res://assets/sfx/impact/impactPunch_heavy_001.ogg",
+]
+const _PATHS_DASHES: PackedStringArray = [
+	"res://assets/sfx/sci-fi/thrusterFire_000.ogg",
+	"res://assets/sfx/sci-fi/thrusterFire_001.ogg",
+	"res://assets/sfx/sci-fi/forceField_000.ogg",
+	"res://assets/sfx/sci-fi/spaceEngineSmall_000.ogg",
+]
+const _PATHS_PICKUPS: PackedStringArray = [
+	"res://assets/sfx/interface/confirmation_001.ogg",
+	"res://assets/sfx/rpg/handleCoins.ogg",
+	"res://assets/sfx/rpg-pack/coin.wav",
+	"res://assets/sfx/digital/pepSound1.ogg",
+]
+const _PATHS_DEATHS: PackedStringArray = [
+	"res://assets/sfx/sci-fi/explosionCrunch_000.ogg",
+	"res://assets/sfx/sci-fi/explosionCrunch_001.ogg",
+	"res://assets/sfx/oga-scifi/explosion_01.ogg",
+	"res://assets/sfx/rpg-pack/mnstr1.wav",
+]
+const _PATHS_SWINGS: PackedStringArray = [
+	"res://assets/sfx/rpg-pack/swing.wav",
+	"res://assets/sfx/rpg-pack/swing2.wav",
+	"res://assets/sfx/rpg/knifeSlice.ogg",
+	"res://assets/sfx/sci-fi/laserSmall_000.ogg",
+]
+const _PATHS_UI: PackedStringArray = [
+	"res://assets/sfx/interface/click_001.ogg",
+	"res://assets/sfx/ui/click-a.ogg",
+	"res://assets/sfx/interface/drop_001.ogg",
+]
+const _PATHS_ERRORS: PackedStringArray = [
+	"res://assets/sfx/interface/error_001.ogg",
+	"res://assets/sfx/interface/error_002.ogg",
+	"res://assets/sfx/digital/lowThreeTone.ogg",
+]
+const _PATHS_COINS: PackedStringArray = [
+	"res://assets/sfx/rpg/handleCoins.ogg",
+	"res://assets/sfx/rpg-pack/coin.wav",
+	"res://assets/sfx/rpg-pack/coin2.wav",
+]
+const _PATHS_BOSS: PackedStringArray = [
+	"res://assets/sfx/sci-fi/lowFrequency_explosion_000.ogg",
+	"res://assets/sfx/rpg-pack/ogre1.wav",
+	"res://assets/sfx/sci-fi/explosionCrunch_002.ogg",
+	"res://assets/sfx/digital/phaserDown1.ogg",
+]
+const _PATHS_SPECIALS: PackedStringArray = [
+	"res://assets/sfx/sci-fi/laserLarge_000.ogg",
+	"res://assets/sfx/sci-fi/forceField_001.ogg",
+	"res://assets/sfx/rpg-pack/spell.wav",
+	"res://assets/sfx/digital/laser1.ogg",
+]
+const _PATHS_PARRIES: PackedStringArray = [
+	"res://assets/sfx/impact/impactPlate_heavy_000.ogg",
+	"res://assets/sfx/sci-fi/forceField_002.ogg",
+	"res://assets/sfx/digital/highUp.ogg",
+	"res://assets/sfx/space-shooter/sfx_shieldUp.ogg",
+]
+const _PATHS_JINGLE_WIN: PackedStringArray = [
+	"res://assets/sfx/jingles/jingles_HIT01.ogg",
+	"res://assets/sfx/jingles/jingles_HIT05.ogg",
+	"res://assets/sfx/jingles/jingles_HIT10.ogg",
+	"res://assets/sfx/jingles/jingles_STEEL03.ogg",
+]
+const _PATHS_JINGLE_BOSS: PackedStringArray = [
+	"res://assets/sfx/jingles/jingles_SAX00.ogg",
+	"res://assets/sfx/jingles/jingles_SAX05.ogg",
+	"res://assets/sfx/jingles/jingles_SAX08.ogg",
+	"res://assets/sfx/jingles/jingles_STEEL07.ogg",
+]
 
 
-func _ensure_banks() -> void:
-	if _banks_loaded:
+func _ensure_bank(target: Array[AudioStream], paths: PackedStringArray) -> void:
+	if not target.is_empty():
 		return
-	_banks_loaded = true
-	_load_banks()
-
-
-func _load_banks() -> void:
-	_fill_bank(_hits, [
-		"res://assets/sfx/impact/impactPunch_medium_000.ogg",
-		"res://assets/sfx/impact/impactPunch_medium_001.ogg",
-		"res://assets/sfx/impact/impactPunch_heavy_000.ogg",
-		"res://assets/sfx/impact/impactMetal_medium_000.ogg",
-		"res://assets/sfx/impact/impactMetal_medium_001.ogg",
-		"res://assets/sfx/sci-fi/impactMetal_000.ogg",
-		"res://assets/sfx/rpg-pack/swing.wav",
-	])
-	_fill_bank(_hurts, [
-		"res://assets/sfx/impact/impactGeneric_light_000.ogg",
-		"res://assets/sfx/impact/impactPlate_medium_000.ogg",
-		"res://assets/sfx/impact/impactPunch_heavy_001.ogg",
-	])
-	_fill_bank(_dashes, [
-		"res://assets/sfx/sci-fi/thrusterFire_000.ogg",
-		"res://assets/sfx/sci-fi/thrusterFire_001.ogg",
-		"res://assets/sfx/sci-fi/forceField_000.ogg",
-		"res://assets/sfx/sci-fi/spaceEngineSmall_000.ogg",
-	])
-	_fill_bank(_pickups, [
-		"res://assets/sfx/interface/confirmation_001.ogg",
-		"res://assets/sfx/rpg/handleCoins.ogg",
-		"res://assets/sfx/rpg-pack/coin.wav",
-		"res://assets/sfx/digital/pepSound1.ogg",
-	])
-	_fill_bank(_deaths, [
-		"res://assets/sfx/sci-fi/explosionCrunch_000.ogg",
-		"res://assets/sfx/sci-fi/explosionCrunch_001.ogg",
-		"res://assets/sfx/oga-scifi/explosion_01.ogg",
-		"res://assets/sfx/rpg-pack/mnstr1.wav",
-	])
-	_fill_bank(_swings, [
-		"res://assets/sfx/rpg-pack/swing.wav",
-		"res://assets/sfx/rpg-pack/swing2.wav",
-		"res://assets/sfx/rpg/knifeSlice.ogg",
-		"res://assets/sfx/sci-fi/laserSmall_000.ogg",
-	])
-	_fill_bank(_ui, [
-		"res://assets/sfx/interface/click_001.ogg",
-		"res://assets/sfx/ui/click-a.ogg",
-		"res://assets/sfx/interface/drop_001.ogg",
-	])
-	_fill_bank(_errors, [
-		"res://assets/sfx/interface/error_001.ogg",
-		"res://assets/sfx/interface/error_002.ogg",
-		"res://assets/sfx/digital/lowThreeTone.ogg",
-	])
-	_fill_bank(_coins, [
-		"res://assets/sfx/rpg/handleCoins.ogg",
-		"res://assets/sfx/rpg-pack/coin.wav",
-		"res://assets/sfx/rpg-pack/coin2.wav",
-	])
-	_fill_bank(_boss, [
-		"res://assets/sfx/sci-fi/lowFrequency_explosion_000.ogg",
-		"res://assets/sfx/rpg-pack/ogre1.wav",
-		"res://assets/sfx/sci-fi/explosionCrunch_002.ogg",
-		"res://assets/sfx/digital/phaserDown1.ogg",
-	])
-	_fill_bank(_specials, [
-		"res://assets/sfx/sci-fi/laserLarge_000.ogg",
-		"res://assets/sfx/sci-fi/forceField_001.ogg",
-		"res://assets/sfx/rpg-pack/spell.wav",
-		"res://assets/sfx/digital/laser1.ogg",
-	])
-	_fill_bank(_parries, [
-		"res://assets/sfx/impact/impactPlate_heavy_000.ogg",
-		"res://assets/sfx/sci-fi/forceField_002.ogg",
-		"res://assets/sfx/digital/highUp.ogg",
-		"res://assets/sfx/space-shooter/sfx_shieldUp.ogg",
-	])
-	_fill_bank(_jingle_win, [
-		"res://assets/sfx/jingles/jingles_HIT01.ogg",
-		"res://assets/sfx/jingles/jingles_HIT05.ogg",
-		"res://assets/sfx/jingles/jingles_HIT10.ogg",
-		"res://assets/sfx/jingles/jingles_STEEL03.ogg",
-	])
-	_fill_bank(_jingle_boss, [
-		"res://assets/sfx/jingles/jingles_SAX00.ogg",
-		"res://assets/sfx/jingles/jingles_SAX05.ogg",
-		"res://assets/sfx/jingles/jingles_SAX08.ogg",
-		"res://assets/sfx/jingles/jingles_STEEL07.ogg",
-	])
+	_fill_bank(target, paths)
 
 
 func _fill_bank(target: Array[AudioStream], paths: PackedStringArray) -> void:
@@ -169,83 +164,96 @@ func _load_many(paths: PackedStringArray) -> Array[AudioStream]:
 
 func play_hit(amount: float = 10.0) -> void:
 	var t := clampf(amount / 40.0, 0.15, 1.0)
+	_ensure_bank(_hits, _PATHS_HITS)
 	_play_bank(_hits, -10.0 + 4.0 * t, randf_range(0.92, 1.08), 0.0)
 	if t > 0.55:
+		_ensure_bank(_swings, _PATHS_SWINGS)
 		_play_bank(_swings, -14.0, randf_range(0.95, 1.12), 0.0)
 	_rumble(0.12 * t, 0.28 * t, 0.06 + 0.04 * t)
 
 
 func play_hurt() -> void:
+	_ensure_bank(_hurts, _PATHS_HURTS)
 	_play_bank(_hurts, -8.0, randf_range(0.85, 1.0), 0.0)
 	_rumble(0.25, 0.15, 0.07)
 
 
 func play_dash() -> void:
+	_ensure_bank(_dashes, _PATHS_DASHES)
 	_play_bank(_dashes, -7.0, randf_range(1.02, 1.18), 0.0)
 	_rumble(0.18, 0.32, 0.08)
 
 
 func play_pickup() -> void:
+	_ensure_bank(_pickups, _PATHS_PICKUPS)
+	_ensure_bank(_jingle_win, _PATHS_JINGLE_WIN)
 	_play_bank(_pickups, -6.0, randf_range(0.98, 1.08), 0.0)
 	_play_bank(_jingle_win, -12.0, 1.08, 0.02)
 
 
 func play_death() -> void:
+	_ensure_bank(_deaths, _PATHS_DEATHS)
 	_play_bank(_deaths, -5.0, randf_range(0.88, 1.02), 0.0)
 	_rumble(0.35, 0.5, 0.14)
 
 
 func play_player_death() -> void:
+	_ensure_bank(_deaths, _PATHS_DEATHS)
+	_ensure_bank(_boss, _PATHS_BOSS)
 	_play_bank(_deaths, -2.0, 0.78, 0.0)
 	_play_bank(_boss, -8.0, 0.7, 0.05)
 	_rumble(0.55, 0.7, 0.22)
 
 
 func play_swing() -> void:
-	if _swings.is_empty():
-		_fill_bank(_swings, [
-			"res://assets/sfx/rpg-pack/swing.wav",
-			"res://assets/sfx/rpg-pack/swing2.wav",
-			"res://assets/sfx/rpg/knifeSlice.ogg",
-			"res://assets/sfx/sci-fi/laserSmall_000.ogg",
-		])
+	_ensure_bank(_swings, _PATHS_SWINGS)
 	_play_bank(_swings, -11.0, randf_range(0.94, 1.12), 0.0)
 
 
 func warmup() -> void:
-	_ensure_banks()
+	## Do not dump the full SFX bank onto class select or Begin Run.
+	pass
 
 
 func play_ui() -> void:
+	_ensure_bank(_ui, _PATHS_UI)
 	_play_bank(_ui, -10.0, 1.0, 0.0)
 
 
 func play_error() -> void:
+	_ensure_bank(_errors, _PATHS_ERRORS)
 	_play_bank(_errors, -6.0, 1.0, 0.0)
 
 
 func play_coin() -> void:
+	_ensure_bank(_coins, _PATHS_COINS)
 	_play_bank(_coins, -8.0, randf_range(0.96, 1.08), 0.0)
 
 
 func play_boss() -> void:
+	_ensure_bank(_boss, _PATHS_BOSS)
+	_ensure_bank(_jingle_boss, _PATHS_JINGLE_BOSS)
 	_play_bank(_boss, -3.0, 0.9, 0.0)
 	_play_bank(_jingle_boss, -6.0, 0.92, 0.04)
 	_rumble(0.6, 0.8, 0.28)
 
 
 func play_parry() -> void:
+	_ensure_bank(_parries, _PATHS_PARRIES)
 	_play_bank(_parries, -5.0, randf_range(0.95, 1.05), 0.0)
 	_rumble(0.45, 0.65, 0.12)
 
 
 func play_perfect_dodge() -> void:
+	_ensure_bank(_dashes, _PATHS_DASHES)
+	_ensure_bank(_ui, _PATHS_UI)
 	_play_bank(_dashes, -8.0, 1.25, 0.0)
 	_play_bank(_ui, -12.0, 1.4, 0.03)
 	_rumble(0.2, 0.35, 0.08)
 
 
 func play_special() -> void:
+	_ensure_bank(_specials, _PATHS_SPECIALS)
 	_play_bank(_specials, -5.0, randf_range(0.9, 1.05), 0.0)
 	_rumble(0.55, 0.7, 0.18)
 
@@ -284,13 +292,12 @@ func _on_player_died() -> void:
 
 
 func _on_room_cleared() -> void:
+	_ensure_bank(_jingle_win, _PATHS_JINGLE_WIN)
 	_play_bank(_jingle_win, -8.0, 1.0, 0.0)
 	_rumble(0.2, 0.3, 0.1)
 
 
 func _play_bank(bank: Array[AudioStream], volume_db: float, pitch: float, delay: float) -> void:
-	if bank.is_empty():
-		_ensure_banks()
 	if bank.is_empty():
 		_blip(180.0, 0.05, 0.18)
 		return

@@ -15,31 +15,16 @@ func physics_update(_delta: float) -> void:
 
 
 func _check_combat_inputs() -> bool:
+	var intent := player.locomotion_combat_intent()
+	if bool(intent.get("handled", false)):
+		return true
+	if intent.has("state"):
+		var st: StringName = intent["state"]
+		var msg: Dictionary = intent.get("msg", {})
+		transition_to(st, msg)
+		return true
 	if player.uses_synthetic_kit():
 		return _check_synthetic_inputs()
-	return _check_legacy_inputs()
-
-
-func _check_legacy_inputs() -> bool:
-	if Input.is_action_just_pressed("special"):
-		player.try_special()
-		return true
-	if Input.is_action_just_pressed("dash") and player.mobility_ready():
-		transition_to(player.mobility_state_name())
-		return true
-	if Input.is_action_just_pressed("parry") and player.parry_ready():
-		transition_to(&"Parry")
-		return true
-	if Input.is_action_just_pressed("attack"):
-		if player.uses_gun_kit() and player.ranged_ready():
-			transition_to(&"RangedAttack")
-			return true
-		if player.attack_ready():
-			transition_to(&"Attack", {"combo_index": 0})
-			return true
-	if Input.is_action_just_pressed("ranged_attack") and player.ranged_ready():
-		transition_to(&"RangedAttack")
-		return true
 	return false
 
 
@@ -48,7 +33,7 @@ func _check_synthetic_inputs() -> bool:
 		transition_to(player.mobility_state_name())
 		return true
 
-	if Input.is_action_just_pressed("special"):
+	if player.pressed_or_buffered(&"special"):
 		player.try_special()
 		return true
 
