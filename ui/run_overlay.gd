@@ -44,7 +44,7 @@ var _finishing_reward: bool = false
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_ensure_dimmer()
-	_skin_panel(&"glass", Color(0.85, 0.9, 1.0, 0.96))
+	_skin_panel(&"glass", Color(0.55, 0.48, 0.38, 0.96))
 	_panel.visible = false
 	_rewards.visible = false
 	_craft.visible = false
@@ -117,7 +117,7 @@ func _wrap_wave_plaque() -> void:
 	_wave_plaque.offset_right = 360.0
 	_wave_plaque.offset_top = -64.0
 	_wave_plaque.offset_bottom = -16.0
-	_wave_plaque.add_theme_stylebox_override("panel", ArtBank.panel_style(&"card", Color(0.82, 0.88, 1.0, 0.94)))
+	_wave_plaque.add_theme_stylebox_override("panel", ArtBank.panel_style(&"card", Color(0.36, 0.3, 0.22, 0.94)))
 	_wave_plaque.visible = false
 	var parent := _wave_label.get_parent()
 	parent.remove_child(_wave_label)
@@ -228,7 +228,7 @@ func _ensure_combo_toast() -> void:
 	_combo_toast.offset_bottom = 86.0
 	_combo_toast.z_index = 80
 	_combo_toast.process_mode = Node.PROCESS_MODE_ALWAYS
-	_combo_toast.add_theme_stylebox_override("panel", ArtBank.panel_style(&"card", Color(1.0, 0.92, 0.55, 0.97)))
+	_combo_toast.add_theme_stylebox_override("panel", ArtBank.panel_style(&"card", Color(0.72, 0.52, 0.22, 0.96)))
 	_combo_toast.modulate.a = 0.0
 	var pad := MarginContainer.new()
 	pad.add_theme_constant_override("margin_left", 16)
@@ -287,7 +287,7 @@ func _ensure_combo_chip() -> void:
 	_combo_chip.offset_bottom = -72.0
 	_combo_chip.z_index = 70
 	_combo_chip.process_mode = Node.PROCESS_MODE_ALWAYS
-	_combo_chip.add_theme_stylebox_override("panel", ArtBank.panel_style(&"card", Color(1.0, 0.9, 0.48, 0.95)))
+	_combo_chip.add_theme_stylebox_override("panel", ArtBank.panel_style(&"card", Color(0.38, 0.28, 0.16, 0.95)))
 	_combo_chip.modulate.a = 0.0
 	var pad := MarginContainer.new()
 	pad.add_theme_constant_override("margin_left", 12)
@@ -299,7 +299,7 @@ func _ensure_combo_chip() -> void:
 	_combo_chip_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_combo_chip_title.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	_combo_chip_title.add_theme_font_size_override("font_size", 18)
-	_combo_chip_title.add_theme_color_override("font_color", Color(0.12, 0.08, 0.04, 1))
+	_combo_chip_title.add_theme_color_override("font_color", Color(0.86, 0.72, 0.48, 1))
 	var chip_font := ArtBank.body_heavy()
 	if chip_font:
 		_combo_chip_title.add_theme_font_override("font", chip_font)

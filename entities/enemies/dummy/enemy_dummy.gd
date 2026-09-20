@@ -43,6 +43,7 @@ var _phase_action_mult: float = 1.0
 ## Lunge / leap impulse applied during LeapAttack active frames.
 var _lunge_vel: Vector2 = Vector2.ZERO
 var _lunge_time: float = 0.0
+var facing_direction: Vector2 = Vector2.RIGHT
 
 
 func _ready() -> void:
@@ -338,6 +339,8 @@ func apply_retreat_movement() -> void:
 	var away := global_position.direction_to(target.global_position) * -1.0
 	velocity = Iso.apply_velocity(away, effective_move_speed())
 	velocity += _knockback_vector()
+	if away != Vector2.ZERO:
+		facing_direction = away.normalized()
 	move_and_slide()
 
 
@@ -569,6 +572,8 @@ func apply_chase_movement() -> void:
 		direction = direction.rotated(randf_range(-0.7, 0.7))
 	velocity = Iso.apply_velocity(direction, effective_move_speed())
 	velocity += _knockback_vector()
+	if direction != Vector2.ZERO:
+		facing_direction = direction.normalized()
 	move_and_slide()
 
 
@@ -583,15 +588,18 @@ func spawn_projectile(direction: Vector2, attack: AttackData = null) -> void:
 	if data:
 		match data.damage_type:
 			GameplayEnums.DamageType.ELECTRICITY:
-				proj.tint = Color(0.35, 0.85, 1.0, 1)
+				proj.tint = Color(0.55, 0.48, 0.32, 1)
 			GameplayEnums.DamageType.CORROSION:
-				proj.tint = Color(0.45, 1.0, 0.3, 1)
+				proj.tint = Color(0.4, 0.45, 0.22, 1)
 			_:
-				proj.tint = Color(1.0, 0.4, 0.25, 1)
+				proj.tint = Color(0.7, 0.38, 0.18, 1)
 	else:
-		proj.tint = Color(1.0, 0.4, 0.25, 1)
+		proj.tint = Color(0.7, 0.38, 0.18, 1)
 	get_parent().add_child(proj)
-	proj.global_position = global_position + direction.normalized() * 28.0
+	var muzzle := direction.normalized() * 28.0 + Vector2(0, -18)
+	if combat_visual and combat_visual.has_method("muzzle_offset"):
+		muzzle = combat_visual.call("muzzle_offset", direction)
+	proj.global_position = global_position + muzzle
 
 
 func spawn_projectile_volley(aim: Vector2, attack: AttackData) -> void:

@@ -7,6 +7,7 @@ static func dress(arena: Node2D, biome: BiomeDefinition) -> void:
 	if arena == null or biome == null:
 		return
 	_clear_named(arena, "Dressing")
+	_clear_iso_walls(arena)
 	var root := Node2D.new()
 	root.name = "Dressing"
 	root.z_index = -12
@@ -19,7 +20,7 @@ static func dress(arena: Node2D, biome: BiomeDefinition) -> void:
 	_add_backdrop(root, biome)
 	_add_iso_floor(root, biome)
 	_add_floor_decals(root, biome, accent)
-	_add_edge_walls(root, biome)
+	_add_edge_walls(arena, biome)
 	_add_props(root, biome, accent)
 	_add_centerpiece(root, biome, accent)
 	_add_lighting(arena, accent, biome)
@@ -43,28 +44,47 @@ static func _clear_named(arena: Node2D, node_name: String) -> void:
 		existing.free()
 
 
+static func _clear_iso_walls(arena: Node2D) -> void:
+	_clear_named(arena, "IsoWalls")
+	var entities := arena.get_node_or_null("Entities")
+	if entities:
+		for child in entities.get_children():
+			if String(child.name).begins_with("IsoWall"):
+				child.free()
+
+
+static func _kenney_iso_offset(tex: Texture2D) -> Vector2:
+	## Kenney 2:1 iso tiles sit on a padded canvas. Snap the diamond center to the node.
+	if tex == null:
+		return Vector2.ZERO
+	var h := float(tex.get_height())
+	var w := float(tex.get_width())
+	var diamond_h := w * 0.5
+	return Vector2(0.0, -(h * 0.5 - diamond_h * 0.5))
+
+
 static func _biome_accent(biome: BiomeDefinition) -> Color:
 	match biome.biome_id:
 		GameplayEnums.BiomeId.DATA_CENTER, GameplayEnums.BiomeId.GATEWAY:
-			return Color(0.35, 0.85, 1.0, 0.55)
+			return Color(0.28, 0.38, 0.42, 0.4)
 		GameplayEnums.BiomeId.LANDFILL, GameplayEnums.BiomeId.WASTELAND:
-			return Color(0.55, 0.9, 0.35, 0.45)
+			return Color(0.42, 0.32, 0.18, 0.4)
 		GameplayEnums.BiomeId.JUNGLE, GameplayEnums.BiomeId.TAIGA:
-			return Color(0.35, 0.75, 0.45, 0.45)
+			return Color(0.22, 0.32, 0.2, 0.4)
 		GameplayEnums.BiomeId.DOWNTOWN, GameplayEnums.BiomeId.MALL, GameplayEnums.BiomeId.ALLEY:
-			return Color(0.95, 0.55, 0.25, 0.45)
+			return Color(0.55, 0.28, 0.14, 0.4)
 		GameplayEnums.BiomeId.RESIDENTIAL:
-			return Color(0.7, 0.55, 0.95, 0.45)
+			return Color(0.32, 0.26, 0.3, 0.4)
 		_:
-			return Color(0.5, 0.75, 0.95, 0.4)
+			return Color(0.35, 0.3, 0.24, 0.35)
 
 
 static func _paint_underlay(arena: Node2D, floor_c: Color) -> void:
 	var floor_poly := arena.get_node_or_null("Floor") as Polygon2D
 	if floor_poly:
-		var c := floor_c.darkened(0.62)
+		var c := floor_c.darkened(0.78)
 		c.a = 1.0
-		floor_poly.color = c
+		floor_poly.color = Color(0.08, 0.07, 0.06, 1)
 		floor_poly.z_index = -22
 
 
@@ -80,23 +100,23 @@ static func _add_backdrop(root: Node2D, biome: BiomeDefinition) -> void:
 		GameplayEnums.BiomeId.LANDFILL, GameplayEnums.BiomeId.WASTELAND:
 			path = "res://assets/kenney/space-shooter/bg/black.png"
 		GameplayEnums.BiomeId.DATA_CENTER, GameplayEnums.BiomeId.GATEWAY:
-			path = "res://assets/kenney/space-shooter/bg/blue.png"
+			path = "res://assets/kenney/space-shooter/bg/black.png"
 		GameplayEnums.BiomeId.JUNGLE, GameplayEnums.BiomeId.TAIGA:
 			path = "res://assets/kenney/space-shooter/bg/black.png"
 		GameplayEnums.BiomeId.DOWNTOWN, GameplayEnums.BiomeId.MALL, GameplayEnums.BiomeId.ALLEY:
-			path = "res://assets/kenney/space-shooter/bg/purple.png"
+			path = "res://assets/kenney/space-shooter/bg/black.png"
 		_:
 			path = "res://assets/kenney/space-shooter/bg/darkPurple.png"
 	var tex := ArtBank.tex(path)
 	if tex == null:
 		return
 	var bg := Sprite2D.new()
-	bg.name = "Nebula"
+	bg.name = "NightSky"
 	bg.texture = tex
 	bg.centered = true
 	bg.z_index = -18
 	bg.scale = Vector2(7.2, 4.6)
-	bg.modulate = Color(0.55, 0.6, 0.68, 1)
+	bg.modulate = Color(0.12, 0.1, 0.09, 1)
 	bg.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 	root.add_child(bg)
 	var grit_path := "res://assets/kenney/patterns/pattern08.png"
@@ -109,7 +129,7 @@ static func _add_backdrop(root: Node2D, biome: BiomeDefinition) -> void:
 		overlay.centered = true
 		overlay.z_index = -17
 		overlay.scale = Vector2(14.0, 10.0)
-		overlay.modulate = Color(1, 1, 1, 0.07)
+		overlay.modulate = Color(0.1, 0.08, 0.07, 0.42)
 		root.add_child(overlay)
 
 
@@ -150,9 +170,7 @@ static func _add_iso_floor(root: Node2D, biome: BiomeDefinition) -> void:
 				tex = ArtBank.dungeon(stem + "_S")
 			if tex == null:
 				tex = ArtBank.space("terrain_SE")
-			var spr := ArtBank.add_sprite(tiles, tex, p, tile_scale, 0, true)
-			if spr:
-				spr.modulate = _floor_modulate(biome, rng)
+			_place_iso_piece(tiles, tex, p, tile_scale, _floor_modulate(biome, rng), 0)
 
 
 static func _floor_stems(biome: BiomeDefinition) -> PackedStringArray:
@@ -172,20 +190,20 @@ static func _floor_stems(biome: BiomeDefinition) -> PackedStringArray:
 
 
 static func _floor_modulate(biome: BiomeDefinition, rng: RandomNumberGenerator) -> Color:
-	var base := Color(0.78, 0.8, 0.84)
+	var base := Color(0.3, 0.26, 0.22)
 	match biome.biome_id:
 		GameplayEnums.BiomeId.LANDFILL, GameplayEnums.BiomeId.WASTELAND:
-			base = Color(0.62, 0.7, 0.48)
+			base = Color(0.32, 0.26, 0.18)
 		GameplayEnums.BiomeId.DATA_CENTER, GameplayEnums.BiomeId.GATEWAY:
-			base = Color(0.55, 0.68, 0.82)
+			base = Color(0.26, 0.26, 0.28)
 		GameplayEnums.BiomeId.JUNGLE, GameplayEnums.BiomeId.TAIGA:
-			base = Color(0.5, 0.68, 0.46)
+			base = Color(0.22, 0.26, 0.16)
 		GameplayEnums.BiomeId.DOWNTOWN, GameplayEnums.BiomeId.MALL, GameplayEnums.BiomeId.ALLEY:
-			base = Color(0.72, 0.58, 0.5)
+			base = Color(0.34, 0.24, 0.18)
 		GameplayEnums.BiomeId.RESIDENTIAL:
-			base = Color(0.7, 0.62, 0.78)
-	var j := rng.randf_range(-0.06, 0.06)
-	return Color(clampf(base.r + j, 0.2, 1.0), clampf(base.g + j, 0.2, 1.0), clampf(base.b + j * 0.5, 0.2, 1.0))
+			base = Color(0.28, 0.24, 0.22)
+	var j := rng.randf_range(-0.05, 0.05)
+	return Color(clampf(base.r + j, 0.12, 0.7), clampf(base.g + j, 0.12, 0.7), clampf(base.b + j * 0.4, 0.1, 0.65))
 
 
 static func _add_floor_decals(root: Node2D, biome: BiomeDefinition, accent: Color) -> void:
@@ -203,36 +221,155 @@ static func _add_floor_decals(root: Node2D, biome: BiomeDefinition, accent: Colo
 			splat = ArtBank.tex("res://assets/kenney/splat/splat03.png")
 		var spr := ArtBank.add_fitted(root, splat, spots[i] + Vector2(rng.randf_range(-22, 22), rng.randf_range(-16, 16)), rng.randf_range(38.0, 58.0), 1, false)
 		if spr:
-			spr.modulate = Color(accent.r, accent.g, accent.b, 0.55).lightened(0.12)
-			spr.modulate.a = 0.42
+			spr.modulate = Color(0.28, 0.16, 0.1, 0.55)
+			spr.modulate.a = 0.38
 			spr.rotation = rng.randf_range(-0.4, 0.4)
 
 
-static func _add_edge_walls(root: Node2D, biome: BiomeDefinition) -> void:
+static func _add_edge_walls(arena: Node2D, biome: BiomeDefinition) -> void:
+	var walls := Node2D.new()
+	walls.name = "IsoWalls"
+	walls.y_sort_enabled = true
+	walls.z_as_relative = false
+	walls.z_index = 1
+	arena.add_child(walls)
 	var doors := _door_dirs()
-	var wall_stem := "stoneWall"
-	if biome.biome_id == GameplayEnums.BiomeId.DATA_CENTER or biome.biome_id == GameplayEnums.BiomeId.GATEWAY:
-		wall_stem = "corridor_wall"
-	var gap := 110.0
-	# North / south
-	for x in range(-720, 721, 160):
-		if _gap_blocks(doors, Vector2i(0, -1), Vector2(x, -430), gap):
-			pass
+	var tile_scale := 0.84
+	var tw := 256.0 * tile_scale
+	var th := 128.0 * tile_scale
+	# Inscribe the wall diamond in the camera (±800 x, ±450 y) so edges meet on-screen.
+	var n := 4
+	var rng := RandomNumberGenerator.new()
+	rng.seed = int(biome.biome_id) * 9103 + 17
+	_iso_corner(walls, biome, _iso_cell(-n, -n, tw, th), "N", tile_scale)
+	_iso_corner(walls, biome, _iso_cell(n, -n, tw, th), "E", tile_scale)
+	_iso_corner(walls, biome, _iso_cell(n, n, tw, th), "S", tile_scale)
+	_iso_corner(walls, biome, _iso_cell(-n, n, tw, th), "W", tile_scale)
+	for iy in range(-n + 1, n):
+		var p_nw := _iso_cell(-n, iy, tw, th)
+		if _iso_door_gap(doors, p_nw):
+			_iso_arch(walls, biome, p_nw, "N", tile_scale)
 		else:
-			_wall_piece(root, biome, wall_stem, Vector2(x, -410), Vector2(0, -1))
-		if _gap_blocks(doors, Vector2i(0, 1), Vector2(x, 430), gap):
-			pass
+			_iso_wall(walls, biome, p_nw, "N", tile_scale, rng)
+		var p_se := _iso_cell(n, iy, tw, th)
+		if _iso_door_gap(doors, p_se):
+			_iso_arch(walls, biome, p_se, "S", tile_scale)
 		else:
-			_wall_piece(root, biome, wall_stem, Vector2(x, 410), Vector2(0, 1))
-	for y in range(-320, 321, 150):
-		if not _gap_blocks(doors, Vector2i(-1, 0), Vector2(-780, y), gap):
-			_wall_piece(root, biome, wall_stem, Vector2(-760, y), Vector2(-1, 0))
-		if not _gap_blocks(doors, Vector2i(1, 0), Vector2(780, y), gap):
-			_wall_piece(root, biome, wall_stem, Vector2(760, y), Vector2(1, 0))
-	# Corner columns
-	for c in [Vector2(-700, -360), Vector2(700, -360), Vector2(-700, 360), Vector2(700, 360)]:
-		var col := ArtBank.dungeon_facing("stoneColumn", Vector2(0, 1))
-		ArtBank.add_fitted(root, col, c, 168.0, 4, true)
+			_iso_wall(walls, biome, p_se, "S", tile_scale, rng)
+	for ix in range(-n + 1, n):
+		var p_ne := _iso_cell(ix, -n, tw, th)
+		if _iso_door_gap(doors, p_ne):
+			_iso_arch(walls, biome, p_ne, "E", tile_scale)
+		else:
+			_iso_wall(walls, biome, p_ne, "E", tile_scale, rng)
+		var p_sw := _iso_cell(ix, n, tw, th)
+		if _iso_door_gap(doors, p_sw):
+			_iso_arch(walls, biome, p_sw, "W", tile_scale)
+		else:
+			_iso_wall(walls, biome, p_sw, "W", tile_scale, rng)
+
+
+static func _iso_cell(ix: int, iy: int, tw: float, th: float) -> Vector2:
+	return Vector2((ix - iy) * tw * 0.5, (ix + iy) * th * 0.5)
+
+
+static func _iso_door_gap(doors: Array[Vector2i], pos: Vector2) -> bool:
+	## Tutorial/campaign south door sits near (0, +Y). Other dirs for procedural.
+	if doors.is_empty():
+		return pos.y > 210.0 and absf(pos.x) < 130.0
+	for dir in doors:
+		if dir == Vector2i(0, 1) and pos.y > 180.0 and absf(pos.x) < 140.0:
+			return true
+		if dir == Vector2i(0, -1) and pos.y < -180.0 and absf(pos.x) < 140.0:
+			return true
+		if dir == Vector2i(1, 0) and pos.x > 280.0 and absf(pos.y) < 120.0:
+			return true
+		if dir == Vector2i(-1, 0) and pos.x < -280.0 and absf(pos.y) < 120.0:
+			return true
+	return false
+
+
+static func _iso_wall(
+	parent: Node2D,
+	biome: BiomeDefinition,
+	pos: Vector2,
+	facing: String,
+	tile_scale: float,
+	rng: RandomNumberGenerator
+) -> void:
+	var stem := "stoneWall"
+	var roll := rng.randf()
+	if roll < 0.18:
+		stem = "stoneWallBroken"
+	elif roll < 0.4:
+		stem = "stoneWallAged"
+	var tex := ArtBank.dungeon("%s_%s" % [stem, facing])
+	if tex == null:
+		tex = ArtBank.dungeon("stoneWall_%s" % facing)
+	_place_iso_piece(parent, tex, pos, tile_scale, _wall_modulate(biome), 1)
+
+
+static func _iso_corner(
+	parent: Node2D,
+	biome: BiomeDefinition,
+	pos: Vector2,
+	facing: String,
+	tile_scale: float
+) -> void:
+	var tex := ArtBank.dungeon("stoneWallCorner_%s" % facing)
+	_place_iso_piece(parent, tex, pos, tile_scale, _wall_modulate(biome), 1)
+
+
+static func _iso_arch(
+	parent: Node2D,
+	biome: BiomeDefinition,
+	pos: Vector2,
+	facing: String,
+	tile_scale: float
+) -> void:
+	var tex := ArtBank.dungeon("stoneWallArchway_%s" % facing)
+	if tex == null:
+		tex = ArtBank.dungeon("stoneWallDoorOpen_%s" % facing)
+	_place_iso_piece(parent, tex, pos, tile_scale, _wall_modulate(biome), 1)
+
+
+static func _place_iso_piece(
+	parent: Node2D,
+	tex: Texture2D,
+	pos: Vector2,
+	tile_scale: float,
+	modulate: Color,
+	z: int = 0
+) -> Sprite2D:
+	if parent == null or tex == null:
+		return null
+	var s := Sprite2D.new()
+	s.name = "IsoWall" if z > 0 else "IsoFloor"
+	s.texture = tex
+	s.position = pos
+	s.centered = true
+	s.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	s.region_enabled = false
+	s.offset = _kenney_iso_offset(tex)
+	s.scale = Vector2(tile_scale, tile_scale)
+	s.modulate = modulate
+	s.z_index = z
+	parent.add_child(s)
+	return s
+
+
+static func _wall_modulate(biome: BiomeDefinition) -> Color:
+	match biome.biome_id:
+		GameplayEnums.BiomeId.DATA_CENTER, GameplayEnums.BiomeId.GATEWAY:
+			return Color(0.32, 0.34, 0.36, 1)
+		GameplayEnums.BiomeId.LANDFILL, GameplayEnums.BiomeId.WASTELAND:
+			return Color(0.38, 0.3, 0.22, 1)
+		GameplayEnums.BiomeId.JUNGLE, GameplayEnums.BiomeId.TAIGA:
+			return Color(0.28, 0.32, 0.22, 1)
+		GameplayEnums.BiomeId.DOWNTOWN, GameplayEnums.BiomeId.MALL, GameplayEnums.BiomeId.ALLEY:
+			return Color(0.4, 0.28, 0.2, 1)
+		_:
+			return Color(0.36, 0.32, 0.26, 1)
 
 
 static func _gap_blocks(doors: Array[Vector2i], dir: Vector2i, pos: Vector2, gap: float) -> bool:
@@ -241,28 +378,6 @@ static func _gap_blocks(doors: Array[Vector2i], dir: Vector2i, pos: Vector2, gap
 	if dir.x == 0:
 		return absf(pos.x) < gap
 	return absf(pos.y) < gap
-
-
-static func _wall_piece(root: Node2D, biome: BiomeDefinition, stem: String, pos: Vector2, facing: Vector2) -> void:
-	var tex: Texture2D = null
-	if stem == "corridor_wall":
-		tex = ArtBank.space_facing("corridor_wall", facing)
-	else:
-		tex = ArtBank.dungeon_facing(stem, facing)
-	var spr := ArtBank.add_fitted(root, tex, pos, 132.0, 3, true)
-	if spr == null:
-		return
-	match biome.biome_id:
-		GameplayEnums.BiomeId.DATA_CENTER, GameplayEnums.BiomeId.GATEWAY:
-			spr.modulate = Color(0.7, 0.85, 1.0, 1)
-		GameplayEnums.BiomeId.LANDFILL, GameplayEnums.BiomeId.WASTELAND:
-			spr.modulate = Color(0.75, 0.82, 0.62, 1)
-		GameplayEnums.BiomeId.JUNGLE, GameplayEnums.BiomeId.TAIGA:
-			spr.modulate = Color(0.62, 0.82, 0.58, 1)
-		GameplayEnums.BiomeId.DOWNTOWN, GameplayEnums.BiomeId.MALL, GameplayEnums.BiomeId.ALLEY:
-			spr.modulate = Color(0.82, 0.68, 0.58, 1)
-		_:
-			spr.modulate = Color(0.86, 0.88, 0.9, 1)
 
 
 static func _add_props(root: Node2D, biome: BiomeDefinition, accent: Color) -> void:
@@ -384,7 +499,7 @@ static func _add_centerpiece(root: Node2D, biome: BiomeDefinition, accent: Color
 	var scale_h := 110.0 if boss else 78.0
 	var spr := ArtBank.add_fitted(root, plat, Vector2(0, 18), scale_h, 1, false)
 	if spr:
-		spr.modulate = Color(0.75, 0.8, 0.9).lerp(accent, 0.35)
+		spr.modulate = Color(0.55, 0.5, 0.42).lerp(accent, 0.25)
 	if biome.biome_id == GameplayEnums.BiomeId.LANDFILL or biome.biome_id == GameplayEnums.BiomeId.WASTELAND:
 		var pile := ArtBank.dungeon_facing("barrels", Vector2(0, 1))
 		if pile == null:
@@ -404,7 +519,7 @@ static func _add_centerpiece(root: Node2D, biome: BiomeDefinition, accent: Color
 		var ring := ArtBank.particle("circle_05")
 		var glow := ArtBank.add_sprite(root, ring, Vector2(0, 8), 1.8, 2, true)
 		if glow:
-			glow.modulate = Color(1.0, 0.28, 0.22, 0.55)
+			glow.modulate = Color(0.55, 0.12, 0.08, 0.4)
 		var dish := ArtBank.space("satelliteDish_large_SE")
 		ArtBank.add_fitted(root, dish, Vector2(0, -40), 96.0, 3, true)
 
@@ -414,33 +529,86 @@ static func _add_lighting(arena: Node2D, accent: Color, biome: BiomeDefinition) 
 	var layer := Node2D.new()
 	layer.name = "Atmosphere"
 	arena.add_child(layer)
+	var grade := CanvasModulate.new()
+	grade.name = "Grade"
+	grade.color = Color(0.42, 0.36, 0.3, 1)
+	if biome.biome_id == GameplayEnums.BiomeId.DATA_CENTER or biome.biome_id == GameplayEnums.BiomeId.GATEWAY:
+		grade.color = Color(0.38, 0.4, 0.42, 1)
+	layer.add_child(grade)
 	var tex := _radial_light_texture()
-	var spots := [
-		Vector2(-520, -260), Vector2(520, -260),
-		Vector2(-520, 260), Vector2(520, 260),
-		Vector2(0, 20)
-	]
-	var boss := _is_boss_room()
+	var moon := PointLight2D.new()
+	moon.name = "Moon"
+	moon.position = Vector2(-80, -220)
+	moon.texture = tex
+	moon.color = Color(0.42, 0.48, 0.55, 1)
+	moon.energy = 0.22
+	moon.texture_scale = 4.6
+	layer.add_child(moon)
+	var sodium := PointLight2D.new()
+	sodium.name = "Sodium"
+	sodium.position = Vector2(220, 40)
+	sodium.texture = tex
+	sodium.color = Color(0.78, 0.38, 0.12, 1).lerp(Color(accent.r, accent.g, accent.b, 1), 0.15)
+	sodium.energy = 0.34 if not _is_boss_room() else 0.55
+	sodium.texture_scale = 2.4
+	layer.add_child(sodium)
+	if _is_boss_room():
+		var ember := PointLight2D.new()
+		ember.position = Vector2(0, 20)
+		ember.texture = tex
+		ember.color = Color(0.75, 0.22, 0.12, 1)
+		ember.energy = 0.55
+		ember.texture_scale = 3.0
+		layer.add_child(ember)
+	_add_fog(layer)
+	_add_vignette(arena)
+
+
+static func _add_fog(layer: Node2D) -> void:
+	var smoke := ArtBank.particle("smoke_08")
+	if smoke == null:
+		smoke = ArtBank.particle("smoke_01")
+	if smoke == null:
+		return
+	var spots := [Vector2(-480, 80), Vector2(460, 120), Vector2(-200, 220), Vector2(80, -180)]
 	for i in spots.size():
-		var light := PointLight2D.new()
-		light.position = spots[i]
-		light.texture = tex
-		if boss:
-			light.color = Color(1.0, 0.35, 0.28, 1.0) if i < 4 else Color(1.0, 0.55, 0.4, 1.0)
-			light.energy = 1.45 if i < 4 else 1.1
-		else:
-			light.color = Color(accent.r, accent.g, accent.b, 1.0).lightened(0.25)
-			light.energy = 1.15 if i < 4 else 0.65
-		light.texture_scale = 2.8
-		layer.add_child(light)
-	if biome.biome_id == GameplayEnums.BiomeId.DATA_CENTER:
-		var extra := PointLight2D.new()
-		extra.position = Vector2(0, -120)
-		extra.texture = tex
-		extra.color = Color(0.45, 0.85, 1.0)
-		extra.energy = 0.9
-		extra.texture_scale = 2.2
-		layer.add_child(extra)
+		var spr := Sprite2D.new()
+		spr.texture = smoke
+		spr.centered = true
+		spr.position = spots[i]
+		spr.scale = Vector2(2.4, 1.6)
+		spr.modulate = Color(0.08, 0.07, 0.06, 0.45)
+		spr.z_index = 12
+		spr.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+		layer.add_child(spr)
+
+
+static func _add_vignette(arena: Node2D) -> void:
+	var existing := arena.get_node_or_null("VignetteLayer")
+	if existing:
+		existing.free()
+	var canvas := CanvasLayer.new()
+	canvas.name = "VignetteLayer"
+	canvas.layer = 4
+	arena.add_child(canvas)
+	var rect := TextureRect.new()
+	rect.name = "Vignette"
+	rect.set_anchors_preset(Control.PRESET_FULL_RECT)
+	rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	rect.stretch_mode = TextureRect.STRETCH_SCALE
+	var grad := Gradient.new()
+	grad.colors = PackedColorArray([Color(0, 0, 0, 0), Color(0.02, 0.012, 0.008, 0.88)])
+	grad.offsets = PackedFloat32Array([0.28, 1.0])
+	var tex := GradientTexture2D.new()
+	tex.gradient = grad
+	tex.width = 256
+	tex.height = 256
+	tex.fill = GradientTexture2D.FILL_RADIAL
+	tex.fill_from = Vector2(0.5, 0.5)
+	tex.fill_to = Vector2(0.5, 0.0)
+	rect.texture = tex
+	canvas.add_child(rect)
 
 
 static func _radial_light_texture() -> Texture2D:

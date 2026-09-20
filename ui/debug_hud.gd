@@ -3,7 +3,7 @@ extends CanvasLayer
 
 const HP_FILL := Color(0.92, 0.22, 0.28, 1)
 const HP_FILL_LOW := Color(1.0, 0.45, 0.12, 1)
-const ENERGY_FILL := Color(0.28, 0.62, 0.98, 1)
+const ENERGY_FILL := Color(0.58, 0.4, 0.22, 1)
 const ADRENALINE_FILL := Color(0.98, 0.78, 0.18, 1)
 
 @onready var health_bar: ProgressBar = $Margin/VBox/HealthBar
@@ -33,6 +33,7 @@ var _last_style_rank: String = ""
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	layer = 8
 	_hide_debug_dumps()
 	_wrap_hud_chrome()
 	_wrap_location_banner()
@@ -42,8 +43,8 @@ func _ready() -> void:
 	health_bar.modulate = Color.WHITE
 	energy_bar.modulate = Color.WHITE
 	adrenaline_bar.modulate = Color.WHITE
-	_paint_label(location_banner, 18, Color(0.94, 0.96, 1.0, 0.98), false)
-	_paint_label(style_label, 16, Color(1.0, 0.86, 0.42))
+	_paint_label(location_banner, 18, Color(0.78, 0.7, 0.58, 0.98), false)
+	_paint_label(style_label, 16, Color(0.82, 0.62, 0.32))
 	_paint_label(status_label, 13, Color(1.0, 0.82, 0.28))
 	status_label.visible = false
 	var weapon_label := health_bar.get_parent().get_node_or_null("WeaponLabel")
@@ -56,7 +57,7 @@ func _ready() -> void:
 	health_bar.get_parent().add_child(_hp_label)
 	health_bar.get_parent().move_child(_hp_label, health_bar.get_index())
 	_primary_label = Label.new()
-	_paint_label(_primary_label, 12, Color(0.75, 0.86, 1.0))
+	_paint_label(_primary_label, 12, Color(0.72, 0.58, 0.38))
 	_primary_label.text = "Energy"
 	energy_bar.get_parent().add_child(_primary_label)
 	energy_bar.get_parent().move_child(_primary_label, energy_bar.get_index())
@@ -115,7 +116,7 @@ func _wrap_hud_chrome() -> void:
 	var chrome := PanelContainer.new()
 	chrome.name = "Chrome"
 	chrome.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	chrome.add_theme_stylebox_override("panel", ArtBank.panel_style(&"glass", Color(0.78, 0.82, 0.95, 0.94)))
+	chrome.add_theme_stylebox_override("panel", ArtBank.panel_style(&"glass", Color(0.42, 0.36, 0.28, 0.92)))
 	var inner := MarginContainer.new()
 	inner.name = "ChromePad"
 	inner.add_theme_constant_override("margin_left", 12)
@@ -141,7 +142,7 @@ func _wrap_location_banner() -> void:
 	plaque.offset_right = 210.0
 	plaque.offset_top = 14.0
 	plaque.offset_bottom = 52.0
-	plaque.add_theme_stylebox_override("panel", ArtBank.panel_style(&"card", Color(0.86, 0.9, 1.0, 0.94)))
+	plaque.add_theme_stylebox_override("panel", ArtBank.panel_style(&"card", Color(0.38, 0.32, 0.24, 0.94)))
 	var parent := location_banner.get_parent()
 	parent.remove_child(location_banner)
 	plaque.add_child(location_banner)
@@ -417,7 +418,7 @@ func _ensure_boss_bar() -> void:
 	_boss_wrap.offset_right = -280.0
 	_boss_wrap.offset_top = 58.0
 	_boss_wrap.offset_bottom = 118.0
-	_boss_wrap.add_theme_stylebox_override("panel", ArtBank.panel_style(&"glass", Color(1.0, 0.72, 0.68, 0.96)))
+	_boss_wrap.add_theme_stylebox_override("panel", ArtBank.panel_style(&"glass", Color(0.55, 0.28, 0.2, 0.94)))
 	var col := VBoxContainer.new()
 	col.add_theme_constant_override("separation", 2)
 	_boss_wrap.add_child(col)

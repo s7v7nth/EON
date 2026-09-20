@@ -69,7 +69,7 @@ func _build() -> void:
 
 	var glow := ColorRect.new()
 	glow.set_anchors_preset(PRESET_FULL_RECT)
-	glow.color = Color(0.04, 0.05, 0.1, 0.42)
+	glow.color = Color(0.04, 0.03, 0.02, 0.62)
 	add_child(glow)
 
 	var margin := MarginContainer.new()
@@ -88,10 +88,10 @@ func _build() -> void:
 	title.text = "EON"
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.add_theme_font_size_override("font_size", 64)
-	title.add_theme_color_override("font_color", Color(0.92, 0.95, 1.0))
+	title.add_theme_color_override("font_color", Color(0.82, 0.72, 0.52))
 	title.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.85))
 	title.add_theme_constant_override("outline_size", 8)
-	var title_font := ArtBank.title_font()
+	var title_font := ArtBank.body_heavy()
 	if title_font:
 		title.add_theme_font_override("font", title_font)
 	col.add_child(title)
@@ -101,7 +101,7 @@ func _build() -> void:
 	sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	sub.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	sub.add_theme_font_size_override("font_size", 16)
-	sub.add_theme_color_override("font_color", Color(0.7, 0.76, 0.86))
+	sub.add_theme_color_override("font_color", Color(0.55, 0.48, 0.4))
 	var sub_font := ArtBank.body_font()
 	if sub_font:
 		sub.add_theme_font_override("font", sub_font)
@@ -110,7 +110,7 @@ func _build() -> void:
 	var route_label := Label.new()
 	route_label.text = "Route"
 	route_label.add_theme_font_size_override("font_size", 14)
-	route_label.add_theme_color_override("font_color", Color(0.55, 0.85, 1.0))
+	route_label.add_theme_color_override("font_color", Color(0.7, 0.52, 0.28))
 	var section_font := ArtBank.body_bold()
 	if section_font:
 		route_label.add_theme_font_override("font", section_font)
@@ -125,8 +125,8 @@ func _build() -> void:
 		btn.custom_minimum_size = Vector2(0, 44)
 		btn.text = "%s  ·  %d rooms" % [route.display_name, route.total_rooms()]
 		btn.pressed.connect(_select_route.bind(route))
-		var route_style := ArtBank.button_style(false, Color(0.85, 0.92, 1.0, 1))
-		var route_hover := ArtBank.button_style(true, Color(1.0, 0.95, 0.75, 1))
+		var route_style := ArtBank.button_style(false, Color(0.55, 0.48, 0.38, 1))
+		var route_hover := ArtBank.button_style(true, Color(0.72, 0.55, 0.32, 1))
 		if route_style:
 			btn.add_theme_stylebox_override("normal", route_style)
 		if route_hover:
@@ -158,7 +158,7 @@ func _build() -> void:
 	_flavor.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_flavor.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_flavor.add_theme_font_size_override("font_size", 15)
-	_flavor.add_theme_color_override("font_color", Color(0.82, 0.86, 0.92))
+	_flavor.add_theme_color_override("font_color", Color(0.68, 0.58, 0.46))
 	var flavor_font := ArtBank.body_font()
 	if flavor_font:
 		_flavor.add_theme_font_override("font", flavor_font)
@@ -172,9 +172,9 @@ func _build() -> void:
 	var start_font := ArtBank.body_heavy()
 	if start_font:
 		_start.add_theme_font_override("font", start_font)
-	_start.add_theme_color_override("font_color", Color(0.08, 0.1, 0.14, 1))
-	var start_style := ArtBank.button_style(false, Color(1.0, 0.86, 0.28, 1))
-	var start_hover := ArtBank.button_style(true, Color(1.0, 0.94, 0.45, 1))
+	_start.add_theme_color_override("font_color", Color(0.12, 0.08, 0.05, 1))
+	var start_style := ArtBank.button_style(false, Color(0.72, 0.48, 0.22, 1))
+	var start_hover := ArtBank.button_style(true, Color(0.85, 0.58, 0.28, 1))
 	if start_style:
 		_start.add_theme_stylebox_override("normal", start_style)
 	if start_hover:
@@ -187,7 +187,7 @@ func _build() -> void:
 	help.text = "T / C / P pick route · 1–4 pick architecture · Enter begin · in run: WASD · LMB attack · RMB special/block · Space dash · Q cast · R restart"
 	help.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	help.add_theme_font_size_override("font_size", 13)
-	help.add_theme_color_override("font_color", Color(0.55, 0.6, 0.68))
+	help.add_theme_color_override("font_color", Color(0.48, 0.42, 0.34))
 	if flavor_font:
 		help.add_theme_font_override("font", flavor_font)
 	col.add_child(help)
@@ -230,7 +230,7 @@ func _make_arch_card(arch: ArchitectureData) -> Button:
 	title.text = str(hint.get("title", arch.display_name))
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.add_theme_font_size_override("font_size", 20)
-	title.add_theme_color_override("font_color", Color(0.96, 0.97, 1.0))
+	title.add_theme_color_override("font_color", Color(0.88, 0.78, 0.58))
 	var title_font := ArtBank.body_heavy()
 	if title_font:
 		title.add_theme_font_override("font", title_font)
@@ -278,10 +278,10 @@ func _portrait_for(arch: ArchitectureData) -> Texture2D:
 func _select_route(route: ActRoute) -> void:
 	_selected_route = route
 	for btn in _route_buttons:
-		btn.modulate = Color(0.55, 0.58, 0.64)
+		btn.modulate = Color(0.42, 0.38, 0.34)
 	for btn in _route_buttons:
 		if route and btn.text.begins_with(route.display_name):
-			btn.modulate = Color(1.1, 1.15, 1.0)
+			btn.modulate = Color(0.95, 0.78, 0.48)
 			break
 
 
@@ -297,9 +297,9 @@ func _select_arch(arch: ArchitectureData) -> void:
 	for i in _arch_buttons.size():
 		var btn := _arch_buttons[i]
 		var match_arch := RunState.get_architectures()
-		btn.modulate = Color(0.55, 0.58, 0.64)
+		btn.modulate = Color(0.42, 0.38, 0.34)
 		if i < match_arch.size() and match_arch[i] == arch:
-			btn.modulate = Color(1.15, 1.12, 0.85)
+			btn.modulate = Color(0.92, 0.72, 0.42)
 	var hint: Dictionary = HINTS.get(int(arch.architecture_id), {})
 	_flavor.text = "%s\n%s" % [str(hint.get("kit", "")), str(hint.get("fantasy", arch.description))]
 

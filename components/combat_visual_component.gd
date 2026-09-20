@@ -20,12 +20,24 @@ var _tween: Tween
 var _aura_tween: Tween
 var _accent := Color(0.7, 0.85, 1.0, 1.0)
 var _charge_bar_width: float = 36.0
+var _pose_locked: bool = false
+var _shape_tag: String = "blade"
+var _last_aim: Vector2 = Vector2.RIGHT
 
 
 func _ready() -> void:
 	_resolve_body()
 	_ensure_nodes()
 	reset_pose()
+	set_process(true)
+
+
+func _process(_delta: float) -> void:
+	if _pose_locked:
+		return
+	var dir := _aim_from_host()
+	if dir.length_squared() > 0.01:
+		hold_aim(dir)
 
 
 func _resolve_body() -> void:
@@ -97,14 +109,10 @@ func _ensure_weapon_sprite() -> void:
 		wspr.centered = true
 		wspr.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 		weapon.add_child(wspr)
-	var tex := ArtBank.particle("slash_01")
-	if tex == null:
-		tex = ArtBank.shooter("laserBlue01")
-	wspr.texture = tex
-	if wspr.texture:
-		ArtBank.fit_height(wspr, 46.0, false)
-	wspr.position = Vector2(12, 0)
-	wspr.modulate = Color(1.15, 1.1, 1.0, 0.95)
+	wspr.position = Vector2.ZERO
+	wspr.rotation = 0.0
+	wspr.modulate = Color(0.62, 0.52, 0.42, 1)
+	wspr.visible = false
 
 
 func _make_poly(node_name: String, color: Color, poly: PackedVector2Array) -> Polygon2D:
@@ -136,25 +144,25 @@ func apply_architecture_look(arch: ArchitectureData) -> void:
 		GameplayEnums.ArchitectureId.NANOMACHINES:
 			_set_body_polygon(_nano_body_poly())
 			_set_body_style(&"nano")
-			aura.color = Color(0.35, 0.95, 0.45, 0.28)
+			aura.color = Color(0.28, 0.42, 0.26, 0.18)
 			aura.polygon = _ring_poly(18.0, 28.0)
 			aura.visible = true
 		GameplayEnums.ArchitectureId.ELECTRO_TRAIN:
 			_set_body_polygon(_train_body_poly())
 			_set_body_style(&"train")
-			aura.color = Color(0.35, 0.7, 1.0, 0.35)
+			aura.color = Color(0.45, 0.32, 0.16, 0.22)
 			aura.polygon = _ring_poly(16.0, 30.0)
 			aura.visible = true
 		GameplayEnums.ArchitectureId.NEURO_HACKER:
 			_set_body_polygon(_default_body_poly())
 			_set_body_style(&"neuro")
-			aura.color = Color(0.7, 0.4, 1.0, 0.32)
+			aura.color = Color(0.38, 0.22, 0.42, 0.18)
 			aura.polygon = _ring_poly(15.0, 26.0)
 			aura.visible = true
 		_:
 			_set_body_polygon(_default_body_poly())
 			_set_body_style(&"player")
-			aura.color = Color(0.7, 0.85, 1.0, 0.18)
+			aura.color = Color(0.4, 0.38, 0.32, 0.12)
 			aura.polygon = _ring_poly(14.0, 22.0)
 			aura.visible = true
 	if "polygon" in body:
@@ -182,6 +190,99 @@ func set_kit_aura(color: Color, aura_scale: Vector2, enabled: bool) -> void:
 	aura.scale = aura_scale
 
 
+func _hand_pos(aim_angle: float) -> Vector2:
+	var fwd := Vector2.from_angle(aim_angle)
+	return fwd * 20.0 + Vector2(0, -22)
+
+
+func muzzle_offset(dir: Vector2) -> Vector2:
+	var aim := dir.normalized() if dir != Vector2.ZERO else Vector2.RIGHT
+	return _hand_pos(aim.angle()) + aim * 18.0
+
+
+func _aim_from_host() -> Vector2:
+	var host := get_parent()
+	if host == null:
+		return _last_aim
+	var facing = host.get("facing_direction")
+	if facing is Vector2 and (facing as Vector2).length_squared() > 0.01:
+		return (facing as Vector2).normalized()
+	if host is CharacterBody2D and (host as CharacterBody2D).velocity.length() > 8.0:
+		return (host as CharacterBody2D).velocity.normalized()
+	return _last_aim
+
+
+func _uses_iso_gun() -> bool:
+	return _shape_tag == "gun" or _shape_tag == "mortar"
+
+
+func _apply_held_prop(dir: Vector2) -> void:
+	if weapon == null:
+		return
+	var wspr := weapon.get_node_or_null("Sprite") as Sprite2D
+	if _uses_iso_gun():
+		weapon.rotation = 0.0
+		weapon.color = Color(weapon.color.r, weapon.color.g, weapon.color.b, 0.0)
+		if wspr:
+			var stem := "weapon_rifle" if _shape_tag == "mortar" else "weapon_gun"
+			var tex := ArtBank.space_facing(stem, dir)
+			if tex == null:
+				tex = ArtBank.space_facing("weapon_gun", dir)
+			wspr.texture = tex
+			wspr.visible = tex != null
+			wspr.position = Vector2.ZERO
+			wspr.rotation = 0.0
+			wspr.modulate = Color(0.58, 0.48, 0.38, 1)
+			if tex:
+				ArtBank.fit_height(wspr, 26.0, false)
+	else:
+		weapon.rotation = dir.angle()
+		if weapon.color.a < 0.4:
+			weapon.color.a = 1.0
+		if wspr:
+			wspr.visible = false
+
+
+func hold_aim(dir: Vector2) -> void:
+	if weapon == null or dir.length_squared() < 0.01:
+		return
+	var aim := dir.normalized()
+	_last_aim = aim
+	var ang := aim.angle()
+	var hold := _hand_pos(ang)
+	weapon.visible = true
+	weapon.position = hold
+	weapon.scale = Vector2.ONE
+	_weapon_rest_pos = hold
+	_apply_held_prop(aim)
+	_apply_weapon_depth(ang)
+	_sync_body_facing(aim)
+
+
+func _apply_weapon_depth(aim_angle: float) -> void:
+	if weapon == null:
+		return
+	# South-facing (toward camera) draws in front of the body.
+	weapon.z_index = 4 if sin(aim_angle) > -0.2 else -1
+
+
+func _sync_body_facing(dir: Vector2) -> void:
+	if body and body.has_method("set_facing"):
+		body.call("set_facing", dir)
+	if body:
+		body.rotation = 0.0
+		body.scale = Vector2.ONE
+
+
+func _lock_pose() -> void:
+	_pose_locked = true
+	_kill_tween()
+
+
+func _unlock_pose() -> void:
+	_pose_locked = false
+
+
 func apply_weapon_look(weapon_data: WeaponData, arch: ArchitectureData = null) -> void:
 	if weapon == null or weapon_data == null:
 		return
@@ -191,39 +292,25 @@ func apply_weapon_look(weapon_data: WeaponData, arch: ArchitectureData = null) -
 		_accent = _element_color_from_tag(weapon_data.element_tag).lerp(arch.visual_tint, 0.25)
 	else:
 		_accent = _element_color_from_tag(weapon_data.element_tag)
-	weapon.color = tint
-	weapon.modulate = Color(1, 1, 1, 0.55)
-	match String(weapon_data.shape_tag):
+	_shape_tag = String(weapon_data.shape_tag)
+	var steel := Color(0.42, 0.38, 0.32).lerp(tint, 0.4)
+	weapon.color = steel
+	weapon.modulate = Color.WHITE
+	match _shape_tag:
 		"whip":
 			weapon.polygon = _whip_poly()
-			_weapon_rest_pos = Vector2(16, -18)
 		"toad":
 			weapon.polygon = _toad_poly()
-			_weapon_rest_pos = Vector2(14, -14)
 		"gun", "mortar":
 			weapon.polygon = _gun_poly()
-			_weapon_rest_pos = Vector2(16, -20)
 		_:
 			weapon.polygon = _blade_poly()
-			_weapon_rest_pos = Vector2(18, -22)
-	weapon.position = _weapon_rest_pos
-	weapon.rotation = -0.35
 	weapon.scale = Vector2.ONE
 	_ensure_weapon_sprite()
 	var wspr := weapon.get_node_or_null("Sprite") as Sprite2D
-	if wspr:
-		var stem := "slash_01"
-		match String(weapon_data.shape_tag):
-			"gun", "mortar":
-				stem = "laserBlue01"
-				wspr.texture = ArtBank.shooter(stem)
-			"whip", "toad":
-				wspr.texture = ArtBank.particle("slash_02")
-			_:
-				wspr.texture = ArtBank.particle("slash_01")
-		if wspr.texture:
-			ArtBank.fit_height(wspr, 48.0, false)
-			wspr.modulate = Color(tint.r, tint.g, tint.b, 1.0).lightened(0.25)
+	if wspr and not _uses_iso_gun():
+		wspr.visible = false
+	hold_aim(_aim_from_host())
 
 
 func apply_faction_look(faction: GameplayEnums.Faction, base_color: Color) -> void:
@@ -260,9 +347,10 @@ func apply_faction_look(faction: GameplayEnums.Faction, base_color: Color) -> vo
 		_body_rest_poly = body.polygon
 	if weapon:
 		weapon.visible = true
-		weapon.color = base_color.lightened(0.2)
+		weapon.color = Color(base_color.r * 0.45, base_color.g * 0.38, base_color.b * 0.32, 1)
 		weapon.polygon = _blade_poly() if faction != GameplayEnums.Faction.ANDROID else _gun_poly()
-		weapon.position = Vector2(16, -18)
+		_shape_tag = "gun" if faction == GameplayEnums.Faction.ANDROID else "blade"
+		hold_aim(_aim_from_host())
 	if aura:
 		aura.visible = false
 
@@ -276,71 +364,69 @@ const MIN_HOSTILE_WINDUP := 0.32
 
 
 func play_melee_windup(aim_angle: float, duration: float, variant: int = 0) -> void:
-	_kill_tween()
+	_lock_pose()
 	_set_body_combat_lock(true)
 	rotation = 0.0
 	weapon.visible = true
 	var v := posmod(variant, MELEE_VARIANT_COUNT)
 	var pose := _melee_pose(aim_angle, v)
-	weapon.rotation = pose.wind_from
-	weapon.position = pose.weapon_pos
+	var hold := _hand_pos(aim_angle)
+	var fwd := Vector2.from_angle(aim_angle)
+	_last_aim = fwd
+	weapon.position = hold
 	weapon.scale = pose.weapon_scale_wind
+	_apply_held_prop(fwd)
+	if not _uses_iso_gun():
+		weapon.rotation = pose.wind_from
+	_apply_weapon_depth(aim_angle)
 	telegraph.polygon = pose.tele_poly
-	telegraph.rotation = pose.tele_rot
-	telegraph.position = pose.tele_pos
+	telegraph.rotation = aim_angle
+	telegraph.position = fwd * 36.0 + Vector2(0, -10)
 	telegraph.scale = Vector2.ONE
 	telegraph.color = Color(_accent.r, _accent.g, _accent.b, 0.0)
 	swing_arc.modulate.a = 0.0
-	if body:
-		body.scale = Vector2.ONE
-		body.modulate = Color(1.15, 1.05, 0.9, 1)
-		body.rotation = pose.body_wind_rot * 0.35
+	_sync_body_facing(fwd)
 	_tween = create_tween()
 	var wind := maxf(duration, MIN_WINDUP_VISUAL)
 	_tween.tween_property(weapon, "rotation", pose.wind_to, wind * 0.75).set_trans(Tween.TRANS_BACK)
-	_tween.parallel().tween_property(weapon, "scale", pose.weapon_scale_wind * 1.15, wind * 0.75)
-	_tween.parallel().tween_property(telegraph, "color:a", 0.7, wind)
+	_tween.parallel().tween_property(telegraph, "color:a", 0.55, wind)
 	_tween.parallel().tween_property(telegraph, "scale", pose.tele_scale, wind)
-	if body:
-		_tween.parallel().tween_property(body, "scale", pose.body_wind_scale, wind)
-		_tween.parallel().tween_property(body, "rotation", pose.body_wind_rot, wind * 0.85)
 
 
 func play_hostile_melee_windup(aim_angle: float, duration: float, variant: int = -1) -> void:
 	## Strong readable telegraph so the player can time a dodge / parry.
-	_kill_tween()
+	_lock_pose()
 	rotation = 0.0
 	weapon.visible = true
 	var v := variant if variant >= 0 else randi() % MELEE_VARIANT_COUNT
 	v = posmod(v, MELEE_VARIANT_COUNT)
 	var pose := _melee_pose(aim_angle, v)
-	weapon.rotation = pose.wind_from
-	weapon.position = pose.weapon_pos
-	weapon.scale = Vector2(1.55, 1.55)
+	var hold := _hand_pos(aim_angle)
+	var fwd := Vector2.from_angle(aim_angle)
+	_last_aim = fwd
+	weapon.position = hold
+	weapon.scale = Vector2(1.35, 1.35)
+	_apply_held_prop(fwd)
+	if not _uses_iso_gun():
+		weapon.rotation = pose.wind_from
+	_apply_weapon_depth(aim_angle)
 	telegraph.polygon = _diamond_poly(32.0)
-	telegraph.rotation = pose.tele_rot
-	telegraph.position = pose.tele_pos
+	telegraph.rotation = aim_angle
+	telegraph.position = fwd * 38.0 + Vector2(0, -16)
 	telegraph.scale = Vector2(0.55, 0.55)
 	telegraph.color = Color(1.0, 0.12, 0.08, 0.0)
 	swing_arc.polygon = _scale_poly(pose.arc_poly, 1.28)
 	swing_arc.rotation = pose.arc_from
-	swing_arc.position = pose.arc_pos
-	swing_arc.color = Color(1.0, 0.85, 0.2, 0.55)
+	swing_arc.position = Vector2.ZERO
+	swing_arc.color = Color(0.85, 0.18, 0.12, 0.55)
 	swing_arc.modulate.a = 0.0
-	if body:
-		body.scale = Vector2.ONE
-		body.modulate = Color(1.35, 0.85, 0.75, 1)
-		body.rotation = pose.body_wind_rot * 0.4
+	_sync_body_facing(fwd)
 	_tween = create_tween()
 	var wind := maxf(duration, MIN_HOSTILE_WINDUP)
 	_tween.tween_property(weapon, "rotation", pose.wind_to, wind * 0.85).set_trans(Tween.TRANS_BACK)
 	_tween.parallel().tween_property(telegraph, "color:a", 1.0, wind * 0.22)
 	_tween.parallel().tween_property(telegraph, "scale", Vector2(2.15, 2.15), wind)
 	_tween.parallel().tween_property(swing_arc, "modulate:a", 1.0, wind * 0.35)
-	if body:
-		_tween.parallel().tween_property(body, "scale", Vector2(0.88, 1.14), wind)
-		_tween.parallel().tween_property(body, "modulate", Color(1.6, 0.55, 0.4, 1), wind)
-		_tween.parallel().tween_property(body, "rotation", pose.body_wind_rot, wind * 0.9)
 
 
 func aim_hostile_telegraph(aim_angle: float) -> void:
@@ -350,7 +436,7 @@ func aim_hostile_telegraph(aim_angle: float) -> void:
 		telegraph.position = Vector2.from_angle(aim_angle) * 38.0 + Vector2(0, -16)
 	if swing_arc:
 		swing_arc.rotation = aim_angle - 0.9
-		swing_arc.position = Vector2(8, -14)
+		swing_arc.position = Vector2.ZERO
 
 
 func play_melee_swing(
@@ -360,45 +446,41 @@ func play_melee_swing(
 	accent_override: Color = Color(0, 0, 0, 0),
 	variant: int = 0
 ) -> void:
-	_kill_tween()
+	_lock_pose()
 	var col := accent_override if accent_override.a > 0.0 else _element_color(damage_type)
 	_accent = col
 	var v := posmod(variant, MELEE_VARIANT_COUNT)
 	var pose := _melee_pose(aim_angle, v)
+	var hold := _hand_pos(aim_angle)
+	var fwd := Vector2.from_angle(aim_angle)
 	var finisher := accent_override.a > 0.0
-	var arc_boost := 1.25 if finisher else 1.1
+	var arc_boost := 1.15 if finisher else 1.0
 	swing_arc.polygon = _scale_poly(pose.arc_poly, arc_boost)
 	swing_arc.rotation = pose.arc_from
-	swing_arc.position = pose.arc_pos
-	swing_arc.color = Color(col.r, col.g, col.b, 0.95)
+	swing_arc.position = Vector2.ZERO
+	swing_arc.color = Color(col.r * 0.7, col.g * 0.55, col.b * 0.4, 0.7)
 	swing_arc.modulate.a = 1.0
 	telegraph.color.a = 0.0
-	weapon.rotation = pose.swing_from
-	weapon.position = pose.weapon_pos
-	weapon.scale = Vector2(1.4, 1.4) if finisher else pose.weapon_scale_swing
-	if finisher:
-		weapon.modulate = Color(col.r, col.g, col.b, 1.0)
+	weapon.position = hold
+	weapon.scale = Vector2(1.25, 1.25) if finisher else pose.weapon_scale_swing
+	_apply_held_prop(fwd)
+	if not _uses_iso_gun():
+		weapon.rotation = pose.swing_from
+	_apply_weapon_depth(aim_angle)
+	_sync_body_facing(fwd)
 	_tween = create_tween()
 	var active := maxf(duration, MIN_SWING_VISUAL)
 	_tween.tween_property(weapon, "rotation", pose.swing_to, active).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	_tween.parallel().tween_property(weapon, "position", pose.weapon_end_pos, active)
+	_tween.parallel().tween_property(weapon, "position", hold + fwd * 10.0, active)
 	_tween.parallel().tween_property(swing_arc, "rotation", pose.arc_to, active)
 	_tween.parallel().tween_property(swing_arc, "modulate:a", 0.0, active).set_ease(Tween.EASE_IN)
-	if pose.thrust_extend > 0.0:
-		_tween.parallel().tween_property(weapon, "scale", Vector2(1.55, 0.8), active * 0.35)
-	if body:
-		_tween.parallel().tween_property(body, "scale", pose.body_swing_scale, active * 0.35)
-		_tween.parallel().tween_property(body, "rotation", pose.body_swing_rot, active * 0.4)
-		_tween.tween_property(body, "scale", Vector2.ONE, active * 0.55)
-		_tween.parallel().tween_property(body, "rotation", 0.0, active * 0.55)
-		_tween.parallel().tween_property(body, "modulate", Color.WHITE, active)
-	_tween.parallel().tween_property(weapon, "modulate", Color.WHITE, active)
 	_tween.parallel().tween_property(weapon, "scale", Vector2.ONE, active)
+	_tween.tween_callback(_unlock_pose)
 
 
 func _melee_pose(aim_angle: float, variant: int) -> Dictionary:
 	var fwd := Vector2.from_angle(aim_angle)
-	var rest := _weapon_rest_pos.rotated(aim_angle * 0.12)
+	var rest := _hand_pos(aim_angle)
 	match variant:
 		1: # Reverse slash (counter-clockwise) — big opposite arc
 			return {
@@ -523,20 +605,23 @@ func _melee_pose(aim_angle: float, variant: int) -> Dictionary:
 
 
 func play_ranged_windup(aim_angle: float, duration: float) -> void:
-	_kill_tween()
+	_lock_pose()
 	weapon.visible = true
-	weapon.rotation = aim_angle
-	weapon.position = Vector2(14, -18)
+	var hold := _hand_pos(aim_angle)
+	var fwd := Vector2.from_angle(aim_angle)
+	_last_aim = fwd
+	weapon.position = hold
+	_apply_held_prop(fwd)
+	_apply_weapon_depth(aim_angle)
+	_sync_body_facing(fwd)
 	telegraph.rotation = aim_angle
-	telegraph.position = Vector2(34, -10).rotated(aim_angle * 0.05) + Vector2.from_angle(aim_angle) * 20.0
+	telegraph.position = hold + fwd * 28.0
 	telegraph.polygon = _diamond_poly(10.0)
 	telegraph.color = Color(_accent.r, _accent.g, _accent.b, 0.0)
-	if body:
-		body.modulate = Color(1.1, 1.1, 1.2, 1)
 	_tween = create_tween()
 	var wind := maxf(duration, 0.05)
-	_tween.tween_property(weapon, "position", Vector2(10, -18) + Vector2.from_angle(aim_angle) * -4.0, wind)
-	_tween.parallel().tween_property(telegraph, "color:a", 0.7, wind)
+	_tween.tween_property(weapon, "position", hold + fwd * -4.0, wind)
+	_tween.parallel().tween_property(telegraph, "color:a", 0.55, wind)
 	_tween.parallel().tween_property(telegraph, "scale", Vector2(1.4, 1.4), wind)
 
 
@@ -552,11 +637,16 @@ func play_hostile_pattern_windup(
 	slam_radius: float = 0.0
 ) -> void:
 	## Distinct tells per pattern so first contact reads as a new threat.
-	_kill_tween()
+	_lock_pose()
 	rotation = 0.0
 	weapon.visible = true
 	var fwd := Vector2.from_angle(aim_angle)
+	_last_aim = fwd
+	var hold := _hand_pos(aim_angle)
 	var wind := maxf(duration, MIN_HOSTILE_WINDUP)
+	_apply_held_prop(fwd)
+	_apply_weapon_depth(aim_angle)
+	_sync_body_facing(fwd)
 	match pattern:
 		AttackData.PatternKind.OVERHEAD_SLAM:
 			var radius := slam_radius if slam_radius > 0.0 else 72.0
@@ -564,85 +654,72 @@ func play_hostile_pattern_windup(
 			telegraph.rotation = 0.0
 			telegraph.position = Vector2(0, -8)
 			telegraph.scale = Vector2(0.35, 0.35)
-			telegraph.color = Color(1.0, 0.25, 0.08, 0.0)
+			telegraph.color = Color(0.72, 0.22, 0.1, 0.0)
 			swing_arc.polygon = _ring_poly(radius * 0.4, radius * 0.55)
 			swing_arc.rotation = 0.0
-			swing_arc.position = Vector2(0, -8)
-			swing_arc.color = Color(1.0, 0.35, 0.12, 0.5)
+			swing_arc.position = Vector2.ZERO
+			swing_arc.color = Color(0.7, 0.28, 0.12, 0.5)
 			swing_arc.modulate.a = 0.0
-			weapon.rotation = aim_angle - 2.4
-			weapon.position = _weapon_rest_pos + Vector2(0, -18)
-			weapon.scale = Vector2(1.5, 1.5)
+			weapon.position = hold
+			if not _uses_iso_gun():
+				weapon.rotation = aim_angle - 2.4
+			weapon.scale = Vector2(1.35, 1.35)
 			_tween = create_tween()
 			_tween.tween_property(telegraph, "color:a", 0.9, wind * 0.35)
 			_tween.parallel().tween_property(telegraph, "scale", Vector2.ONE, wind)
 			_tween.parallel().tween_property(swing_arc, "modulate:a", 0.85, wind * 0.5)
-			_tween.parallel().tween_property(weapon, "rotation", aim_angle - 2.7, wind * 0.85)
-			if body:
-				body.modulate = Color(1.4, 0.7, 0.55, 1)
-				_tween.parallel().tween_property(body, "scale", Vector2(0.82, 1.2), wind)
-				_tween.parallel().tween_property(body, "modulate", Color(1.7, 0.4, 0.3, 1), wind)
+			if not _uses_iso_gun():
+				_tween.parallel().tween_property(weapon, "rotation", aim_angle - 2.7, wind * 0.85)
 		AttackData.PatternKind.LUNGE:
 			telegraph.polygon = _line_poly(78.0, 10.0)
 			telegraph.rotation = aim_angle
 			telegraph.position = fwd * 18.0 + Vector2(0, -12)
 			telegraph.scale = Vector2(0.4, 0.85)
-			telegraph.color = Color(1.0, 0.55, 0.15, 0.0)
+			telegraph.color = Color(0.72, 0.38, 0.16, 0.0)
 			swing_arc.polygon = _muzzle_poly_scaled(2.2)
 			swing_arc.rotation = aim_angle
-			swing_arc.position = Vector2(16, -14)
-			swing_arc.color = Color(1.0, 0.5, 0.2, 0.55)
+			swing_arc.position = hold
+			swing_arc.color = Color(0.7, 0.4, 0.18, 0.55)
 			swing_arc.modulate.a = 0.0
-			weapon.rotation = aim_angle
-			weapon.position = _weapon_rest_pos + fwd * -10.0
+			weapon.position = hold + fwd * -8.0
 			_tween = create_tween()
 			_tween.tween_property(telegraph, "color:a", 0.95, wind * 0.3)
 			_tween.parallel().tween_property(telegraph, "scale", Vector2(1.35, 1.0), wind)
 			_tween.parallel().tween_property(swing_arc, "modulate:a", 0.9, wind * 0.45)
-			_tween.parallel().tween_property(weapon, "position", _weapon_rest_pos + fwd * -18.0, wind)
-			if body:
-				_tween.parallel().tween_property(body, "modulate", Color(1.55, 0.7, 0.35, 1), wind)
-				_tween.parallel().tween_property(body, "scale", Vector2(1.18, 0.86), wind)
+			_tween.parallel().tween_property(weapon, "position", hold + fwd * -14.0, wind)
 		AttackData.PatternKind.CHARGE_SHOT:
 			telegraph.polygon = _line_poly(96.0, 7.0)
 			telegraph.rotation = aim_angle
 			telegraph.position = fwd * 28.0 + Vector2(0, -12)
 			telegraph.scale = Vector2(0.25, 0.7)
-			telegraph.color = Color(0.35, 0.85, 1.0, 0.0)
+			telegraph.color = Color(0.62, 0.42, 0.22, 0.0)
 			swing_arc.polygon = _diamond_poly(16.0)
 			swing_arc.rotation = aim_angle
-			swing_arc.position = fwd * 42.0 + Vector2(0, -12)
-			swing_arc.color = Color(0.4, 0.9, 1.0, 0.6)
+			swing_arc.position = hold + fwd * 22.0
+			swing_arc.color = Color(0.7, 0.48, 0.22, 0.55)
 			swing_arc.modulate.a = 0.0
-			weapon.rotation = aim_angle
-			weapon.position = Vector2(14, -18)
+			weapon.position = hold
 			_tween = create_tween()
 			_tween.tween_property(telegraph, "color:a", 1.0, wind * 0.35)
 			_tween.parallel().tween_property(telegraph, "scale", Vector2(1.55, 1.05), wind)
 			_tween.parallel().tween_property(swing_arc, "modulate:a", 0.95, wind * 0.55)
-			_tween.parallel().tween_property(swing_arc, "scale", Vector2(1.6, 1.6), wind)
-			_tween.parallel().tween_property(weapon, "position", Vector2(6, -18) + fwd * -10.0, wind)
-			if body:
-				_tween.parallel().tween_property(body, "modulate", Color(0.7, 1.2, 1.5, 1), wind)
+			_tween.parallel().tween_property(weapon, "position", hold + fwd * -6.0, wind)
 		AttackData.PatternKind.FAN_SHOT:
 			telegraph.polygon = _fan_poly(54.0, 0.9)
 			telegraph.rotation = aim_angle
 			telegraph.position = fwd * 20.0 + Vector2(0, -12)
 			telegraph.scale = Vector2(0.45, 0.45)
-			telegraph.color = Color(1.0, 0.45, 0.2, 0.0)
+			telegraph.color = Color(0.7, 0.36, 0.16, 0.0)
 			swing_arc.polygon = _fan_poly(40.0, 0.75)
 			swing_arc.rotation = aim_angle
-			swing_arc.position = Vector2(14, -16)
-			swing_arc.color = Color(1.0, 0.5, 0.25, 0.55)
+			swing_arc.position = hold
+			swing_arc.color = Color(0.7, 0.4, 0.2, 0.5)
 			swing_arc.modulate.a = 0.0
-			weapon.rotation = aim_angle
-			weapon.position = Vector2(14, -18)
+			weapon.position = hold
 			_tween = create_tween()
 			_tween.tween_property(telegraph, "color:a", 0.92, wind * 0.35)
 			_tween.parallel().tween_property(telegraph, "scale", Vector2(1.35, 1.35), wind)
 			_tween.parallel().tween_property(swing_arc, "modulate:a", 0.85, wind * 0.5)
-			if body:
-				_tween.parallel().tween_property(body, "modulate", Color(1.5, 0.6, 0.4, 1), wind)
 		_:
 			play_hostile_melee_windup(aim_angle, duration, variant)
 
@@ -671,21 +748,26 @@ func aim_hostile_pattern_telegraph(pattern: int, aim_angle: float, slam_radius: 
 
 
 func play_ranged_fire(aim_angle: float, damage_type: GameplayEnums.DamageType = GameplayEnums.DamageType.PHYSICAL) -> void:
-	_kill_tween()
+	_lock_pose()
 	var col := _element_color(damage_type)
-	weapon.rotation = aim_angle
+	var hold := _hand_pos(aim_angle)
+	var fwd := Vector2.from_angle(aim_angle)
+	_last_aim = fwd
+	weapon.position = hold
+	_apply_held_prop(fwd)
+	_apply_weapon_depth(aim_angle)
+	_sync_body_facing(fwd)
 	swing_arc.polygon = _muzzle_poly()
 	swing_arc.rotation = aim_angle
-	swing_arc.position = Vector2(22, -16)
-	swing_arc.color = Color(col.r, col.g, col.b, 0.9)
+	swing_arc.position = hold + fwd * 16.0
+	swing_arc.color = Color(col.r * 0.85, col.g * 0.55, col.b * 0.35, 0.9)
 	swing_arc.modulate.a = 1.0
 	telegraph.color.a = 0.0
 	_tween = create_tween()
-	_tween.tween_property(weapon, "position", Vector2(18, -18) + Vector2.from_angle(aim_angle) * 6.0, 0.05)
-	_tween.parallel().tween_property(swing_arc, "modulate:a", 0.0, 0.18)
-	_tween.tween_property(weapon, "position", _weapon_rest_pos, 0.12)
-	if body:
-		_tween.parallel().tween_property(body, "modulate", Color.WHITE, 0.12)
+	_tween.tween_property(weapon, "position", hold + fwd * 6.0, 0.05)
+	_tween.parallel().tween_property(swing_arc, "modulate:a", 0.0, 0.16)
+	_tween.tween_property(weapon, "position", hold, 0.1)
+	_tween.tween_callback(_unlock_pose)
 
 
 func play_parry_start() -> void:
@@ -741,13 +823,20 @@ func play_block_end() -> void:
 
 
 func play_charge_start(aim_angle: float, charge: float = 0.0) -> void:
-	_kill_tween()
+	_lock_pose()
 	weapon.visible = true
-	weapon.rotation = aim_angle - 0.4
+	var fwd := Vector2.from_angle(aim_angle)
+	_last_aim = fwd
+	weapon.position = _hand_pos(aim_angle)
+	_apply_held_prop(fwd)
+	if not _uses_iso_gun():
+		weapon.rotation = aim_angle - 0.4
+	_apply_weapon_depth(aim_angle)
+	_sync_body_facing(fwd)
 	telegraph.rotation = aim_angle
-	telegraph.position = Vector2.from_angle(aim_angle) * 36.0 + Vector2(0, -10)
+	telegraph.position = fwd * 36.0 + Vector2(0, -10)
 	telegraph.polygon = _diamond_poly(12.0)
-	telegraph.color = Color(0.45, 0.85, 1.0, 0.0)
+	telegraph.color = Color(0.62, 0.42, 0.22, 0.0)
 	_set_charge_ui(aim_angle, charge)
 	_tween = create_tween()
 	_tween.tween_property(telegraph, "color:a", 0.55, 0.08)
@@ -756,10 +845,17 @@ func play_charge_start(aim_angle: float, charge: float = 0.0) -> void:
 
 
 func play_charge_tick(aim_angle: float, charge: float) -> void:
-	weapon.rotation = aim_angle - 0.4 - charge * 0.5
-	weapon.position = _weapon_rest_pos + Vector2.from_angle(aim_angle) * (-6.0 * charge)
+	var fwd := Vector2.from_angle(aim_angle)
+	_last_aim = fwd
+	var hold := _hand_pos(aim_angle)
+	weapon.position = hold + fwd * (-6.0 * charge)
+	_apply_held_prop(fwd)
+	if not _uses_iso_gun():
+		weapon.rotation = aim_angle - 0.4 - charge * 0.5
+	_apply_weapon_depth(aim_angle)
+	_sync_body_facing(fwd)
 	telegraph.rotation = aim_angle
-	telegraph.position = Vector2.from_angle(aim_angle) * (36.0 + 20.0 * charge) + Vector2(0, -10)
+	telegraph.position = fwd * (36.0 + 20.0 * charge) + Vector2(0, -10)
 	telegraph.scale = Vector2.ONE * (1.0 + charge * 0.8)
 	telegraph.color.a = 0.4 + charge * 0.5
 	_set_charge_ui(aim_angle, charge)
@@ -776,9 +872,9 @@ func _set_charge_ui(aim_angle: float, charge: float) -> void:
 		# Grow from left edge of the feet bar.
 		charge_bar_fill.position = Vector2((-_charge_bar_width + w) * 0.5, 18)
 		charge_bar_fill.color = Color(
-			lerpf(0.35, 0.55, c),
-			lerpf(0.75, 0.95, c),
-			1.0,
+			lerpf(0.45, 0.85, c),
+			lerpf(0.32, 0.42, c),
+			lerpf(0.16, 0.18, c),
 			0.55 + c * 0.4
 		)
 	if charge_aim_beam:
@@ -786,28 +882,28 @@ func _set_charge_ui(aim_angle: float, charge: float) -> void:
 		charge_aim_beam.polygon = _aim_beam_poly(len)
 		charge_aim_beam.rotation = aim_angle
 		charge_aim_beam.position = Vector2(0, -16)
-		charge_aim_beam.color = Color(0.45, 0.85, 1.0, 0.18 + c * 0.35)
+		charge_aim_beam.color = Color(0.62, 0.38, 0.16, 0.18 + c * 0.35)
 
 
 func play_circle_slash(duration: float) -> void:
-	_kill_tween()
+	_lock_pose()
 	var active := maxf(duration, 0.12)
+	var fwd := _last_aim if _last_aim.length_squared() > 0.01 else Vector2.RIGHT
+	var hold := _hand_pos(fwd.angle())
 	swing_arc.polygon = _arc_poly(78.0)
-	swing_arc.position = Vector2(0, -12)
+	swing_arc.position = Vector2.ZERO
 	swing_arc.rotation = -PI
-	swing_arc.color = Color(0.55, 0.9, 1.0, 0.85)
+	swing_arc.color = Color(0.62, 0.42, 0.28, 0.8)
 	swing_arc.modulate.a = 1.0
 	weapon.visible = true
-	if body:
-		body.modulate = Color(1.2, 1.25, 1.4, 1)
+	weapon.position = hold
+	_apply_held_prop(fwd)
 	_tween = create_tween()
 	_tween.tween_property(swing_arc, "rotation", PI, active).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	_tween.parallel().tween_property(weapon, "rotation", weapon.rotation + TAU, active)
+	if not _uses_iso_gun():
+		_tween.parallel().tween_property(weapon, "rotation", weapon.rotation + TAU, active)
 	_tween.parallel().tween_property(swing_arc, "modulate:a", 0.0, active)
-	if body:
-		_tween.parallel().tween_property(body, "scale", Vector2(1.15, 0.9), active * 0.4)
-		_tween.tween_property(body, "scale", Vector2.ONE, active * 0.6)
-		_tween.parallel().tween_property(body, "modulate", Color.WHITE, active)
+	_tween.tween_callback(_unlock_pose)
 
 
 func play_hit_flash() -> void:
@@ -822,9 +918,6 @@ func play_flinch() -> void:
 	if body == null:
 		return
 	play_hit_flash()
-	var t := create_tween()
-	t.tween_property(body, "scale", Vector2(1.2, 0.75), 0.05).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	t.tween_property(body, "scale", Vector2.ONE, 0.12).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
 
 func play_stun_stars(duration: float = 1.0) -> void:
@@ -865,6 +958,7 @@ func play_parry_impact() -> void:
 
 func reset_pose() -> void:
 	_kill_tween()
+	_unlock_pose()
 	_set_body_combat_lock(false)
 	if body:
 		body.scale = Vector2.ONE
@@ -873,11 +967,6 @@ func reset_pose() -> void:
 		if not _body_rest_poly.is_empty():
 			_set_body_polygon(_body_rest_poly)
 		_set_body_color(_body_rest_color)
-	if weapon:
-		weapon.position = _weapon_rest_pos
-		weapon.rotation = -0.35
-		weapon.scale = Vector2.ONE
-		weapon.modulate = Color.WHITE
 	if swing_arc:
 		swing_arc.modulate.a = 0.0
 	if telegraph:
@@ -887,6 +976,7 @@ func reset_pose() -> void:
 		parry_shield.color.a = 0.0
 	if charge_bar_bg:
 		charge_bar_bg.color.a = 0.0
+	hold_aim(_aim_from_host())
 	if charge_bar_fill:
 		charge_bar_fill.color.a = 0.0
 		charge_bar_fill.polygon = _bar_poly(1.0, 5.0)
@@ -903,15 +993,15 @@ func _kill_tween() -> void:
 func _element_color(t: GameplayEnums.DamageType) -> Color:
 	match t:
 		GameplayEnums.DamageType.ELECTRICITY:
-			return Color(0.45, 0.8, 1.0, 1)
+			return Color(0.55, 0.62, 0.48, 1)
 		GameplayEnums.DamageType.CORROSION:
-			return Color(0.45, 0.95, 0.35, 1)
+			return Color(0.38, 0.48, 0.28, 1)
 		GameplayEnums.DamageType.FIRE:
-			return Color(1.0, 0.45, 0.15, 1)
+			return Color(0.85, 0.38, 0.14, 1)
 		GameplayEnums.DamageType.BLEED:
-			return Color(0.95, 0.2, 0.25, 1)
+			return Color(0.62, 0.12, 0.12, 1)
 		_:
-			return Color(0.9, 0.92, 1.0, 1)
+			return Color(0.72, 0.68, 0.58, 1)
 
 
 func _element_color_from_tag(tag: StringName) -> Color:

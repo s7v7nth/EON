@@ -149,12 +149,22 @@ func _refresh_stem() -> void:
 			_target_h = 88.0
 
 
+func set_facing(dir: Vector2) -> void:
+	if dir.length_squared() < 0.01:
+		return
+	_facing = dir
+	_apply_texture()
+
+
 func _process(delta: float) -> void:
 	var speed := 0.0
 	var parent_body := get_parent() as CharacterBody2D
 	if parent_body:
 		speed = parent_body.velocity.length()
-		if parent_body.velocity.length() > 8.0:
+		var facing_prop = parent_body.get("facing_direction")
+		if facing_prop is Vector2 and (facing_prop as Vector2).length_squared() > 0.01:
+			_facing = facing_prop as Vector2
+		elif parent_body.velocity.length() > 8.0:
 			_facing = parent_body.velocity
 	var target_walk := clampf(speed / 180.0, 0.0, 1.0)
 	_walk_amount = lerpf(_walk_amount, target_walk, 1.0 - exp(-12.0 * delta))
@@ -193,8 +203,8 @@ func _apply_texture() -> void:
 func _apply_tint() -> void:
 	if _sprite == null:
 		return
-	# Keep Kenney paint readable; architecture color is a wash, not a recolor.
-	_sprite.modulate = Color.WHITE.lerp(color, 0.32)
+	# Keep Kenney paint readable; remnant wash, not a candy recolor.
+	_sprite.modulate = Color(0.78, 0.74, 0.68, 1).lerp(color, 0.22)
 
 
 func _bob() -> void:

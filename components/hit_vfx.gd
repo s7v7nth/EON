@@ -1,6 +1,6 @@
 class_name HitVFX
 extends RefCounted
-## Greybox hit feedback — dense blood / sparks / acid flecks.
+## Impact dust / rust / blood using Kenney splat and spark sheets.
 
 
 static func spawn_at(
@@ -18,20 +18,16 @@ static func spawn_at(
 	_sprite_impact(world, global_pos, dir, damage_type, s)
 	match damage_type:
 		GameplayEnums.DamageType.ELECTRICITY:
-			_burst(world, global_pos, dir, Color(0.45, 0.9, 1.0, 1), int(22 * s), 160.0 * s, 0.38, true, 1.6 * s)
-			_burst(world, global_pos, dir, Color(1.0, 1.0, 1.0, 1), int(12 * s), 120.0 * s, 0.28, true, 1.1 * s)
+			_burst(world, global_pos, dir, Color(0.55, 0.52, 0.38, 1), int(10 * s), 120.0 * s, 0.28, true, 1.1 * s)
 		GameplayEnums.DamageType.CORROSION:
-			_burst(world, global_pos, dir, Color(0.4, 0.95, 0.25, 1), int(20 * s), 130.0 * s, 0.45, false, 1.7 * s)
-			_burst(world, global_pos, dir, Color(0.7, 1.0, 0.35, 1), int(10 * s), 80.0 * s, 0.35, false, 1.2 * s)
+			_burst(world, global_pos, dir, Color(0.38, 0.45, 0.22, 1), int(10 * s), 100.0 * s, 0.32, false, 1.1 * s)
 		GameplayEnums.DamageType.FIRE:
-			_burst(world, global_pos, dir, Color(1.0, 0.4, 0.1, 1), int(20 * s), 140.0 * s, 0.4, true, 1.7 * s)
-			_burst(world, global_pos, dir, Color(1.0, 0.85, 0.25, 1), int(12 * s), 100.0 * s, 0.3, true, 1.2 * s)
+			_burst(world, global_pos, dir, Color(0.85, 0.32, 0.1, 1), int(12 * s), 120.0 * s, 0.32, true, 1.2 * s)
 		GameplayEnums.DamageType.BLEED, GameplayEnums.DamageType.PHYSICAL:
-			_burst(world, global_pos, dir, Color(0.7, 0.05, 0.1, 1), int(26 * s), 180.0 * s, 0.5, false, 2.0 * s)
-			_burst(world, global_pos, dir, Color(0.95, 0.15, 0.2, 1), int(16 * s), 120.0 * s, 0.38, false, 1.5 * s)
-			_burst(world, global_pos, dir, Color(0.45, 0.02, 0.06, 1), int(10 * s), 70.0 * s, 0.55, false, 1.8 * s)
+			_burst(world, global_pos, dir, Color(0.45, 0.08, 0.08, 1), int(8 * s), 90.0 * s, 0.32, false, 0.9 * s)
+			_burst(world, global_pos, dir, Color(0.22, 0.05, 0.04, 1), int(5 * s), 50.0 * s, 0.36, false, 0.85 * s)
 		_:
-			_burst(world, global_pos, dir, Color(0.9, 0.92, 1.0, 1), int(16 * s), 120.0 * s, 0.32, true, 1.4 * s)
+			_burst(world, global_pos, dir, Color(0.55, 0.48, 0.38, 1), int(8 * s), 90.0 * s, 0.26, true, 1.0 * s)
 
 
 static func spawn_optic_burst(
@@ -163,24 +159,24 @@ static func _sprite_impact(
 	damage_type: GameplayEnums.DamageType,
 	impact_scale: float
 ) -> void:
-	var stem := "slash_01"
-	var tint := Color(1, 0.85, 0.75, 1)
+	var stem := "smoke_08"
+	var tint := Color(0.45, 0.38, 0.3, 1)
 	match damage_type:
 		GameplayEnums.DamageType.ELECTRICITY:
 			stem = "spark_05"
-			tint = Color(0.55, 0.95, 1.0, 1)
+			tint = Color(0.62, 0.55, 0.38, 1)
 		GameplayEnums.DamageType.CORROSION:
 			stem = "smoke_06"
-			tint = Color(0.45, 1.0, 0.35, 1)
+			tint = Color(0.38, 0.45, 0.22, 1)
 		GameplayEnums.DamageType.FIRE:
 			stem = "flame_04"
-			tint = Color(1.0, 0.55, 0.2, 1)
+			tint = Color(0.85, 0.38, 0.14, 1)
 		GameplayEnums.DamageType.BLEED, GameplayEnums.DamageType.PHYSICAL:
-			stem = "slash_02"
-			tint = Color(1.0, 0.25, 0.28, 1)
+			stem = "smoke_08"
+			tint = Color(0.42, 0.12, 0.1, 1)
 		_:
-			stem = "star_04"
-			tint = Color(0.85, 0.9, 1.0, 1)
+			stem = "smoke_01"
+			tint = Color(0.5, 0.44, 0.36, 1)
 	var tex := ArtBank.particle(stem)
 	if tex == null:
 		tex = ArtBank.particle("spark_01")
@@ -192,12 +188,12 @@ static func _sprite_impact(
 	spr.z_index = 31
 	spr.centered = true
 	spr.rotation = dir.angle()
-	spr.scale = Vector2.ONE * (0.55 * impact_scale)
+	spr.scale = Vector2.ONE * (0.08 * impact_scale)
 	spr.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 	world.add_child(spr)
 	spr.global_position = origin
 	var tween := spr.create_tween()
-	tween.tween_property(spr, "scale", Vector2.ONE * (1.15 * impact_scale), 0.08).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tween.tween_property(spr, "scale", Vector2.ONE * (0.14 * impact_scale), 0.08).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	tween.parallel().tween_property(spr, "modulate:a", 0.0, 0.22)
 	tween.tween_callback(spr.queue_free)
 	if damage_type == GameplayEnums.DamageType.PHYSICAL or damage_type == GameplayEnums.DamageType.BLEED:

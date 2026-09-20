@@ -167,7 +167,7 @@ func _ensure_visual() -> void:
 	if spr.texture == null:
 		spr.texture = ArtBank.rts_unit(8)
 	ArtBank.fit_height(spr, 76.0, true)
-	spr.modulate = Color(0.82, 0.58, 1.0, 1)
+	spr.modulate = Color(0.55, 0.5, 0.48, 1)
 	var ring := get_node_or_null("Halo") as Sprite2D
 	if ring == null:
 		ring = Sprite2D.new()
@@ -178,5 +178,5 @@ func _ensure_visual() -> void:
 		add_child(ring)
 		move_child(ring, 0)
 	ring.texture = ArtBank.particle("circle_05")
-	ring.scale = Vector2(0.18, 0.18)
-	ring.modulate = Color(0.72, 0.42, 1.0, 0.7)
+	ring.scale = Vector2(0.08, 0.08)
+	ring.modulate = Color(0.45, 0.28, 0.22, 0.35)

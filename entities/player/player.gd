@@ -147,9 +147,9 @@ func _attach_body_light() -> void:
 	tex.fill_from = Vector2(0.5, 0.5)
 	tex.fill_to = Vector2(0.5, 0.0)
 	light.texture = tex
-	light.energy = 0.9
-	light.texture_scale = 1.6
-	light.color = Color(0.85, 0.92, 1.0)
+	light.energy = 0.32
+	light.texture_scale = 1.05
+	light.color = Color(1.0, 0.62, 0.32)
 	light.position = Vector2(0, -22)
 	add_child(light)
 
@@ -178,6 +178,7 @@ func _physics_process(delta: float) -> void:
 	_process_architecture_economy(delta)
 	_tick_upgrade_effects(delta)
 	_tick_attack_hold(delta)
+	_sync_aim_facing()
 
 
 func uses_synthetic_kit() -> bool:
@@ -195,6 +196,13 @@ func uses_gun_kit() -> bool:
 	if weapon and weapon.shape_tag == &"gun":
 		return true
 	return architecture != null and architecture.architecture_id == GameplayEnums.ArchitectureId.NEURO_HACKER
+
+
+func _sync_aim_facing() -> void:
+	## Body, muzzle, and swing share one aim. Walk does not twist the weapon.
+	var aim := get_aim_direction()
+	if aim != Vector2.ZERO:
+		facing_direction = aim
 
 
 func blade_in_flight() -> bool:
@@ -535,8 +543,6 @@ func get_aim_direction() -> Vector2:
 
 
 func apply_movement(direction: Vector2) -> void:
-	if direction != Vector2.ZERO:
-		facing_direction = direction.normalized()
 	var speed := (stats.move_speed if stats else 0.0) * move_speed_multiplier
 	if frenzy_until > 0.0:
 		speed *= frenzy_speed
@@ -657,7 +663,7 @@ func equip_weapon(index: int) -> void:
 		return
 	if hitbox:
 		hitbox.attack_data = weapon.primary
-		hitbox.position = Vector2(maxf(weapon.hitbox_reach, 62.0) * 0.58, -16.0)
+		hitbox.position = Vector2(maxf(weapon.hitbox_reach, 62.0) * 0.58, 0.0)
 		_resize_melee_hitbox(maxf(weapon.hitbox_reach, 62.0))
 	combo_root = weapon.primary
 	pending_combo = null
@@ -675,7 +681,7 @@ func _resize_melee_hitbox(reach: float) -> void:
 	var shape_node := hitbox.get_node_or_null("CollisionShape2D") as CollisionShape2D
 	if shape_node == null:
 		return
-	hitbox.position = Vector2(maxf(reach, 62.0) * 0.58, -18.0)
+	hitbox.position = Vector2(maxf(reach, 62.0) * 0.58, 0.0)
 	var circle := CircleShape2D.new()
 	circle.radius = maxf(reach * 0.62, 38.0)
 	shape_node.shape = circle
@@ -700,7 +706,7 @@ func configure_hitbox_for_attack(attack: AttackData) -> void:
 		if not weapons.is_empty() and weapons[weapon_index]:
 			reach = maxf(weapons[weapon_index].hitbox_reach, 62.0)
 		# Forward circle covering the blade arc (not a thin rotated rect that misses).
-		hitbox.position = Vector2(reach * 0.58, -18.0)
+		hitbox.position = Vector2(reach * 0.58, 0.0)
 		var circle := CircleShape2D.new()
 		circle.radius = maxf(reach * 0.62, 38.0)
 		shape_node.shape = circle
@@ -727,7 +733,10 @@ func spawn_projectile(direction: Vector2) -> void:
 		if ranged_attack_data:
 			proj.tint = _projectile_color(ranged_attack_data.damage_type)
 		get_parent().add_child(proj)
-		proj.global_position = global_position + dir * 28.0
+		var muzzle := Vector2(0, -22)
+		if combat_visual and combat_visual.has_method("muzzle_offset"):
+			muzzle = combat_visual.call("muzzle_offset", dir)
+		proj.global_position = global_position + muzzle
 		proj.hit_landed.connect(_on_projectile_hit_landed)
 
 
@@ -750,7 +759,7 @@ func spawn_returning_blade(direction: Vector2, charge: float = 1.0) -> void:
 	proj.charge = clampf(charge, 0.2, 1.0)
 	# World (1) + enemy hurtbox (16) + energy mirrors (32).
 	proj.collision_mask = (1 << 0) | (1 << 4) | (1 << 5)
-	proj.tint = Color(0.55, 0.85, 1.0, 1)
+	proj.tint = Color(0.62, 0.48, 0.32, 1)
 	proj.max_mirror_bounces = 1
 	proj.wall_bounce_enabled = false
 	if active_economy != null and active_economy.has_method("get_ricochet_params"):
@@ -763,8 +772,10 @@ func spawn_returning_blade(direction: Vector2, charge: float = 1.0) -> void:
 	_blade_flight_time = 0.0
 	_active_blade = proj
 	get_parent().add_child(proj)
-	# Spawn slightly ahead along aim so the blade clears the player hurtbox / feet.
-	proj.global_position = global_position + Vector2(0, -18) + dir * 34.0
+	var muzzle := Vector2(0, -18) + dir * 34.0
+	if combat_visual and combat_visual.has_method("muzzle_offset"):
+		muzzle = combat_visual.call("muzzle_offset", dir)
+	proj.global_position = global_position + muzzle
 	proj.hit_landed.connect(_on_projectile_hit_landed)
 	proj.returned_to_source.connect(_on_blade_returned)
 	proj.tree_exiting.connect(_on_blade_tree_exiting)
@@ -799,17 +810,17 @@ func try_prevent_death(amount: float) -> bool:
 func _projectile_color(damage_type: GameplayEnums.DamageType) -> Color:
 	match damage_type:
 		GameplayEnums.DamageType.ELECTRICITY:
-			return Color(0.45, 0.85, 1.0, 1)
+			return Color(0.55, 0.52, 0.38, 1)
 		GameplayEnums.DamageType.CORROSION:
-			return Color(0.4, 0.95, 0.35, 1)
+			return Color(0.42, 0.48, 0.28, 1)
 		GameplayEnums.DamageType.FIRE:
-			return Color(1.0, 0.5, 0.2, 1)
+			return Color(0.85, 0.38, 0.14, 1)
 		GameplayEnums.DamageType.BLEED:
-			return Color(0.95, 0.25, 0.3, 1)
+			return Color(0.62, 0.16, 0.12, 1)
 		GameplayEnums.DamageType.GLITCH:
-			return Color(0.78, 0.42, 1.0, 1)
+			return Color(0.48, 0.28, 0.36, 1)
 		_:
-			return Color(0.85, 0.9, 1.0, 1)
+			return Color(0.58, 0.5, 0.4, 1)
 
 
 func _on_projectile_hit_landed(target: HurtboxComponent) -> void:

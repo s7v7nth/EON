@@ -194,51 +194,44 @@ func _ensure_visuals() -> void:
 		bolt.centered = true
 		bolt.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 		add_child(bolt)
-	var laser := ArtBank.shooter("laserBlue01")
+	var shard := ArtBank.shooter("meteorGrey_small1")
+	if shard == null:
+		shard = ArtBank.shooter("meteorBrown_small1")
 	if attack_data and attack_data.returning:
-		laser = ArtBank.shooter("laserGreen01")
-	elif attack_data and attack_data.damage_type == GameplayEnums.DamageType.GLITCH:
-		laser = ArtBank.shooter("laserRed01")
-	elif attack_data and attack_data.damage_type == GameplayEnums.DamageType.FIRE:
-		laser = ArtBank.shooter("laserRed07")
-	if laser == null:
-		laser = ArtBank.particle("slash_01")
-	bolt.texture = laser
+		shard = ArtBank.shooter("meteorGrey_med2")
+	bolt.texture = shard
 	ArtBank.apply_opaque_region(bolt)
 	bolt.rotation = 0.0
-	ArtBank.fit_height(bolt, 54.0, false)
-	bolt.rotation = PI * 0.5
+	ArtBank.fit_height(bolt, 22.0 if (attack_data and attack_data.returning) else 16.0, false)
+	bolt.modulate = Color(0.55, 0.46, 0.34, 1)
 	if attack_data and attack_data.damage_type == GameplayEnums.DamageType.GLITCH:
-		bolt.modulate = Color(0.78, 0.42, 1.0, 1)
+		bolt.modulate = Color(0.48, 0.3, 0.36, 1)
 	if _visual:
-		_visual.modulate.a = 0.35
+		_visual.modulate.a = 0.0
 	if _core:
-		_core.modulate.a = 0.7
+		_core.modulate.a = 0.0
 
 
 func _apply_visual_style() -> void:
 	var col: Color = tint
 	if col.a <= 0.0 or col.r + col.g + col.b < 0.35:
 		col = Color(1.0, 0.55, 0.35, 1.0)
-	_visual.color = Color(col.r, col.g, col.b, 0.55)
+	_visual.color = Color(col.r * 0.45, col.g * 0.4, col.b * 0.32, 0.0)
 	_visual.modulate = Color.WHITE
 	_visual.z_index = 1
 	_visual.polygon = PackedVector2Array([
-		Vector2(28, 0), Vector2(-14, -12), Vector2(-6, 0), Vector2(-14, 12)
+		Vector2(16, 0), Vector2(-8, -5), Vector2(-4, 0), Vector2(-8, 5)
 	])
-	_core.color = Color(1, 1, 1, 0.95)
+	_core.color = Color(0.55, 0.42, 0.28, 0.0)
 	_core.modulate = Color.WHITE
 	_core.z_index = 2
 	_core.polygon = PackedVector2Array([
-		Vector2(16, 0), Vector2(-4, -6), Vector2(2, 0), Vector2(-4, 6)
+		Vector2(12, 0), Vector2(-3, -3), Vector2(1, 0), Vector2(-3, 3)
 	])
 	modulate = Color.WHITE
 	if attack_data and attack_data.returning:
-		_visual.polygon = PackedVector2Array([
-			Vector2(32, 0), Vector2(-16, -14), Vector2(-6, 0), Vector2(-16, 14)
-		])
 		_core.polygon = PackedVector2Array([
-			Vector2(18, 0), Vector2(-4, -7), Vector2(2, 0), Vector2(-4, 7)
+			Vector2(18, 0), Vector2(-6, -5), Vector2(2, 0), Vector2(-6, 5)
 		])
 
 
