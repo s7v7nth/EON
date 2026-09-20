@@ -20,6 +20,7 @@ var _route_nodes: Array[Node] = []
 @onready var _vbox: VBoxContainer = $Center/Panel/Margin/VBox
 
 var _route: VBoxContainer
+var _offer_buttons: Array[Button] = []
 
 
 func _ready() -> void:
@@ -62,6 +63,9 @@ func _ensure_route_box() -> void:
 
 
 func _input(event: InputEvent) -> void:
+	if _mode == Mode.REWARD:
+		_handle_reward_hotkeys(event)
+		return
 	if _mode != Mode.DEATH and _mode != Mode.WIN:
 		return
 	if event is InputEventKey and event.pressed and not event.echo:
@@ -119,9 +123,9 @@ func _on_run_won() -> void:
 func _on_exit_reached() -> void:
 	_populate_craft()
 	_populate_reward_upgrades()
-	var loot_line := "Choose one artifact — three offerings, Hades-style"
+	var loot_line := "Choose one artifact — click a card or press 1 / 2 / 3"
 	if not RunState.last_loot.is_empty():
-		loot_line = "Loot: %s — then pick an artifact" % RunState.loot_summary()
+		loot_line = "Loot: %s — then pick an artifact (1–3)" % RunState.loot_summary()
 	if RunState.last_combo_name != "":
 		loot_line = "COMBO %s — %s" % [RunState.last_combo_name, loot_line]
 	var title := "Room Cleared — Rank %s" % RunState.current_room_rank()
@@ -251,6 +255,7 @@ func _populate_reward_upgrades() -> void:
 		if is_instance_valid(node):
 			node.queue_free()
 	_reward_extra_nodes.clear()
+	_offer_buttons.clear()
 	for child in _rewards.get_children():
 		child.visible = false
 	var offers := RunState.roll_boon_offers(3)
@@ -267,25 +272,72 @@ func _populate_reward_upgrades() -> void:
 		_reward_extra_nodes.append(skip)
 		return
 	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 10)
+	row.add_theme_constant_override("separation", 14)
+	row.alignment = BoxContainer.ALIGNMENT_CENTER
 	_rewards.add_child(row)
 	_reward_extra_nodes.append(row)
-	for upgrade in offers:
-		row.add_child(_make_boon_card(upgrade))
+	for i in offers.size():
+		var card := _make_boon_card(offers[i], i + 1)
+		row.add_child(card)
+		_offer_buttons.append(card)
 
 
-func _make_boon_card(upgrade: UpgradeData) -> Button:
+func _make_boon_card(upgrade: UpgradeData, hotkey: int = 0) -> Button:
 	var btn := Button.new()
-	btn.custom_minimum_size = Vector2(168, 210)
+	btn.custom_minimum_size = Vector2(210, 248)
 	btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var house := UpgradeData.house_name(upgrade.house)
 	var rare := UpgradeData.rarity_name(upgrade.rarity)
-	btn.text = "%s\n%s\n\n%s\n\n%s" % [rare, house, upgrade.display_name, upgrade.description]
+	var key_line := "[ %d ]" % hotkey if hotkey > 0 else ""
+	btn.text = "%s\n%s · %s\n\n%s\n\n%s" % [key_line, rare, house, upgrade.display_name, upgrade.description]
 	btn.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	var tint := UpgradeData.rarity_color(upgrade.rarity)
-	btn.modulate = Color(lerpf(0.85, 1.0, tint.r), lerpf(0.85, 1.0, tint.g), lerpf(0.85, 1.0, tint.b))
+	var house_c := UpgradeData.house_color(upgrade.house)
+	btn.add_theme_color_override("font_color", Color(0.94, 0.96, 1.0))
+	btn.add_theme_color_override("font_hover_color", Color.WHITE)
+	btn.add_theme_font_size_override("font_size", 15)
+	btn.add_theme_stylebox_override("normal", _card_style(tint, Color(0.06, 0.07, 0.11, 0.96)))
+	btn.add_theme_stylebox_override("hover", _card_style(tint.lightened(0.18), Color(0.12, 0.13, 0.2, 0.98)))
+	btn.add_theme_stylebox_override("pressed", _card_style(house_c, Color(0.16, 0.17, 0.24, 1)))
 	btn.pressed.connect(_on_reward_upgrade.bind(upgrade))
 	return btn
+
+
+func _card_style(border: Color, bg: Color) -> StyleBoxFlat:
+	var s := StyleBoxFlat.new()
+	s.bg_color = bg
+	s.border_color = border
+	s.set_border_width_all(3)
+	s.set_corner_radius_all(10)
+	s.content_margin_left = 14
+	s.content_margin_right = 14
+	s.content_margin_top = 14
+	s.content_margin_bottom = 14
+	s.shadow_color = Color(0, 0, 0, 0.4)
+	s.shadow_size = 6
+	return s
+
+
+func _handle_reward_hotkeys(event: InputEvent) -> void:
+	if event is not InputEventKey or not event.pressed or event.echo:
+		return
+	var idx := -1
+	match (event as InputEventKey).physical_keycode:
+		KEY_1, KEY_KP_1:
+			idx = 0
+		KEY_2, KEY_KP_2:
+			idx = 1
+		KEY_3, KEY_KP_3:
+			idx = 2
+		_:
+			return
+	if idx < 0 or idx >= _offer_buttons.size():
+		return
+	var btn := _offer_buttons[idx]
+	if btn == null or not is_instance_valid(btn):
+		return
+	get_viewport().set_input_as_handled()
+	btn.emit_signal("pressed")
 
 
 func _on_combo_unlocked(combo_name: String, description: String) -> void:

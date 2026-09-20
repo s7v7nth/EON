@@ -97,6 +97,7 @@ func _try_start_special_room() -> bool:
 			_wave_index = 0
 			RunState.grant_special_room_loot(room.kind)
 			_spawn_special_marker(room.kind)
+			_spawn_special_artifacts(room.kind)
 			_finish_special_room()
 			return true
 		_:
@@ -135,8 +136,47 @@ func _spawn_special_marker(kind: int) -> void:
 				Vector2(-4, 10), Vector2(4, 10), Vector2(4, 18), Vector2(-4, 18)
 			])
 	marker.add_child(poly)
+	var hint := Label.new()
+	hint.position = Vector2(-90, -48)
+	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	hint.custom_minimum_size = Vector2(180, 20)
+	hint.add_theme_font_size_override("font_size", 14)
+	hint.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
+	hint.add_theme_constant_override("outline_size", 4)
+	match kind:
+		DungeonRoom.RoomKind.SHOP:
+			hint.text = "SHOP — pick one artifact"
+			hint.add_theme_color_override("font_color", Color(0.55, 1.0, 0.7))
+		DungeonRoom.RoomKind.TREASURE:
+			hint.text = "CACHE — walk over to claim"
+			hint.add_theme_color_override("font_color", Color(1.0, 0.88, 0.4))
+		_:
+			hint.text = "SECRET — walk over to claim"
+			hint.add_theme_color_override("font_color", Color(0.82, 0.65, 1.0))
+	marker.add_child(hint)
 	_entities.add_child(marker)
 	marker.position = Vector2.ZERO
+
+
+func _spawn_special_artifacts(kind: int) -> void:
+	if _entities == null:
+		return
+	var count := 1
+	if kind == DungeonRoom.RoomKind.SHOP:
+		count = 3
+	var offers := RunState.roll_boon_offers(count)
+	if offers.is_empty():
+		return
+	var orbs: Array[ArtifactOrb] = []
+	var spacing := 96.0
+	var start_x := -spacing * float(offers.size() - 1) * 0.5
+	for i in offers.size():
+		var pos := Vector2(start_x + spacing * float(i), 48.0)
+		orbs.append(ArtifactOrb.spawn_at(_entities, pos, offers[i]))
+	if kind != DungeonRoom.RoomKind.SHOP:
+		return
+	for orb in orbs:
+		orb.exclusive_group = orbs
 
 
 func _current_room_already_cleared() -> bool:
@@ -426,12 +466,7 @@ func _on_enemy_died(_enemy: Node) -> void:
 func _spawn_artifact_orb(enemy: Node) -> void:
 	if enemy is not Node2D or _entities == null:
 		return
-	var orb_script := load("res://entities/pickups/artifact_orb.gd") as Script
-	if orb_script == null:
-		return
-	var orb := Area2D.new()
-	orb.set_script(orb_script)
-	_entities.add_child(orb)
+	var orb := ArtifactOrb.spawn_at(_entities, Vector2.ZERO)
 	orb.global_position = (enemy as Node2D).global_position
 
 

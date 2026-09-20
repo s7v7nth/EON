@@ -91,6 +91,14 @@ const RECIPES: Array[Dictionary] = [
 		"value_b": 28.0,
 		"status": &"burn",
 	},
+	{
+		"id": &"ion_phase",
+		"name": "Ion Phase",
+		"need": [&"phase_capacitor", &"ion_bloom"],
+		"desc": "Ranged cadence goes frantic.",
+		"kind": &"ranged_cooldown",
+		"value": 0.75,
+	},
 ]
 
 

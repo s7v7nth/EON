@@ -70,6 +70,13 @@ static func all_boons() -> Array[UpgradeData]:
 	out.append(_boon(&"sunspot", "Sunspot", "Hits apply Burn buildup.", UpgradeData.House.FORGE, UpgradeData.Rarity.RARE, [_p(&"status_hit", 0.75, 22.0, StatusComponent.STATUS_BURN)]))
 	out.append(_boon(&"void_cloak", "Void Cloak", "Dash cooldown −20% and +0.12s i-frames.", UpgradeData.House.SIGNAL, UpgradeData.Rarity.EPIC, [_p(&"dash_cooldown", 0.8), _p(&"dash_iframes", 0.12)]))
 	out.append(_boon(&"radiant_edge", "Radiant Edge", "+12% damage. Hits have a chance to Burn.", UpgradeData.House.CORE, UpgradeData.Rarity.RARE, [_p(&"damage", 1.12), _p(&"status_hit", 0.35, 18.0, StatusComponent.STATUS_BURN)]))
+	out.append(_boon(&"phase_capacitor", "Phase Capacitor", "Ranged cooldown −25%.", UpgradeData.House.SIGNAL, UpgradeData.Rarity.RARE, [_p(&"ranged_cooldown", 0.75)]))
+	out.append(_boon(&"rivet_storm", "Rivet Storm", "Hits shove foes farther.", UpgradeData.House.FORGE, UpgradeData.Rarity.COMMON, [_p(&"knockback", 90.0)]))
+	out.append(_boon(&"carapace_bloom", "Carapace Bloom", "+18 max HP and a sliver of lifesteal.", UpgradeData.House.HIVE, UpgradeData.Rarity.EPIC, [_p(&"hp", 18.0), _p(&"lifesteal", 0.05)]))
+	out.append(_boon(&"ion_bloom", "Ion Bloom", "Ranged cooldown −30%.", UpgradeData.House.VOLT, UpgradeData.Rarity.RARE, [_p(&"ranged_cooldown", 0.7)]))
+	out.append(_boon(&"cold_boot", "Cold Boot", "Foes below 30% HP take +25% damage.", UpgradeData.House.NEURO, UpgradeData.Rarity.COMMON, [_p(&"execute", 0.3, 1.25)]))
+	out.append(_boon(&"gutter_wind", "Gutter Wind", "Move speed +10% and dash cost −15%.", UpgradeData.House.SIGNAL, UpgradeData.Rarity.COMMON, [_p(&"speed", 1.1), _p(&"dash_cost", 0.85)]))
+	out.append(_boon(&"shard_mail", "Shard Mail", "Take 10% less damage. +12 HP.", UpgradeData.House.CORE, UpgradeData.Rarity.RARE, [_p(&"incoming", 0.9), _p(&"hp", 12.0)]))
 
 	return out
 

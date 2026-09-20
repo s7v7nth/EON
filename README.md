@@ -1,6 +1,6 @@
 # EON
 
-Isometric Hades-like action roguelike (Godot 4.7). Four architectures, dash/attack/special/cast, statuses, and **48 shared artifacts** plus Geometry crafts.
+Isometric Hades-like action roguelike (Godot 4.7). Four architectures, dash/attack/special/cast, statuses, and **56 shared artifacts** plus Geometry crafts.
 
 ## Run
 
@@ -23,15 +23,17 @@ Godot 4.7.1+ required. Headless smokes:
 ```bash
 godot --headless --path . res://tools/validate_artifacts.tscn
 godot --headless --path . res://tools/validate_geometry_rewards.tscn
+godot --headless --path . res://tools/validate_encounters_rooms.tscn
 ```
 
 Vulkan issues on some VMs: `godot --rendering-driver opengl3 --path .`
 
 ## What you can do
 
-- Choose **Синтетик / Улей / Паровоз / Нейро-хакер**
-- Clear rooms, then pick **one of three artifacts** (rarity + house)
+- Choose **Синтетик / Улей / Паровоз / Нейро-хакер** (1–4 + Enter on class select)
+- Clear rooms, then pick **one of three artifacts** (click or press 1/2/3)
+- Shop / treasure / secret rooms spawn walk-over **artifact orbs** (shops: pick one of three)
 - Elite kills can drop a walk-over **artifact orb**
-- Pair artifacts to unlock named **combos** (Storm Step, Mercy Kill, …)
+- Pair artifacts to unlock named **combos** (Storm Step, Mercy Kill, Ion Phase, …)
 
 See `CREDITS.md` for third-party assets.

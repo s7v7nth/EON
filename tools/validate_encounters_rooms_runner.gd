@@ -57,5 +57,24 @@ func _run() -> void:
 	assert(not RunState.last_loot.is_empty(), "treasure room should grant loot")
 	assert(RunState.owned_tags.has("style"))
 
+	# Shop / cache orbs: preset claim grants the named boon; exclusive siblings vanish.
+	RunState.reset()
+	RunState.choose_architecture(GameplayEnums.ArchitectureId.DEFAULT)
+	var stock := RunState.roll_boon_offers(3)
+	assert(stock.size() == 3, "shop stock should be a 3-card roll")
+	var holder := Node2D.new()
+	add_child(holder)
+	var orb_a := ArtifactOrb.spawn_at(holder, Vector2(-40, 0), stock[0])
+	var orb_b := ArtifactOrb.spawn_at(holder, Vector2(40, 0), stock[1])
+	orb_a.exclusive_group = [orb_a, orb_b]
+	orb_b.exclusive_group = [orb_a, orb_b]
+	var player: Player = (load("res://entities/player/player.tscn") as PackedScene).instantiate() as Player
+	add_child(player)
+	await get_tree().process_frame
+	assert(orb_a.try_claim(player), "shop orb should grant the preset boon")
+	assert(RunState._already_crafted(stock[0].upgrade_id))
+	await get_tree().process_frame
+	assert(not is_instance_valid(orb_b), "exclusive shop siblings should despawn")
+
 	print("ENCOUNTERS_ROOMS_OK")
 	get_tree().quit(0)

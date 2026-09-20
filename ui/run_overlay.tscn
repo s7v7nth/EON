@@ -7,19 +7,35 @@ layer = 10
 script = ExtResource("1_script")
 
 [node name="WaveLabel" type="Label" parent="."]
+anchors_preset = 2
+anchor_left = 0.0
+anchor_top = 1.0
+anchor_right = 0.0
+anchor_bottom = 1.0
 offset_left = 16.0
-offset_top = 230.0
-offset_right = 420.0
-offset_bottom = 254.0
-theme_override_font_sizes/font_size = 16
+offset_top = -56.0
+offset_right = 560.0
+offset_bottom = -30.0
+theme_override_colors/font_color = Color(0.92, 0.95, 1, 0.95)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.85)
+theme_override_constants/outline_size = 5
+theme_override_font_sizes/font_size = 17
 text = ""
 
 [node name="StyleBanner" type="Label" parent="."]
+anchors_preset = 2
+anchor_left = 0.0
+anchor_top = 1.0
+anchor_right = 0.0
+anchor_bottom = 1.0
 offset_left = 16.0
-offset_top = 254.0
-offset_right = 420.0
-offset_bottom = 278.0
-theme_override_font_sizes/font_size = 15
+offset_top = -30.0
+offset_right = 560.0
+offset_bottom = -8.0
+theme_override_colors/font_color = Color(1, 0.86, 0.4, 0.95)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0.85)
+theme_override_constants/outline_size = 5
+theme_override_font_sizes/font_size = 16
 text = ""
 
 [node name="Center" type="CenterContainer" parent="."]
@@ -32,7 +48,7 @@ mouse_filter = 2
 
 [node name="Panel" type="PanelContainer" parent="Center"]
 visible = false
-custom_minimum_size = Vector2(720, 520)
+custom_minimum_size = Vector2(980, 560)
 layout_mode = 2
 
 [node name="Margin" type="MarginContainer" parent="Center/Panel"]
