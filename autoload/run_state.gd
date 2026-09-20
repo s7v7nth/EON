@@ -713,7 +713,7 @@ func current_room_kind() -> int:
 		match room_index:
 			1:
 				return DungeonRoom.RoomKind.SHOP
-			4:
+			3:
 				return DungeonRoom.RoomKind.TREASURE
 	return DungeonRoom.RoomKind.COMBAT
 
@@ -727,7 +727,7 @@ func is_elite_room() -> bool:
 		return false
 	if not is_campaign_route():
 		return false
-	return room_index == 2 or room_index == 6
+	return room_index == 2
 
 
 func room_kind_label() -> String:

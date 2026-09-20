@@ -14,7 +14,7 @@ func _run() -> void:
 	var routes := RunState.get_available_routes()
 	assert(routes.size() >= 2)
 	var campaign := load("res://resources/runs/campaign_route.tres") as ActRoute
-	assert(campaign.total_rooms() >= 8)
+	assert(campaign.total_rooms() >= 5)
 	RunState.choose_route(campaign)
 	assert(RunState.route_picked)
 	assert(RunState.room_count() == campaign.total_rooms())
@@ -24,6 +24,8 @@ func _run() -> void:
 	assert(RunState.current_room_kind() == DungeonRoom.RoomKind.SHOP, "campaign room 2 should be a shop")
 	RunState.seek_room(2)
 	assert(RunState.is_elite_room(), "campaign room 3 should be an elite")
+	RunState.seek_room(3)
+	assert(RunState.current_room_kind() == DungeonRoom.RoomKind.TREASURE, "campaign room 4 should be a cache")
 	RunState.seek_room(campaign.total_rooms() - 1)
 	assert(RunState.is_boss_room(), "campaign last room should be the warden")
 	RunState.seek_room(0)

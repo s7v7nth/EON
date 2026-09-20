@@ -25,21 +25,21 @@ script = ExtResource("2")
 act_index = 2
 display_name = "Dead Habitats"
 biomes = Array[Resource]([ExtResource("6"), ExtResource("7"), ExtResource("8")])
-rooms_in_act = 2
+rooms_in_act = 1
 
 [sub_resource type="Resource" id="act_3"]
 script = ExtResource("2")
 act_index = 3
 display_name = "Wild Growth"
 biomes = Array[Resource]([ExtResource("9"), ExtResource("10")])
-rooms_in_act = 2
+rooms_in_act = 1
 
 [sub_resource type="Resource" id="act_4"]
 script = ExtResource("2")
 act_index = 4
 display_name = "Data Core"
 biomes = Array[Resource]([ExtResource("11"), ExtResource("12")])
-rooms_in_act = 2
+rooms_in_act = 1
 boss_biome = ExtResource("12")
 
 [resource]
