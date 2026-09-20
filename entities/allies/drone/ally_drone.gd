@@ -145,12 +145,18 @@ func _die() -> void:
 
 
 func _ensure_visual() -> void:
-	var visual := get_node_or_null("Visual") as Polygon2D
-	if visual == null:
-		visual = Polygon2D.new()
-		visual.name = "Visual"
-		add_child(visual)
-	visual.color = Color(0.65, 0.45, 1.0, 1)
-	visual.polygon = PackedVector2Array([
-		Vector2(0, -10), Vector2(10, 0), Vector2(0, 10), Vector2(-10, 0)
-	])
+	var visual := get_node_or_null("Visual") as Node2D
+	if visual is Polygon2D:
+		visual.visible = false
+	var spr := get_node_or_null("Sprite") as Sprite2D
+	if spr == null:
+		spr = Sprite2D.new()
+		spr.name = "Sprite"
+		spr.centered = true
+		spr.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+		add_child(spr)
+	spr.texture = ArtBank.space("satelliteDish_SE")
+	if spr.texture == null:
+		spr.texture = ArtBank.rts_unit(8)
+	spr.scale = Vector2(0.32, 0.32)
+	spr.modulate = Color(0.78, 0.62, 1.0, 1)

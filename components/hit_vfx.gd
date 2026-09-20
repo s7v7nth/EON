@@ -15,6 +15,7 @@ static func spawn_at(
 	var dir: Vector2 = impact_dir.normalized() if impact_dir != Vector2.ZERO else Vector2.RIGHT
 	var s: float = maxf(impact_scale, 0.35)
 	_flash_ring(world, global_pos, damage_type, s)
+	_sprite_impact(world, global_pos, dir, damage_type, s)
 	match damage_type:
 		GameplayEnums.DamageType.ELECTRICITY:
 			_burst(world, global_pos, dir, Color(0.45, 0.9, 1.0, 1), int(22 * s), 160.0 * s, 0.38, true, 1.6 * s)
@@ -75,6 +76,7 @@ static func spawn_prism_explode(world: Node, origin: Vector2, color: Color = Col
 	spawn_optic_ring(world, origin, Color(color.r, color.g, color.b, 0.9), 1.6)
 	_burst(world, origin, Vector2.UP, color, 22, 180.0, 0.4, true, 1.7)
 	_burst(world, origin, Vector2.RIGHT, Color(1, 1, 1, 1), 12, 130.0, 0.28, true, 1.2)
+	_sprite_impact(world, origin, Vector2.UP, GameplayEnums.DamageType.GLITCH, 1.4)
 
 
 static func _flash_ring(
@@ -152,6 +154,69 @@ static func _burst(
 		tween.parallel().tween_property(shard, "scale", Vector2(0.2, 0.2), fade)
 		tween.parallel().tween_property(shard, "rotation", shard.rotation + randf_range(-2.5, 2.5), fade)
 		tween.tween_callback(shard.queue_free)
+
+
+static func _sprite_impact(
+	world: Node,
+	origin: Vector2,
+	dir: Vector2,
+	damage_type: GameplayEnums.DamageType,
+	impact_scale: float
+) -> void:
+	var stem := "slash_01"
+	var tint := Color(1, 0.85, 0.75, 1)
+	match damage_type:
+		GameplayEnums.DamageType.ELECTRICITY:
+			stem = "spark_05"
+			tint = Color(0.55, 0.95, 1.0, 1)
+		GameplayEnums.DamageType.CORROSION:
+			stem = "smoke_06"
+			tint = Color(0.45, 1.0, 0.35, 1)
+		GameplayEnums.DamageType.FIRE:
+			stem = "flame_04"
+			tint = Color(1.0, 0.55, 0.2, 1)
+		GameplayEnums.DamageType.BLEED, GameplayEnums.DamageType.PHYSICAL:
+			stem = "slash_02"
+			tint = Color(1.0, 0.25, 0.28, 1)
+		_:
+			stem = "star_04"
+			tint = Color(0.85, 0.9, 1.0, 1)
+	var tex := ArtBank.particle(stem)
+	if tex == null:
+		tex = ArtBank.particle("spark_01")
+	if tex == null:
+		return
+	var spr := Sprite2D.new()
+	spr.texture = tex
+	spr.modulate = tint
+	spr.z_index = 31
+	spr.centered = true
+	spr.rotation = dir.angle()
+	spr.scale = Vector2.ONE * (0.35 * impact_scale)
+	spr.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	world.add_child(spr)
+	spr.global_position = origin
+	var tween := spr.create_tween()
+	tween.tween_property(spr, "scale", Vector2.ONE * (0.85 * impact_scale), 0.08).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tween.parallel().tween_property(spr, "modulate:a", 0.0, 0.22)
+	tween.tween_callback(spr.queue_free)
+	if damage_type == GameplayEnums.DamageType.PHYSICAL or damage_type == GameplayEnums.DamageType.BLEED:
+		var splat_names := ["splat00", "splat01", "splat03", "splat05", "splat07"]
+		var splat := ArtBank.tex("res://assets/kenney/splat/%s.png" % splat_names[randi() % splat_names.size()])
+		if splat:
+			var stain := Sprite2D.new()
+			stain.texture = splat
+			stain.modulate = Color(0.7, 0.08, 0.1, 0.7)
+			stain.z_index = -4
+			stain.centered = true
+			stain.rotation = randf() * TAU
+			stain.scale = Vector2.ONE * randf_range(0.12, 0.22) * impact_scale
+			world.add_child(stain)
+			stain.global_position = origin + Vector2(randf_range(-8, 8), randf_range(4, 14))
+			var fade := stain.create_tween()
+			fade.tween_interval(10.0)
+			fade.tween_property(stain, "modulate:a", 0.0, 2.0)
+			fade.tween_callback(stain.queue_free)
 
 
 static func _circle_poly(radius: float) -> PackedVector2Array:

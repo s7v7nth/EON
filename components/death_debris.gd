@@ -13,6 +13,7 @@ static func burst(
 		return
 	_spawn_blood_puddle(world, origin, body_color)
 	_spawn_blood_spray(world, origin)
+	_spawn_splat(world, origin)
 	for _i in maxi(chunk_count, 4):
 		_spawn_chunk(world, origin, body_color)
 
@@ -40,6 +41,28 @@ static func _spawn_blood_puddle(world: Node, origin: Vector2, body_color: Color)
 	tween.tween_interval(18.0)
 	tween.tween_property(puddle, "modulate:a", 0.0, 2.5)
 	tween.tween_callback(puddle.queue_free)
+
+
+static func _spawn_splat(world: Node, origin: Vector2) -> void:
+	var names := ["splat00", "splat01", "splat03", "splat05"]
+	var tex := ArtBank.tex("res://assets/kenney/splat/%s.png" % names[randi() % names.size()])
+	if tex == null:
+		tex = ArtBank.particle("smoke_08")
+	if tex == null:
+		return
+	var spr := Sprite2D.new()
+	spr.texture = tex
+	spr.centered = true
+	spr.z_index = -5
+	spr.modulate = Color(0.55, 0.08, 0.1, 0.75)
+	spr.rotation = randf() * TAU
+	spr.scale = Vector2.ONE * randf_range(0.16, 0.28)
+	world.add_child(spr)
+	spr.global_position = origin + Vector2(randf_range(-6, 6), randf_range(2, 10))
+	var tw := spr.create_tween()
+	tw.tween_interval(16.0)
+	tw.tween_property(spr, "modulate:a", 0.0, 2.4)
+	tw.tween_callback(spr.queue_free)
 
 
 static func _spawn_blood_spray(world: Node, origin: Vector2) -> void:

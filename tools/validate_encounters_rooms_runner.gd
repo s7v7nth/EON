@@ -71,10 +71,37 @@ func _run() -> void:
 	var player: Player = (load("res://entities/player/player.tscn") as PackedScene).instantiate() as Player
 	add_child(player)
 	await get_tree().process_frame
-	assert(orb_a.try_claim(player), "shop orb should grant the preset boon")
+	assert(orb_a.try_claim(player), "free orb should grant the preset boon")
 	assert(RunState._already_crafted(stock[0].upgrade_id))
 	await get_tree().process_frame
 	assert(not is_instance_valid(orb_b), "exclusive shop siblings should despawn")
+
+	# Priced shop: walk-over fails without gold, spends on success.
+	RunState.reset()
+	RunState.choose_architecture(GameplayEnums.ArchitectureId.DEFAULT)
+	var priced := RunState.roll_boon_offers(2)
+	assert(priced.size() >= 1)
+	var shop_holder := Node2D.new()
+	add_child(shop_holder)
+	var paid := ArtifactOrb.spawn_at(shop_holder, Vector2.ZERO, priced[0])
+	paid.price_gold = RunState.shop_price_for(priced[0])
+	paid._refresh_price()
+	var buyer: Player = (load("res://entities/player/player.tscn") as PackedScene).instantiate() as Player
+	add_child(buyer)
+	await get_tree().process_frame
+	RunState.gold = 0
+	assert(paid.price_gold > 0)
+	assert(not paid.try_claim(buyer), "shop orb must not be free")
+	RunState.add_gold(paid.price_gold)
+	assert(paid.try_claim(buyer), "shop orb should sell when gold is paid")
+	assert(RunState.gold == 0, "purchase should spend the listed price")
+	assert(RunState._already_crafted(priced[0].upgrade_id))
+
+	# Authored packs landed in-repo.
+	assert(ArtBank.space("astronautA_SE") != null, "space kit astronaut missing")
+	assert(ArtBank.dungeon("stoneTile_S") != null, "iso dungeon floor missing")
+	assert(ArtBank.particle("slash_02") != null, "particle slash missing")
+	assert(ResourceLoader.exists("res://assets/sfx/impact/impactPunch_medium_000.ogg"))
 
 	print("ENCOUNTERS_ROOMS_OK")
 	get_tree().quit(0)

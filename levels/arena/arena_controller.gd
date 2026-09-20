@@ -120,22 +120,25 @@ func _spawn_special_marker(kind: int) -> void:
 	var marker := Node2D.new()
 	marker.name = "SpecialRoomMarker"
 	marker.z_index = 5
-	var poly := Polygon2D.new()
-	poly.name = "Visual"
+	var spr := Sprite2D.new()
+	spr.name = "Visual"
+	spr.centered = true
+	spr.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 	match kind:
 		DungeonRoom.RoomKind.SHOP:
-			poly.color = Color(0.35, 0.85, 0.55, 0.85)
-			poly.polygon = PackedVector2Array([Vector2(-18, -14), Vector2(18, -14), Vector2(18, 14), Vector2(-18, 14)])
+			spr.texture = ArtBank.dungeon("chestClosed_S")
+			if spr.texture == null:
+				spr.texture = ArtBank.icon("coin")
+			spr.scale = Vector2(0.7, 0.7)
 		DungeonRoom.RoomKind.TREASURE:
-			poly.color = Color(0.95, 0.8, 0.25, 0.9)
-			poly.polygon = PackedVector2Array([Vector2(0, -20), Vector2(16, 0), Vector2(0, 16), Vector2(-16, 0)])
+			spr.texture = ArtBank.dungeon("chestOpen_S")
+			if spr.texture == null:
+				spr.texture = ArtBank.shooter("star_gold")
+			spr.scale = Vector2(0.7, 0.7)
 		_:
-			poly.color = Color(0.7, 0.45, 1.0, 0.85)
-			poly.polygon = PackedVector2Array([
-				Vector2(-4, -18), Vector2(4, -18), Vector2(4, 4), Vector2(-4, 4),
-				Vector2(-4, 10), Vector2(4, 10), Vector2(4, 18), Vector2(-4, 18)
-			])
-	marker.add_child(poly)
+			spr.texture = ArtBank.shooter("powerupBlue_shield")
+			spr.scale = Vector2(0.9, 0.9)
+	marker.add_child(spr)
 	var hint := Label.new()
 	hint.position = Vector2(-90, -48)
 	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -145,7 +148,7 @@ func _spawn_special_marker(kind: int) -> void:
 	hint.add_theme_constant_override("outline_size", 4)
 	match kind:
 		DungeonRoom.RoomKind.SHOP:
-			hint.text = "SHOP — pick one artifact"
+			hint.text = "SHOP — pay gold, pick one"
 			hint.add_theme_color_override("font_color", Color(0.55, 1.0, 0.7))
 		DungeonRoom.RoomKind.TREASURE:
 			hint.text = "CACHE — walk over to claim"
@@ -177,6 +180,8 @@ func _spawn_special_artifacts(kind: int) -> void:
 		return
 	for orb in orbs:
 		orb.exclusive_group = orbs
+		orb.price_gold = RunState.shop_price_for(orb.preset_upgrade)
+		orb._refresh_price()
 
 
 func _current_room_already_cleared() -> bool:
@@ -446,8 +451,49 @@ func _spawn_wave(wave: WaveDefinition) -> void:
 					group.elite_move_mult,
 					group.elite_action_speed
 				)
+			if enemy is EnemyDummy and (enemy as EnemyDummy).definition and (enemy as EnemyDummy).definition.is_boss:
+				_present_boss(enemy as EnemyDummy)
 			_alive_enemies += 1
 	_alert_wave_at_player()
+
+
+func _present_boss(enemy: EnemyDummy) -> void:
+	if enemy == null:
+		return
+	var visual := enemy.get_node_or_null("Visual") as Node2D
+	if visual:
+		visual.scale = Vector2(1.7, 1.7)
+	CameraFx.add_trauma(0.55)
+	CameraFx.flash(Color(1.0, 0.25, 0.18, 0.45), 0.22)
+	HitStop.punch(0.12, 0.16)
+	if FeelAudio:
+		FeelAudio.play_boss()
+	var name_txt := "WARDEN"
+	if enemy.definition and enemy.definition.display_name != "":
+		name_txt = enemy.definition.display_name
+	SignalBus.boss_spawned.emit(name_txt)
+	var tex := _radial_boss_tex()
+	for i in 3:
+		var light := PointLight2D.new()
+		light.texture = tex
+		light.color = Color(1.0, 0.3, 0.22)
+		light.energy = 1.4
+		light.texture_scale = 2.2
+		enemy.add_child(light)
+		light.position = Vector2(cos(TAU * float(i) / 3.0), sin(TAU * float(i) / 3.0)) * 40.0
+
+
+func _radial_boss_tex() -> Texture2D:
+	var grad := Gradient.new()
+	grad.colors = PackedColorArray([Color(1, 1, 1, 1), Color(1, 1, 1, 0)])
+	var tex := GradientTexture2D.new()
+	tex.gradient = grad
+	tex.width = 128
+	tex.height = 128
+	tex.fill = GradientTexture2D.FILL_RADIAL
+	tex.fill_from = Vector2(0.5, 0.5)
+	tex.fill_to = Vector2(0.5, 0.0)
+	return tex
 
 
 func _alert_wave_at_player() -> void:

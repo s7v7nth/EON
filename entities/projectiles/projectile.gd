@@ -187,13 +187,28 @@ func _ensure_visuals() -> void:
 		_core = Polygon2D.new()
 		_core.name = "Core"
 		add_child(_core)
+	var bolt := get_node_or_null("Bolt") as Sprite2D
+	if bolt == null:
+		bolt = Sprite2D.new()
+		bolt.name = "Bolt"
+		bolt.centered = true
+		bolt.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+		add_child(bolt)
+	var laser := ArtBank.shooter("laserBlue01")
+	if attack_data and attack_data.returning:
+		laser = ArtBank.shooter("laserGreen01")
+	if laser == null:
+		laser = ArtBank.particle("slash_01")
+	bolt.texture = laser
+	bolt.rotation = 0.0
+	bolt.scale = Vector2(0.7, 0.55)
 
 
 func _apply_visual_style() -> void:
 	var col: Color = tint
 	if col.a <= 0.0 or col.r + col.g + col.b < 0.35:
 		col = Color(1.0, 0.55, 0.35, 1.0)
-	_visual.color = Color(col.r, col.g, col.b, 1.0)
+	_visual.color = Color(col.r, col.g, col.b, 0.55)
 	_visual.modulate = Color.WHITE
 	_visual.z_index = 1
 	_visual.polygon = PackedVector2Array([

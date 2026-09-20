@@ -36,6 +36,8 @@ func enter(_msg: Dictionary = {}) -> void:
 	player.hurtbox.set_invincible(true, true)
 	player.velocity = Iso.apply_velocity(_dash_dir, player.stats.dash_speed)
 	player.notify_dash_started(_dash_dir)
+	if FeelAudio:
+		FeelAudio.play_dash()
 	_spawn_ghost()
 
 
@@ -88,24 +90,40 @@ func _spawn_ghost() -> void:
 	var visual := player.get_node_or_null("Visual") as Node2D
 	if visual == null:
 		return
-	var ghost := Polygon2D.new()
+	var spr := visual.get_node_or_null("Sprite") as Sprite2D
+	if spr and spr.texture:
+		var ghost := Sprite2D.new()
+		ghost.texture = spr.texture
+		ghost.offset = spr.offset
+		ghost.centered = spr.centered
+		ghost.scale = visual.scale * spr.scale
+		ghost.modulate = GHOST_TINT
+		ghost.z_index = -1
+		ghost.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+		player.get_parent().add_child(ghost)
+		ghost.global_position = player.global_position + spr.position
+		var tween := ghost.create_tween()
+		tween.tween_property(ghost, "modulate:a", 0.0, GHOST_FADE_TIME)
+		tween.tween_callback(ghost.queue_free)
+		return
+	var ghost_poly := Polygon2D.new()
 	if "polygon" in visual and not (visual.polygon as PackedVector2Array).is_empty():
-		ghost.polygon = visual.polygon
+		ghost_poly.polygon = visual.polygon
 	else:
-		ghost.polygon = PackedVector2Array([
+		ghost_poly.polygon = PackedVector2Array([
 			Vector2(-10, 0), Vector2(10, 0), Vector2(8, -36), Vector2(-8, -36)
 		])
 	if "color" in visual:
-		ghost.color = visual.color
+		ghost_poly.color = visual.color
 	else:
-		ghost.color = Color(0.55, 0.58, 0.62, 1)
-	ghost.modulate = GHOST_TINT
-	ghost.z_index = -1
-	player.get_parent().add_child(ghost)
-	ghost.global_position = player.global_position
-	var tween := ghost.create_tween()
-	tween.tween_property(ghost, "modulate:a", 0.0, GHOST_FADE_TIME)
-	tween.tween_callback(ghost.queue_free)
+		ghost_poly.color = Color(0.55, 0.58, 0.62, 1)
+	ghost_poly.modulate = GHOST_TINT
+	ghost_poly.z_index = -1
+	player.get_parent().add_child(ghost_poly)
+	ghost_poly.global_position = player.global_position
+	var tween_poly := ghost_poly.create_tween()
+	tween_poly.tween_property(ghost_poly, "modulate:a", 0.0, GHOST_FADE_TIME)
+	tween_poly.tween_callback(ghost_poly.queue_free)
 
 
 func _return_to_locomotion() -> void:

@@ -49,14 +49,23 @@ func _ready() -> void:
 
 
 func _build() -> void:
-	var bg := ColorRect.new()
+	var bg := TextureRect.new()
 	bg.set_anchors_preset(PRESET_FULL_RECT)
-	bg.color = Color(0.04, 0.045, 0.07, 1)
+	bg.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	bg.stretch_mode = TextureRect.STRETCH_SCALE
+	bg.texture = ArtBank.tex("res://assets/kenney/space-shooter/bg/darkPurple.png")
+	if bg.texture == null:
+		bg.texture = ArtBank.tex("res://assets/kenney/space-shooter/bg/black.png")
 	add_child(bg)
+	if bg.texture == null:
+		var fallback := ColorRect.new()
+		fallback.set_anchors_preset(PRESET_FULL_RECT)
+		fallback.color = Color(0.04, 0.045, 0.07, 1)
+		add_child(fallback)
 
 	var glow := ColorRect.new()
 	glow.set_anchors_preset(PRESET_FULL_RECT)
-	glow.color = Color(0.12, 0.16, 0.28, 0.35)
+	glow.color = Color(0.04, 0.05, 0.1, 0.42)
 	add_child(glow)
 
 	var margin := MarginContainer.new()
@@ -74,8 +83,13 @@ func _build() -> void:
 	var title := Label.new()
 	title.text = "EON"
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title.add_theme_font_size_override("font_size", 56)
+	title.add_theme_font_size_override("font_size", 64)
 	title.add_theme_color_override("font_color", Color(0.92, 0.95, 1.0))
+	title.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.85))
+	title.add_theme_constant_override("outline_size", 8)
+	var title_font := ArtBank.title_font()
+	if title_font:
+		title.add_theme_font_override("font", title_font)
 	col.add_child(title)
 
 	var sub := Label.new()
@@ -145,15 +159,37 @@ func _make_arch_card(arch: ArchitectureData) -> Button:
 	var btn := Button.new()
 	btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	btn.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	btn.custom_minimum_size = Vector2(180, 220)
+	btn.custom_minimum_size = Vector2(180, 260)
 	var hint: Dictionary = HINTS.get(int(arch.architecture_id), {})
 	var title := str(hint.get("title", arch.display_name))
 	var role := str(hint.get("role", arch.description))
 	btn.text = "%s\n\n%s\n\n%s" % [title, role, arch.description]
 	btn.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	var font := ArtBank.ui_font()
+	if font:
+		btn.add_theme_font_override("font", font)
+	btn.icon = _portrait_for(arch)
+	btn.expand_icon = false
+	btn.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	btn.vertical_icon_alignment = VERTICAL_ALIGNMENT_TOP
+	btn.add_theme_constant_override("icon_max_width", 96)
 	btn.pressed.connect(_select_arch.bind(arch))
 	_arch_buttons.append(btn)
 	return btn
+
+
+func _portrait_for(arch: ArchitectureData) -> Texture2D:
+	if arch == null:
+		return ArtBank.space("astronautA_SE")
+	match arch.architecture_id:
+		GameplayEnums.ArchitectureId.NANOMACHINES:
+			return ArtBank.space("astronautB_SE")
+		GameplayEnums.ArchitectureId.ELECTRO_TRAIN:
+			return ArtBank.space("rover_SE")
+		GameplayEnums.ArchitectureId.NEURO_HACKER:
+			return ArtBank.space("astronautA_NE")
+		_:
+			return ArtBank.space("astronautA_SE")
 
 
 func _select_route(route: ActRoute) -> void:

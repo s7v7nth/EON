@@ -26,6 +26,7 @@ var _last_hp: float = -1.0
 var _seed_label: Label
 var _artifact_label: Label
 var _hp_flash: Tween
+var _gold_label: Label
 
 
 func _ready() -> void:
@@ -81,8 +82,10 @@ func _ready() -> void:
 	call_deferred("_refresh_location_from_run_state")
 	call_deferred("_refresh_seed_label")
 	_ensure_artifact_label()
+	_ensure_gold_label()
 	SignalBus.upgrade_crafted.connect(_on_upgrade_crafted)
 	SignalBus.combo_unlocked.connect(_on_combo_hud)
+	SignalBus.gold_changed.connect(_on_gold_changed)
 
 
 func _wrap_hud_chrome() -> void:
@@ -134,6 +137,9 @@ func _paint_label(label: Label, size: int, color: Color) -> void:
 	label.add_theme_color_override("font_color", color)
 	label.add_theme_color_override("font_outline_color", Color(0.0, 0.0, 0.0, 0.9))
 	label.add_theme_constant_override("outline_size", 5)
+	var font := ArtBank.ui_font()
+	if font:
+		label.add_theme_font_override("font", font)
 
 
 func _on_room_entered(_coord: Vector2i) -> void:
@@ -343,3 +349,20 @@ func _artifact_line() -> String:
 			shown.append(names[i])
 		return "Artifacts (%d): %s…" % [names.size(), ", ".join(shown)]
 	return "Artifacts: %s" % ", ".join(names)
+
+
+func _ensure_gold_label() -> void:
+	if _gold_label:
+		return
+	_gold_label = Label.new()
+	_gold_label.name = "GoldLabel"
+	_paint_label(_gold_label, 15, Color(1.0, 0.86, 0.32))
+	_gold_label.text = "Gold  0"
+	health_bar.get_parent().add_child(_gold_label)
+	health_bar.get_parent().move_child(_gold_label, 0)
+	_on_gold_changed(RunState.gold)
+
+
+func _on_gold_changed(amount: int) -> void:
+	if _gold_label:
+		_gold_label.text = "Gold  %d" % amount

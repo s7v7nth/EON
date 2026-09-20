@@ -4,6 +4,14 @@
 export.cfg
 export_presets.cfg
 *.tmp
+assets/**/*.import
+
+# OS / editor
+.DS_Store
+*.swp
+*~
+.vscode/
+.idea/
 
 # OS / editor
 .DS_Store

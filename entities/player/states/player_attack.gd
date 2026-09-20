@@ -63,6 +63,8 @@ func enter(msg: Dictionary = {}) -> void:
 			)
 	if not player.hitbox.hit_landed.is_connected(_on_hit_landed):
 		player.hitbox.hit_landed.connect(_on_hit_landed)
+	if FeelAudio:
+		FeelAudio.play_swing()
 
 
 func physics_update(delta: float) -> void:

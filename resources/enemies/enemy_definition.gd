@@ -45,6 +45,10 @@ extends Resource
 ## Poise restored per second while not flinching.
 @export var poise_regen: float = 18.0
 
+@export_group("Bounty")
+## Gold granted on kill. 0 = infer from tags / elite / boss.
+@export var gold_reward: int = 0
+
 
 func get_resist(damage_type: GameplayEnums.DamageType) -> float:
 	if use_resist_overrides:

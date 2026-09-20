@@ -21,6 +21,8 @@ var _route_nodes: Array[Node] = []
 
 var _route: VBoxContainer
 var _offer_buttons: Array[Button] = []
+var _boss_banner: Label
+var _boss_tween: Tween
 
 
 func _ready() -> void:
@@ -47,6 +49,15 @@ func _ready() -> void:
 	if get_parent() == get_tree().current_scene and RunState.room_index == 0 and not RunState.architecture_picked:
 		call_deferred("_show_start_flow")
 	SignalBus.combo_unlocked.connect(_on_combo_unlocked)
+	_ensure_boss_banner()
+	SignalBus.boss_spawned.connect(_on_boss_spawned)
+	SignalBus.boss_phase.connect(_on_boss_phase)
+	var font := ArtBank.ui_font()
+	if font:
+		_title.add_theme_font_override("font", font)
+		_wave_label.add_theme_font_override("font", font)
+		if _style_banner:
+			_style_banner.add_theme_font_override("font", font)
 
 
 func _ensure_route_box() -> void:
@@ -84,6 +95,53 @@ func _is_restart_key(event: InputEvent) -> bool:
 	if event is InputEventKey and event.pressed and not event.echo:
 		return (event as InputEventKey).physical_keycode == KEY_R
 	return false
+
+
+func _ensure_boss_banner() -> void:
+	_boss_banner = get_node_or_null("BossBanner") as Label
+	if _boss_banner:
+		return
+	_boss_banner = Label.new()
+	_boss_banner.name = "BossBanner"
+	_boss_banner.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	_boss_banner.offset_top = 72.0
+	_boss_banner.offset_bottom = 128.0
+	_boss_banner.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_boss_banner.add_theme_font_size_override("font_size", 34)
+	_boss_banner.add_theme_color_override("font_color", Color(1.0, 0.32, 0.28))
+	_boss_banner.add_theme_color_override("font_outline_color", Color(0.05, 0, 0, 0.95))
+	_boss_banner.add_theme_constant_override("outline_size", 8)
+	var font := ArtBank.title_font()
+	if font:
+		_boss_banner.add_theme_font_override("font", font)
+	_boss_banner.text = ""
+	add_child(_boss_banner)
+
+
+func _on_boss_spawned(boss_name: String) -> void:
+	_flash_boss_banner("BOSS  —  %s" % boss_name.to_upper(), Color(1.0, 0.32, 0.28))
+
+
+func _on_boss_phase(phase: int, boss_name: String) -> void:
+	_flash_boss_banner("PHASE %d  —  %s" % [phase, boss_name.to_upper()], Color(1.0, 0.55, 0.2))
+
+
+func _flash_boss_banner(text: String, color: Color) -> void:
+	if _boss_banner == null:
+		_ensure_boss_banner()
+	_boss_banner.text = text
+	_boss_banner.add_theme_color_override("font_color", color)
+	_boss_banner.modulate = Color.WHITE
+	if _boss_tween and _boss_tween.is_valid():
+		_boss_tween.kill()
+	_boss_tween = create_tween()
+	_boss_tween.tween_interval(1.8)
+	_boss_tween.tween_property(_boss_banner, "modulate:a", 0.0, 0.45)
+	_boss_tween.tween_callback(func() -> void:
+		if _boss_banner:
+			_boss_banner.text = ""
+			_boss_banner.modulate = Color.WHITE
+	)
 
 
 func _show_start_flow() -> void:

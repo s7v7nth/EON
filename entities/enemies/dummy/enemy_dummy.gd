@@ -201,6 +201,23 @@ func apply_definition(def: EnemyDefinition) -> void:
 		var hp_bar_boss := get_node_or_null("HealthBar") as HealthBarComponent
 		if hp_bar_boss:
 			hp_bar_boss.set_label("BOSS " + (def.display_name if def.display_name != "" else "Enemy"))
+			hp_bar_boss.hide_when_full = false
+			hp_bar_boss.bar_size = Vector2(118, 11)
+			hp_bar_boss.offset = Vector2(0, -96)
+			hp_bar_boss.visible = true
+			hp_bar_boss.queue_redraw()
+		var vis_boss := get_node_or_null("Visual") as Node2D
+		if vis_boss:
+			vis_boss.scale = Vector2(1.55, 1.55)
+	var vis := get_node_or_null("Visual") as Node2D
+	if vis and def:
+		var swarm := false
+		for tag in def.tags:
+			if String(tag) == "swarm":
+				swarm = true
+				break
+		if swarm:
+			vis.scale = Vector2(0.78, 0.78)
 	var hp_bar := get_node_or_null("HealthBar") as HealthBarComponent
 	if hp_bar and not (definition and definition.is_boss):
 		hp_bar.set_label(def.display_name if def.display_name != "" else "Enemy")
@@ -580,6 +597,11 @@ func _enter_boss_phase2() -> void:
 	var hp_bar := get_node_or_null("HealthBar") as HealthBarComponent
 	if hp_bar and definition:
 		hp_bar.set_label("BOSS " + definition.display_name + " II")
+	if FeelAudio:
+		FeelAudio.play_boss()
+	CameraFx.flash(Color(1.0, 0.2, 0.15, 0.5), 0.16)
+	var nm := definition.display_name if definition and definition.display_name != "" else "BOSS"
+	SignalBus.boss_phase.emit(2, nm)
 	_summon_boss_adds()
 
 

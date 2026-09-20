@@ -64,6 +64,7 @@ var _transitioning: bool = false
 var last_boon_offers: Array[UpgradeData] = []
 var unlocked_combos: Array[StringName] = []
 var last_combo_name: String = ""
+var gold: int = 0
 
 
 func _ready() -> void:
@@ -124,6 +125,7 @@ func reset() -> void:
 	last_boon_offers.clear()
 	unlocked_combos.clear()
 	last_combo_name = ""
+	gold = 0
 	current_biome = null
 	current_route = DEFAULT_ROUTE as ActRoute
 	run_seed = 0
@@ -141,6 +143,7 @@ func reset() -> void:
 	_multi_kill_count = 0
 	_multi_kill_timer = 0.0
 	_emit_style()
+	SignalBus.gold_changed.emit(gold)
 
 
 func apply_to_player(player: Player) -> void:
@@ -419,6 +422,59 @@ func craft_upgrade(upgrade: UpgradeData) -> bool:
 	if upgrade not in get_craftable_upgrades():
 		return false
 	return _append_upgrade(upgrade)
+
+
+func shop_price_for(upgrade: UpgradeData) -> int:
+	if upgrade == null:
+		return 25
+	match upgrade.rarity:
+		UpgradeData.Rarity.COMMON:
+			return 22
+		UpgradeData.Rarity.RARE:
+			return 40
+		UpgradeData.Rarity.EPIC:
+			return 70
+		UpgradeData.Rarity.LEGENDARY:
+			return 110
+	return 25
+
+
+func add_gold(amount: int, world_pos: Vector2 = Vector2.ZERO, world: Node = null) -> void:
+	if amount == 0:
+		return
+	gold = maxi(gold + amount, 0)
+	SignalBus.gold_changed.emit(gold)
+	if amount > 0 and world != null:
+		DamagePop.spawn_label(world, world_pos, "+%d G" % amount, Color(1.0, 0.86, 0.28, 1), 14)
+
+
+func try_spend_gold(amount: int) -> bool:
+	if amount <= 0:
+		return true
+	if gold < amount:
+		return false
+	gold -= amount
+	SignalBus.gold_changed.emit(gold)
+	return true
+
+
+func bounty_for(enemy: Node) -> int:
+	if enemy == null:
+		return 0
+	var def: EnemyDefinition = enemy.get("definition") as EnemyDefinition
+	if def and def.gold_reward > 0:
+		return def.gold_reward
+	if def and def.is_boss:
+		return 90
+	if bool(enemy.get("is_elite")):
+		return 36
+	if def:
+		for tag in def.tags:
+			if String(tag) == "swarm":
+				return 8
+			if String(tag) == "sniper":
+				return 18
+	return 14
 
 
 func grant_upgrade(upgrade: UpgradeData) -> bool:
@@ -776,6 +832,13 @@ func _on_enemy_died(_enemy: Node) -> void:
 		_on_style_action(GameplayEnums.StyleAction.MULTI_KILL, points)
 	else:
 		_on_style_action(GameplayEnums.StyleAction.KILL, points)
+	var bounty := bounty_for(_enemy)
+	var world: Node = null
+	var pos := Vector2.ZERO
+	if _enemy is Node2D:
+		world = (_enemy as Node2D).get_parent()
+		pos = (_enemy as Node2D).global_position + Vector2(0, -36)
+	add_gold(bounty, pos, world)
 
 
 func _on_style_action(action: int, points: int) -> void:
