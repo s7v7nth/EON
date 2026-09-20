@@ -56,8 +56,8 @@ func _run() -> void:
 	assert(has_n and has_e, "N and E wall tiles must both be used")
 	var grade := arena.find_child("Grade", true, false) as CanvasModulate
 	assert(grade != null, "night grade should exist")
-	assert(grade.color.r < 0.52, "grade should be a dark remnant wash")
-	assert(grade != null, "night grade should exist")
+	assert(grade.color.r >= 0.85, "grade must not crush illustrated paint")
+	assert(grade.color.r < 0.98, "grade should still read as night")
 	var vignette := arena.find_child("Vignette", true, false)
 	assert(vignette != null, "vignette should exist")
 	print("FACING_ATMOSPHERE_OK weapon hand + iso walls + night grade")

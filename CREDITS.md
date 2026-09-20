@@ -30,3 +30,7 @@ Third-party art and audio are **CC0 1.0**. Copies live under `assets/` with per-
 Attribution is not required under CC0; we credit the authors anyway.
 
 Godot `GradientTexture2D` lighting remains engine MIT.
+
+## Illustrated ruin pack
+
+Hand-authored isometric hero / hostiles / floors / walls / EON props under `assets/illustrated/` (original, CC0 for this project). Not Kenney voxels and not a 1:1 copy of third-party screenshots.

@@ -4,7 +4,7 @@ extends "res://systems/economy/resource_economy.gd"
 
 const MIRROR_SCENE := preload("res://entities/props/energy_mirror.tscn")
 
-@export var max_attack_speed_bonus: float = 0.35
+@export var max_attack_speed_bonus: float = 0.0
 @export var max_mirrors: int = 3
 ## Deprecated: mirrors use action budget (3), not timers. Kept for resource compatibility.
 @export var mirror_lifetime: float = -1.0
@@ -12,6 +12,9 @@ const MIRROR_SCENE := preload("res://entities/props/energy_mirror.tscn")
 @export var dash_explode_radius: float = 96.0
 @export var dash_explode_damage: float = 14.0
 @export var collapse_scale: float = 1.35
+@export var block_energy_cost: float = 4.0
+## Geometry tree is opt-in via crafts. Base Synthetic is energy/adrenaline, not lattice-only.
+var geometry_enabled: bool = false
 ## Blade bounce budget off Energy Mirrors (Prism Chain raises this).
 @export var max_bounces: int = 1
 @export var ricochet_damage_mult: float = 1.5
@@ -43,6 +46,7 @@ func on_equip(host: Node) -> void:
 	spawn_crystal_on_return = false
 	mirror_confuse = false
 	spawn_lens_on_parry = false
+	geometry_enabled = false
 	var energy: EnergyComponent = host.get("energy") as EnergyComponent
 	if energy:
 		energy.unlock_regen(1.0)
@@ -64,6 +68,8 @@ func can_afford(host: Node, action: StringName, cost: float = 0.0) -> bool:
 		return false
 	if action == &"special":
 		return _alive_mirror_count() > 0 and _can_spend_energy(host, collapse_energy_cost)
+	if action == &"block":
+		return _can_spend_energy(host, block_energy_cost)
 	var energy: EnergyComponent = host.get("energy") as EnergyComponent
 	if action == &"attack" or action == &"ranged" or action == &"dash":
 		if cost <= 0.0:
@@ -81,20 +87,17 @@ func spend(host: Node, action: StringName, cost: float = 0.0) -> bool:
 		return false
 	if action == &"special":
 		return _spend_energy(host, collapse_energy_cost)
+	if action == &"block":
+		return _spend_energy(host, block_energy_cost)
 	var energy: EnergyComponent = host.get("energy") as EnergyComponent
 	if cost > 0.0:
 		return energy != null and energy.try_spend(cost)
 	return true
 
 
-func attack_speed_multiplier(host: Node) -> float:
-	var adrenaline: AdrenalineComponent = host.get("adrenaline") as AdrenalineComponent
-	if adrenaline == null:
-		return 1.0
-	var max_a := adrenaline.get_max_adrenaline()
-	if max_a <= 0.0:
-		return 1.0
-	return 1.0 + max_attack_speed_bonus * (adrenaline.current_adrenaline / max_a)
+func attack_speed_multiplier(_host: Node) -> float:
+	## Adrenaline is energy regen, not attack speed.
+	return 1.0
 
 
 func try_special(host: Node) -> bool:
@@ -121,25 +124,30 @@ func get_hud_values(host: Node) -> Dictionary:
 
 
 func set_prism_chain(bounces: int, bounce_mult: float) -> void:
+	geometry_enabled = true
 	max_bounces = maxi(bounces, 1)
 	extra_bounce_mult = maxf(bounce_mult, 1.0)
 
 
 func set_optic_labyrinth(cap: int = 5) -> void:
+	geometry_enabled = true
 	max_mirrors = maxi(cap, max_mirrors)
 	mirror_confuse = true
 
 
 func enable_kinetic_pingpong() -> void:
+	geometry_enabled = true
 	wall_bounce_enabled = true
 	dash_blade_intercept = true
 
 
 func enable_prism_trap() -> void:
+	geometry_enabled = true
 	spawn_crystal_on_return = true
 
 
 func enable_focus_lens() -> void:
+	geometry_enabled = true
 	spawn_lens_on_parry = true
 
 
@@ -170,6 +178,7 @@ func spawn_mirror_at(global_pos: Vector2, _life: float = -1.0) -> Node:
 
 
 func spawn_echo_shade(source: Node, _life: float = -1.0) -> Node:
+	geometry_enabled = true
 	if source == null or source is not Node2D or _host == null or _host is not Node2D:
 		return null
 	var behind: Vector2 = (source as Node2D).global_position
@@ -275,6 +284,8 @@ func _on_parry_success(source: Node) -> void:
 			if facing == Vector2.ZERO:
 				facing = Vector2.RIGHT
 		spawn_pos += facing.normalized() * 40.0
+	if not geometry_enabled:
+		return
 	spawn_mirror_at(spawn_pos)
 	if spawn_lens_on_parry:
 		var lens_pos := spawn_pos + Vector2(0, -36)

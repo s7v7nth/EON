@@ -48,6 +48,9 @@ static func generate(rng: RunRng, room_count: int = DEFAULT_ROOM_COUNT) -> Dunge
 	start.kind = DungeonRoom.RoomKind.START
 	start.layout_path = LAYOUT_POOL[0]  # Matches main_scene so route pick stays on start cell.
 	start.biome = _starter_biome(rng, biomes)
+	start.footprint_id = "octa"
+	start.linear_index = 0
+	start.world_origin = Vector2.INF
 	graph.rooms[start.coord] = start
 	graph.start_coord = start.coord
 
@@ -65,8 +68,11 @@ static func generate(rng: RunRng, room_count: int = DEFAULT_ROOM_COUNT) -> Dunge
 		to_room.kind = DungeonRoom.RoomKind.COMBAT
 		to_room.layout_path = _pick_layout(rng)
 		to_room.biome = _pick_neighbor_biome(rng, from_room.biome, biomes)
+		to_room.footprint_id = _pick_shape(rng)
+		to_room.linear_index = graph.rooms.size()
+		to_room.world_origin = Vector2.INF
 		graph.rooms[to_coord] = to_room
-		_link(from_room, to_room, dir)
+		_link(from_room, to_room, dir, rng)
 		open.append(to_coord)
 		# Occasionally drop a dead-end from the frontier for branchier shapes.
 		if open.size() > 3 and rng.map.randf() < 0.25:
@@ -75,12 +81,27 @@ static func generate(rng: RunRng, room_count: int = DEFAULT_ROOM_COUNT) -> Dunge
 	_assign_boss(graph, rng)
 	_assign_special_rooms(graph, rng)
 	_apply_blends(graph)
+	graph.rebuild_order()
+	FloorPlacer.place(graph)
 	return graph
 
 
-static func _link(a: DungeonRoom, b: DungeonRoom, dir_a_to_b: Vector2i) -> void:
+static func _link(a: DungeonRoom, b: DungeonRoom, dir_a_to_b: Vector2i, rng: RunRng) -> void:
 	a.doors[dir_a_to_b] = true
 	b.doors[-dir_a_to_b] = true
+	var t_a := 0.18 + rng.map.randf() * 0.64
+	var t_b := 0.18 + rng.map.randf() * 0.64
+	if absf(t_a - 0.5) < 0.06:
+		t_a = 0.32 if rng.map.randf() < 0.5 else 0.68
+	if absf(t_b - 0.5) < 0.06:
+		t_b = 0.27 if rng.map.randf() < 0.5 else 0.73
+	a.door_t[dir_a_to_b] = t_a
+	b.door_t[-dir_a_to_b] = t_b
+
+
+static func _pick_shape(rng: RunRng) -> String:
+	var pool := RoomFootprint.pool()
+	return pool[rng.map.randi() % pool.size()]
 
 
 static func _pick_layout(rng: RunRng) -> String:
@@ -144,6 +165,7 @@ static func _assign_boss(graph: DungeonGraph, rng: RunRng) -> void:
 		best = ties[rng.map.randi() % ties.size()]
 	var boss: DungeonRoom = graph.rooms[best]
 	boss.kind = DungeonRoom.RoomKind.BOSS
+	boss.boss_id = &"hive"
 	# Prefer endgame biome pack when available.
 	var endgame := load("res://resources/biomes/data_center.tres") as BiomeDefinition
 	var gateway := load("res://resources/biomes/gateway.tres") as BiomeDefinition
@@ -169,8 +191,9 @@ static func _assign_special_rooms(graph: DungeonGraph, rng: RunRng) -> void:
 		DungeonRoom.RoomKind.TREASURE,
 		DungeonRoom.RoomKind.SHOP,
 		DungeonRoom.RoomKind.SECRET,
+		DungeonRoom.RoomKind.REMNANT,
 	]
-	var count := mini(picks.size(), maxi(combat.size() / 4, 1))
+	var count := mini(picks.size(), maxi(combat.size() / 3, 2))
 	count = mini(count, combat.size())
 	for i in count:
 		var idx := rng.map.randi() % combat.size()
@@ -178,9 +201,26 @@ static func _assign_special_rooms(graph: DungeonGraph, rng: RunRng) -> void:
 		combat.remove_at(idx)
 		var room: DungeonRoom = graph.rooms[coord]
 		room.kind = picks[i % picks.size()]
-		# Prefer dead-end layouts for secret/treasure readability.
+		if room.kind == DungeonRoom.RoomKind.REMNANT:
+			room.remnant = true
 		if room.kind == DungeonRoom.RoomKind.SECRET or room.kind == DungeonRoom.RoomKind.TREASURE:
 			room.layout_path = LAYOUT_POOL[rng.map.randi() % LAYOUT_POOL.size()]
+	_assign_warden(graph, rng)
+
+
+static func _assign_warden(graph: DungeonGraph, rng: RunRng) -> void:
+	var combat: Array[Vector2i] = []
+	for key in graph.rooms.keys():
+		var coord := key as Vector2i
+		var room: DungeonRoom = graph.rooms[coord]
+		if room.kind == DungeonRoom.RoomKind.COMBAT and coord != graph.start_coord:
+			combat.append(coord)
+	if combat.is_empty():
+		return
+	var pick: Vector2i = combat[rng.map.randi() % combat.size()]
+	var room: DungeonRoom = graph.rooms[pick]
+	room.boss_id = &"warden"
+	room.is_elite = true
 
 
 static func _apply_blends(graph: DungeonGraph) -> void:

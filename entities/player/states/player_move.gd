@@ -24,8 +24,8 @@ func _check_legacy_inputs() -> bool:
 	if Input.is_action_just_pressed("special"):
 		player.try_special()
 		return true
-	if Input.is_action_just_pressed("dash") and player.dash_ready():
-		transition_to(&"Dash")
+	if Input.is_action_just_pressed("dash") and player.mobility_ready():
+		transition_to(player.mobility_state_name())
 		return true
 	if Input.is_action_just_pressed("parry") and player.parry_ready():
 		transition_to(&"Parry")
@@ -44,8 +44,12 @@ func _check_legacy_inputs() -> bool:
 
 
 func _check_synthetic_inputs() -> bool:
-	if player.pressed_or_buffered(&"dash") and player.dash_ready():
-		transition_to(&"Dash")
+	if player.pressed_or_buffered(&"dash") and player.mobility_ready():
+		transition_to(player.mobility_state_name())
+		return true
+
+	if Input.is_action_just_pressed("special"):
+		player.try_special()
 		return true
 
 	# RMB: always raise shield. Also register combo step if the circle path expects it.

@@ -14,6 +14,10 @@ var _active: bool = false
 func enter(_msg: Dictionary = {}) -> void:
 	_elapsed = 0.0
 	_active = true
+	if not player.try_spend_block():
+		_active = false
+		_return_to_locomotion()
+		return
 	player.hurtbox.set_blocking(true)
 	player.hurtbox.set_parrying(true)
 	if player.combat_visual:
@@ -47,8 +51,8 @@ func physics_update(delta: float) -> void:
 	else:
 		player.stop_movement()
 
-	if player.pressed_or_buffered(&"dash") and player.dash_ready():
-		transition_to(&"Dash")
+	if player.pressed_or_buffered(&"dash") and player.mobility_ready():
+		transition_to(player.mobility_state_name())
 		return
 
 

@@ -41,8 +41,8 @@ func physics_update(delta: float) -> void:
 	else:
 		player.stop_movement()
 
-	if Input.is_action_just_pressed("dash") and player.dash_ready():
-		transition_to(&"Dash")
+	if Input.is_action_just_pressed("dash") and player.mobility_ready():
+		transition_to(player.mobility_state_name())
 		return
 
 	if not Input.is_action_pressed("attack"):

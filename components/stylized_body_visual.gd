@@ -1,6 +1,6 @@
 class_name StylizedBodyVisual
 extends Node2D
-## Authored isometric body (Kenney Space Kit) with facing + walk bob.
+## Illustrated isometric body (hero / scrap / nano / hive) with facing + walk bob.
 ## Duck-types Polygon2D API (color / polygon / scale / modulate) for CombatVisual.
 
 enum BodyStyle {
@@ -15,7 +15,7 @@ enum BodyStyle {
 }
 
 ## Duck-typed for CombatVisualComponent (color / polygon / scale / modulate).
-var color: Color = Color(0.55, 0.58, 0.62, 1.0):
+var color: Color = Color(0.86, 0.9, 0.95, 1.0):
 	set(value):
 		color = value
 		_apply_tint()
@@ -39,10 +39,16 @@ var _facing: Vector2 = Vector2(1, 1)
 var _combat_locked: bool = false
 var _sprite: Sprite2D
 var _shadow: Sprite2D
-var _stem: String = "astronautA"
-var _target_h: float = 88.0
+var _rim: PointLight2D
+var _stem: String = "hero"
+var _target_h: float = 92.0
 var _last_dir_key: String = ""
 var _custom_stem: String = ""
+var _illustrated: bool = true
+
+
+func uses_illustrated() -> bool:
+	return _illustrated
 
 
 func _ready() -> void:
@@ -81,6 +87,9 @@ func set_combat_pose_active(active: bool) -> void:
 func apply_custom_stem(stem: String, target_h: float = 0.0) -> void:
 	if stem.strip_edges() == "":
 		return
+	## Only honor stems that exist in the illustrated pack (never Kenney fallback).
+	if ArtBank.illustrated(stem) == null and ArtBank.illustrated_facing(stem, Vector2(1, 1)) == null:
+		return
 	_custom_stem = stem
 	_stem = stem
 	if target_h > 8.0:
@@ -113,9 +122,18 @@ func _ensure_sprites() -> void:
 		_shadow.name = "ContactShadow"
 		_shadow.centered = true
 		_shadow.z_index = -1
-		_shadow.modulate = Color(0, 0, 0, 0.42)
+		_shadow.modulate = Color(0, 0, 0, 0.5)
 		_shadow.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 		add_child(_shadow)
+	_rim = get_node_or_null("RimLight") as PointLight2D
+	if _rim == null:
+		_rim = PointLight2D.new()
+		_rim.name = "RimLight"
+		_rim.texture = IllustratedSet.radial()
+		_rim.energy = 0.95
+		_rim.texture_scale = 1.35
+		_rim.position = Vector2(10, -28)
+		add_child(_rim)
 
 
 func _refresh_stem() -> void:
@@ -124,29 +142,29 @@ func _refresh_stem() -> void:
 		return
 	match body_style:
 		BodyStyle.NANO:
-			_stem = "astronautB"
-			_target_h = 88.0
-		BodyStyle.TRAIN:
-			_stem = "rover"
-			_target_h = 72.0
-		BodyStyle.NEURO:
-			_stem = "astronautA"
-			_target_h = 88.0
-		BodyStyle.ANDROID:
-			_stem = "turret_single"
-			_target_h = 84.0
-		BodyStyle.CYBORG:
-			_stem = "craft_speederA"
+			_stem = "hero"
 			_target_h = 92.0
+		BodyStyle.TRAIN:
+			_stem = "hero"
+			_target_h = 94.0
+		BodyStyle.NEURO:
+			_stem = "hero"
+			_target_h = 92.0
+		BodyStyle.ANDROID:
+			_stem = "enemy_nano"
+			_target_h = 86.0
+		BodyStyle.CYBORG:
+			_stem = "enemy_scrap"
+			_target_h = 96.0
 		BodyStyle.BEAST:
-			_stem = "rover"
-			_target_h = 78.0
+			_stem = "hive_boss"
+			_target_h = 128.0
 		BodyStyle.SAVAGE:
-			_stem = "alien"
-			_target_h = 76.0
+			_stem = "enemy_swarm"
+			_target_h = 72.0
 		_:
-			_stem = "astronautA"
-			_target_h = 88.0
+			_stem = "hero"
+			_target_h = 92.0
 
 
 func set_facing(dir: Vector2) -> void:
@@ -178,9 +196,7 @@ func _process(delta: float) -> void:
 func _apply_texture() -> void:
 	if _sprite == null:
 		return
-	var tex := ArtBank.space_facing(_stem, _facing)
-	if tex == null:
-		tex = ArtBank.space(_stem + "_SE")
+	var tex := _illustrated_tex()
 	if tex == null:
 		return
 	var key := "%s:%s" % [_stem, ArtBank.dir8_from(_facing)]
@@ -197,14 +213,45 @@ func _apply_texture() -> void:
 		_shadow.scale = Vector2(sc * 0.92, sc * 0.28)
 		_shadow.centered = true
 		_shadow.offset = Vector2(0.0, 6.0)
-		_shadow.modulate = Color(0, 0, 0, 0.4)
+		_shadow.modulate = Color(0, 0, 0, 0.48)
+	_tune_rim()
+
+
+func _illustrated_tex() -> Texture2D:
+	var facing := ArtBank.illustrated_facing(_stem, _facing)
+	if facing:
+		return facing
+	var plain := ArtBank.illustrated(_stem)
+	if plain:
+		return plain
+	if _stem != "hero":
+		return ArtBank.illustrated_facing("hero", _facing)
+	return ArtBank.illustrated("hero_SE")
+
+
+func _tune_rim() -> void:
+	if _rim == null:
+		return
+	match body_style:
+		BodyStyle.NANO, BodyStyle.SAVAGE, BodyStyle.BEAST:
+			_rim.color = Color(0.55, 1.0, 0.32, 1)
+			_rim.energy = 1.15
+		BodyStyle.ANDROID, BodyStyle.NEURO:
+			_rim.color = Color(0.35, 0.9, 1.0, 1)
+			_rim.energy = 1.05
+		BodyStyle.CYBORG, BodyStyle.TRAIN:
+			_rim.color = Color(1.0, 0.35, 0.22, 1)
+			_rim.energy = 1.2
+		_:
+			_rim.color = Color(0.55, 0.85, 1.0, 1)
+			_rim.energy = 0.9
 
 
 func _apply_tint() -> void:
 	if _sprite == null:
 		return
-	# Keep Kenney paint readable; remnant wash, not a candy recolor.
-	_sprite.modulate = Color(0.78, 0.74, 0.68, 1).lerp(color, 0.22)
+	## Kit tints ride on illustrated paint; never a grey voxel wash.
+	_sprite.modulate = Color.WHITE.lerp(color, 0.28)
 
 
 func _bob() -> void:
@@ -217,10 +264,9 @@ func _bob() -> void:
 
 
 func _draw() -> void:
-	# Ground contact ellipse so sprites don't float.
 	draw_colored_polygon(
 		PackedVector2Array([
 			Vector2(-18, 2), Vector2(18, 2), Vector2(13, 10), Vector2(-13, 10)
 		]),
-		Color(0, 0, 0, 0.32)
+		Color(0, 0, 0, 0.38)
 	)

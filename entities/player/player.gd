@@ -147,9 +147,9 @@ func _attach_body_light() -> void:
 	tex.fill_from = Vector2(0.5, 0.5)
 	tex.fill_to = Vector2(0.5, 0.0)
 	light.texture = tex
-	light.energy = 0.32
-	light.texture_scale = 1.05
-	light.color = Color(1.0, 0.62, 0.32)
+	light.energy = 0.72
+	light.color = Color(0.55, 0.82, 1.0, 1)
+	light.texture_scale = 1.8
 	light.position = Vector2(0, -22)
 	add_child(light)
 
@@ -183,6 +183,10 @@ func _physics_process(delta: float) -> void:
 
 func uses_synthetic_kit() -> bool:
 	return architecture != null and architecture.architecture_id == GameplayEnums.ArchitectureId.DEFAULT
+
+
+func uses_hive_kit() -> bool:
+	return architecture != null and architecture.architecture_id == GameplayEnums.ArchitectureId.NANOMACHINES
 
 
 func current_weapon() -> WeaponData:
@@ -293,9 +297,10 @@ func _relay_component_signals() -> void:
 func _on_hurtbox_hit_received(_attack_data: AttackData, _source: Node, hp_damage: float) -> void:
 	if engagement:
 		engagement.notify_exchange()
-	if hp_damage > 0.0 and stats:
+	if stats:
 		adrenaline.add(stats.adrenaline_gain_on_hurt)
-	RunState.register_took_damage()
+	if hp_damage > 0.0:
+		RunState.register_took_damage()
 	if combat_visual:
 		combat_visual.play_hit_flash()
 
@@ -320,8 +325,7 @@ func _on_perfect_dodged(_attack_data: AttackData, source: Node) -> void:
 func _on_parried(attack_data: AttackData, source: Node) -> void:
 	if stats:
 		adrenaline.add(stats.adrenaline_gain_on_hit * 1.5)
-	if energy:
-		energy.restore(8.0)
+	# Block already spent energy to raise the shield. Adrenaline is the payoff.
 	# God-of-War style "BAM": deep freeze, flash, heavy knock + hard stun.
 	HitStop.punch(0.04, 0.18)
 	CameraFx.add_trauma(0.72)
@@ -505,23 +509,20 @@ func get_input_direction() -> Vector2:
 
 
 func nearest_hostile(max_dist: float = 210.0) -> Node2D:
-	var parent := get_parent()
-	if parent == null:
+	if not is_inside_tree():
 		return null
 	var best: Node2D = null
 	var best_d := max_dist
-	for child in parent.get_children():
-		if child == self or child is not Node2D:
+	for node in get_tree().get_nodes_in_group("enemies"):
+		if node == self or node is not Node2D:
 			continue
-		if not child.is_in_group("enemies"):
-			continue
-		var hp := child.get("health") as HealthComponent
+		var hp := node.get("health") as HealthComponent
 		if hp and hp.current_health <= 0.0:
 			continue
-		var d := global_position.distance_to((child as Node2D).global_position)
+		var d := global_position.distance_to((node as Node2D).global_position)
 		if d <= best_d:
 			best_d = d
-			best = child as Node2D
+			best = node as Node2D
 	return best
 
 
@@ -557,6 +558,8 @@ func stop_movement() -> void:
 
 
 func dash_ready() -> bool:
+	if uses_hive_kit():
+		return false
 	if stats == null:
 		return false
 	if active_economy and active_economy.is_action_locked(self):
@@ -566,6 +569,38 @@ func dash_ready() -> bool:
 	if active_economy:
 		return active_economy.can_afford(self, &"dash", stats.dash_cost * dash_cost_multiplier)
 	return energy.current_energy >= stats.dash_cost * dash_cost_multiplier
+
+
+func dissipate_ready() -> bool:
+	if not uses_hive_kit():
+		return false
+	if active_economy and active_economy.is_action_locked(self):
+		return false
+	if active_economy:
+		return active_economy.can_afford(self, &"dissipate", 0.0)
+	return true
+
+
+func mobility_ready() -> bool:
+	if uses_hive_kit():
+		return dissipate_ready()
+	return dash_ready()
+
+
+func mobility_state_name() -> StringName:
+	if uses_hive_kit():
+		return &"Dissipate"
+	return &"Dash"
+
+
+func try_spend_block() -> bool:
+	if not uses_synthetic_kit():
+		return true
+	if active_economy:
+		return active_economy.spend(self, &"block", 0.0)
+	if energy:
+		return energy.try_spend(4.0)
+	return true
 
 
 func try_spend_dash() -> bool:

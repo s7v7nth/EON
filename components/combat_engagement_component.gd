@@ -37,20 +37,13 @@ func _set_combat(value: bool) -> void:
 
 func _any_enemy_targeting_player() -> bool:
 	var player := get_parent()
-	if player == null:
+	if player == null or not player.is_inside_tree():
 		return false
-	var entities := player.get_parent()
-	if entities == null:
-		return false
-	for child in entities.get_children():
+	for child in player.get_tree().get_nodes_in_group("enemies"):
 		if child == player:
-			continue
-		if not child.has_method("apply_knockback"):
 			continue
 		if child.get("target") == player:
 			var health = child.get("health")
-			if health and health.has_method("is_dead") and health.is_dead():
-				continue
 			if health and "current_health" in health and float(health.current_health) <= 0.0:
 				continue
 			return true

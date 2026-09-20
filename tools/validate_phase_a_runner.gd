@@ -9,6 +9,7 @@ func _ready() -> void:
 
 func _run() -> void:
 	RunState.reset()
+	MetaSave.unlock_all_for_tests()
 	var arches := RunState.get_architectures()
 	assert(arches.size() >= 3, "catalog should list architectures")
 	for arch in arches:

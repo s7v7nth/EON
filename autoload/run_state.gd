@@ -165,19 +165,24 @@ func get_architectures() -> Array[ArchitectureData]:
 	return arch_catalog.all()
 
 
-func choose_architecture(arch_id: GameplayEnums.ArchitectureId) -> void:
+func choose_architecture(arch_id: GameplayEnums.ArchitectureId) -> bool:
 	var arch := _find_architecture(arch_id)
-	choose_architecture_data(arch)
+	return choose_architecture_data(arch)
 
 
-func choose_architecture_data(arch: ArchitectureData) -> void:
+func choose_architecture_data(arch: ArchitectureData) -> bool:
 	if arch == null:
 		arch = _default_architecture()
+	if arch and not MetaSave.is_architecture_unlocked(int(arch.architecture_id)):
+		var reason := MetaSave.unlock_requirement(int(arch.architecture_id))
+		SignalBus.architecture_unlock_denied.emit(int(arch.architecture_id), reason)
+		return false
 	architecture = arch
 	owned_tags = arch.starting_tags.duplicate()
 	architecture_picked = true
 	_grant_signature_seed()
 	SignalBus.architecture_changed.emit(architecture.architecture_id)
+	return true
 
 
 func _grant_signature_seed() -> void:
@@ -225,10 +230,7 @@ func choose_route(route: ActRoute) -> void:
 		run_seed = 0
 		_begin_procedural_dungeon()
 	else:
-		dungeon = null
-		rng = null
-		run_seed = 0
-		current_coord = Vector2i.ZERO
+		_begin_authored_floor()
 	_sync_route_cursor()
 	SignalBus.route_chosen.emit(current_route.route_id if current_route else &"")
 
@@ -287,6 +289,18 @@ func _begin_procedural_dungeon() -> void:
 	if current_route:
 		count = current_route.procedural_room_count
 	dungeon = DungeonGenerator.generate(rng, count)
+	current_coord = dungeon.start_coord if dungeon else Vector2i.ZERO
+	pending_exit_dir = Vector2i.ZERO
+	entry_travel_dir = Vector2i.ZERO
+	var start_room := current_dungeon_room()
+	if start_room:
+		start_room.explored = true
+
+
+func _begin_authored_floor() -> void:
+	run_seed = _fresh_seed()
+	rng = RunRng.new(run_seed)
+	dungeon = RouteGraph.build(current_route)
 	current_coord = dungeon.start_coord if dungeon else Vector2i.ZERO
 	pending_exit_dir = Vector2i.ZERO
 	entry_travel_dir = Vector2i.ZERO
@@ -671,7 +685,7 @@ func begin_room() -> void:
 	style_multiplier = maxf(style_multiplier * 0.5, 1.0)
 	_sync_route_cursor()
 	_emit_style()
-	if is_procedural_run():
+	if dungeon != null:
 		var room := current_dungeon_room()
 		if room:
 			room.explored = true
@@ -687,7 +701,7 @@ func register_took_damage() -> void:
 
 
 func room_count() -> int:
-	if is_procedural_run():
+	if dungeon != null:
 		return dungeon.room_count()
 	if current_route:
 		return maxi(current_route.total_rooms(), 1)
@@ -695,14 +709,16 @@ func room_count() -> int:
 
 
 func is_last_room() -> bool:
-	if is_procedural_run():
+	if dungeon != null:
 		var room := current_dungeon_room()
-		return room != null and room.kind == DungeonRoom.RoomKind.BOSS
+		if room == null:
+			return false
+		return room.kind == DungeonRoom.RoomKind.BOSS or room.coord == dungeon.boss_coord
 	return room_index >= room_count() - 1
 
 
 func current_room_kind() -> int:
-	if is_procedural_run():
+	if dungeon != null:
 		var room := current_dungeon_room()
 		if room:
 			return room.kind
@@ -722,12 +738,17 @@ func current_room_kind() -> int:
 
 
 func is_boss_room() -> bool:
+	if dungeon != null:
+		var room := current_dungeon_room()
+		if room:
+			return room.kind == DungeonRoom.RoomKind.BOSS or room.boss_id != StringName()
 	return current_room_kind() == DungeonRoom.RoomKind.BOSS
 
 
 func is_elite_room() -> bool:
-	if is_procedural_run():
-		return false
+	if dungeon != null:
+		var room := current_dungeon_room()
+		return room != null and room.is_elite
 	if not is_campaign_route():
 		return false
 	return room_index == 2
@@ -745,6 +766,10 @@ func room_kind_label() -> String:
 			return "Cache"
 		DungeonRoom.RoomKind.SECRET:
 			return "Secret"
+		DungeonRoom.RoomKind.REMNANT:
+			return "Remnant"
+		DungeonRoom.RoomKind.START:
+			return "Start"
 		_:
 			return ""
 
@@ -767,10 +792,14 @@ func biome_for_current_room() -> BiomeDefinition:
 
 func seek_room(index: int) -> void:
 	room_index = maxi(index, 0)
+	if dungeon:
+		current_coord = dungeon.coord_at_index(room_index)
 	_sync_route_cursor()
 
 
 func layout_scene_for_current_room() -> String:
+	if dungeon != null:
+		return "res://levels/floor/floor_world.tscn"
 	if is_procedural_run():
 		var room := current_dungeon_room()
 		if room and room.layout_path != "":
@@ -791,12 +820,7 @@ func pick_enemy_for_biome(fallback: EnemyDefinition) -> EnemyDefinition:
 
 
 func advance_to_next_room() -> void:
-	if is_last_room() or _transitioning:
-		return
-	if is_procedural_run():
-		if pending_exit_dir == Vector2i.ZERO:
-			return
-		_advance_through_door(pending_exit_dir)
+	if dungeon != null or is_last_room() or _transitioning:
 		return
 	room_index += 1
 	_sync_route_cursor()
@@ -804,16 +828,12 @@ func advance_to_next_room() -> void:
 
 
 func finish_room_reward() -> void:
-	## Called after craft/boon on room clear. Wins on last room instead of advancing.
-	if is_procedural_run():
+	## Overlay closes in place. Physical floors walk out; last/boss craft still wins.
+	if dungeon != null:
 		mark_current_room_cleared()
 		var room := current_dungeon_room()
-		if room and room.kind == DungeonRoom.RoomKind.BOSS:
+		if room and (room.kind == DungeonRoom.RoomKind.BOSS or is_last_room()):
 			SignalBus.run_won.emit()
-			return
-		if pending_exit_dir == Vector2i.ZERO or _transitioning:
-			return
-		_advance_through_door(pending_exit_dir)
 		return
 	if is_last_room():
 		SignalBus.run_won.emit()
@@ -822,7 +842,7 @@ func finish_room_reward() -> void:
 
 
 func mark_current_room_cleared() -> void:
-	if not is_procedural_run():
+	if dungeon == null:
 		return
 	var room := current_dungeon_room()
 	if room:
@@ -871,7 +891,7 @@ func _sync_route_cursor() -> void:
 		current_route = DEFAULT_ROUTE as ActRoute
 	if current_route == null:
 		return
-	if is_procedural_run():
+	if dungeon != null:
 		var room := current_dungeon_room()
 		act_index = 1
 		room_in_act = room_index

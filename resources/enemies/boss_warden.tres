@@ -32,6 +32,8 @@ status_vulnerabilities = {
 "stagger": 0.75
 }
 is_boss = true
+unlock_flag = &"warden_killed"
+boss_id = &"warden"
 boss_phase2_hp_ratio = 0.5
 boss_phase2_action_speed = 1.28
 boss_phase2_summon = ExtResource("7_summon")

@@ -46,14 +46,15 @@ Campaign Acts:
 4. Data Core — Gateway (blend) → Data Center
 
 Режимы маршрута:
-- Tutorial: Landfill → Wasteland → Data Center (3 комнаты)
-- Campaign: Acts 1–4
-- Procedural: Isaac-style сетка ~12 комнат, seed, двери N/E/S/W, соседние биомы + blend, финал = boss room + craft → win
-- Procedural special rooms: SHOP / TREASURE / SECRET (no waves, guaranteed loot); layout pool room_01–05
-- Boss rooms: `boss_encounter_waves` (android adds → **Warden** boss + swarm pack); Warden phase 2 @50% HP (faster actions + summon); gateway/data-center waves mark elites (HP + action speed)
-- Encounter pressure: denser mixed packs (roles overlap), signature enemy patterns (slam / lunge / charge / fan / combo) with distinct telegraphs
-- HUD procedural: мини-карта (explored / current / cleared / boss / shop / treasure / secret), fade при смене комнаты, проёмы дверей в стенах; персонажи — stylized silhouettes (не greybox-rects); cleared rooms stay empty on revisit (no enemy respawn)
-- Feel P2: `FeelAudio` autoload — procedural hit/parry/Q blips + gamepad rumble on SignalBus combat events
+- Tutorial: Landfill → Wasteland → Data Center (3 island rooms, south remnant then east last)
+- Campaign: Acts 1–4 on one physical floor (shop / elite / cache / remnant / Warden / **The Hive**)
+- Procedural: Isaac-style сетка ~12 комнат, seed, двери N/E/S/W, соседние биомы + blend, финал = **The Hive** + craft → win
+- All routes: physical islands + hallways, offset doors, reversed entry, walk-back, no overlap; overlay does not teleport
+- Meta unlocks (authoritative `user://eon_meta.cfg`): Synthetic always; Hive kit after The Hive; Parovoz after Warden; Neuro after remnant talk. Class select refuses locked kits.
+- Procedural special rooms: SHOP / TREASURE / SECRET / REMNANT (no waves); layout pool unused (islands)
+- Boss rooms: Hive vomit/hook/slam + phase 2 summons; Warden still has `boss_encounter_waves`
+- HUD: dying-city frame (HP / Energy / Adrenaline / Style / Gold); Isaac minimap on every dungeon graph
+- Look: illustrated isometric ruin, neon vs toxic, rim-lit hostiles, contrasty night — not Kenney voxels / not a 1:1 clone of the street refs
 
 Биомы (BiomeId): JUNGLE, DATA_CENTER, DOWNTOWN, RESIDENTIAL, TAIGA, ALLEY, LANDFILL, MALL, WASTELAND, GATEWAY.
 
@@ -62,7 +63,7 @@ Campaign Acts:
 ═══════════════════════════════════════
 ПЕРСОНАЖ И БОЕВОЙ СКЕЛЕТ (общий для всех архитектур)
 ═══════════════════════════════════════
-- Управление: WASD, LMB/RMB атаки/блок (зависит от архитектуры), Space dash с i-frames, Q = special (economy.try_special).
+- Управление: WASD, LMB/RMB атаки/блок (зависит от архитектуры), Space dash **или Hive Dissipate**, Q = special (economy.try_special).
 - Движение мгновенное, без инерции; вертикаль сжата Iso.Y_SCALE.
 - Style Score: множитель растёт от HIT/KILL/PERFECT_DODGE/PARRY/COMBO/MULTI_KILL/ELEMENT_CASCADE; сбрасывается на TOOK_DAMAGE. Ранг комнаты C–S влияет на качество лута.
 - После clear комнаты: loot parts + reward/craft UI. На финальной комнате craft тоже есть, win только после выбора.
@@ -99,8 +100,8 @@ Behaviors: aggro swarm, erratic dodge, tactical support, hyper chase, death burs
 Fantasy: энерго-мечник / Geometry of Reflections — skill-ceiling positioning fighter.
 Economy: ENERGY_ADRENALINE (EconomyAdrenaline)
 - Energy pool ~50. Атаки/dash тратят Energy. Входящий урон сначала жрёт Energy, остаток → HP.
-- Ideal dash возвращает стоимость. Вне боя adrenaline → 0; в бою baseline + ~3 Energy/s; растёт от хитов, HP-урона, parry, ideal dash.
-- Адреналин даёт attack speed bonus (до ~+35%).
+- Ideal dash возвращает стоимость. Вне боя adrenaline → 0 + slow Energy trickle; в бою baseline adrenaline + Energy regen (не attack speed). Растёт от хитов, HP-урона, parry, ideal dash.
+- Geometry of Reflections — **opt-in craft tree**. Base kit не ставит зеркала с parry.
 Combat:
 - LMB tap — melee swing (combo). LMB hold — snappy charge returning blade throw (feet blue charge bar + aim beam).
 - RMB hold — energy shield (−50% dmg); first ~0.18s raise-parry (full negate + stagger); dedicated Parry stays ~0.22s.
@@ -133,9 +134,10 @@ Post-room Rewards (always offerable for Synthetic, same menu as +damage/+speed):
 --- 2) УЛЕЙ (NANOMACHINES) ---
 Fantasy: нано-рой / биологический паразит-носитель.
 Economy: BLOOD_HARVEST (EconomyBloodHarvest)
-- Нет Energy. Пассивный HP drain (~4% max HP/s, floor 1 HP).
-- Life steal ~14% + heal on kill. Dash/special стоят % HP.
-- Q = swarm burst (AoE за % HP).
+- Нет Energy. Пассивный HP drain рядом с врагами (~3% max HP/s, floor ~8 HP).
+- Life steal on hit + heal on kill. **Нет baked low-HP damage.**
+- Space = hold **Dissipate** (sand puddle, remnant silhouette, invincible, HP drain, puddle poison; release reforms + heal fraction). Нет dash.
+- Q = swarm burst (AoE за % HP) — целится по группе `enemies`.
 Combat primitives: nano blade / whip / toad
 Tags: nano, whip, toad, swarm, proximity
 Resists: +corrosion/bleed/elec; −fire; чуть слабее physical

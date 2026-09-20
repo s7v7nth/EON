@@ -87,8 +87,8 @@ func physics_update(delta: float) -> void:
 			transition_to(&"Parry")
 			return
 
-	if player.pressed_or_buffered(&"dash") and player.dash_ready():
-		transition_to(&"Dash")
+	if player.pressed_or_buffered(&"dash") and player.mobility_ready():
+		transition_to(player.mobility_state_name())
 		return
 
 	match _phase:
@@ -261,8 +261,8 @@ func _return_to_locomotion() -> void:
 	if player.combat_visual:
 		player.combat_visual.reset_pose()
 	# Flush buffered follow-ups at end of recovery.
-	if player.pressed_or_buffered(&"dash") and player.dash_ready():
-		transition_to(&"Dash")
+	if player.pressed_or_buffered(&"dash") and player.mobility_ready():
+		transition_to(player.mobility_state_name())
 		return
 	if player.uses_synthetic_kit() and player.consume_buffered(&"ranged_attack"):
 		if player.combo_expects(&"ranged_attack"):

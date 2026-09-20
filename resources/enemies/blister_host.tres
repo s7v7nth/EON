@@ -1,0 +1,39 @@
+[gd_resource type="Resource" script_class="EnemyDefinition" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://resources/enemies/enemy_definition.gd" id="1"]
+[ext_resource type="Resource" path="res://resources/stats/enemy_blister_stats.tres" id="2_stats"]
+[ext_resource type="Resource" path="res://resources/attacks/enemy_blister_slam.tres" id="3_slam"]
+[ext_resource type="Resource" path="res://resources/attacks/enemy_bio_mutant_attack.tres" id="4_atk"]
+[ext_resource type="Resource" path="res://resources/enemies/behaviors/death_burst.tres" id="5_burst"]
+
+[resource]
+script = ExtResource("1")
+display_name = "Blister Host"
+faction = 4
+stats = ExtResource("2_stats")
+melee_attack = ExtResource("3_slam")
+moveset = Array[Resource]([ExtResource("3_slam"), ExtResource("4_atk")])
+attack_range = 52.0
+ranged_range = 0.0
+detection_radius = 310.0
+visual_color = Color(0.38, 0.55, 0.18, 1)
+prefers_kite = false
+behavior_modules = Array[Resource]([ExtResource("5_burst")])
+tags = PackedStringArray("bio", "blister", "death_burst", "elite")
+visual_stem = "craft_miner"
+visual_height = 118.0
+status_vulnerabilities = {
+"burn": 1.5,
+"bleed": 0.6,
+"acid": 0.4
+}
+use_resist_overrides = true
+resist_physical = 0.1
+resist_electricity = 0.05
+resist_corrosion = 0.4
+resist_fire = -0.4
+resist_bleed = 0.2
+resist_glitch = 0.3
+max_poise = 48.0
+poise_regen = 14.0
+gold_reward = 40

@@ -6,6 +6,9 @@ extends "res://systems/economy/resource_economy.gd"
 @export var life_steal: float = 0.18
 @export var heal_on_kill: float = 12.0
 @export var dash_hp_cost_percent: float = 0.04
+@export var dissipate_hp_percent_per_sec: float = 0.12
+@export var dissipate_heal_ratio: float = 0.55
+@export var dissipate_puddle_damage: float = 5.0
 @export var special_hp_cost_percent: float = 0.06
 @export var special_radius: float = 100.0
 @export var special_damage: float = 14.0
@@ -58,7 +61,7 @@ func can_afford(host: Node, action: StringName, _cost: float = 0.0) -> bool:
 		return false
 	var max_hp := health.get_max_health()
 	match action:
-		&"dash":
+		&"dash", &"dissipate":
 			return health.current_health > max_hp * dash_hp_cost_percent + min_hp_from_drain
 		&"special":
 			return health.current_health > max_hp * special_hp_cost_percent + min_hp_from_drain
@@ -70,7 +73,7 @@ func spend(host: Node, action: StringName, _cost: float = 0.0) -> bool:
 	if not can_afford(host, action, _cost):
 		return false
 	match action:
-		&"dash":
+		&"dash", &"dissipate":
 			_spend_hp_percent(host, dash_hp_cost_percent)
 		&"special":
 			_spend_hp_percent(host, special_hp_cost_percent)
@@ -101,6 +104,33 @@ func on_kill(host: Node, _enemy: Node) -> void:
 	var health: HealthComponent = host.get("health") as HealthComponent
 	if health and heal_on_kill > 0.0:
 		health.heal(heal_on_kill)
+
+
+func damage_multiplier(_host: Node) -> float:
+	## Low-HP damage is an item path, not baked into the kit.
+	return 1.0
+
+
+func tick_dissipate(host: Node, delta: float) -> float:
+	var health: HealthComponent = host.get("health") as HealthComponent
+	if health == null:
+		return 0.0
+	var max_hp := health.get_max_health()
+	var drain := max_hp * dissipate_hp_percent_per_sec * delta
+	var room := health.current_health - min_hp_from_drain
+	if room <= 0.05:
+		return 0.0
+	drain = minf(drain, room)
+	health.current_health = maxf(health.current_health - drain, min_hp_from_drain)
+	health.health_changed.emit(health.current_health, max_hp)
+	return drain
+
+
+func reform_dissipate(host: Node, spent: float) -> void:
+	var health: HealthComponent = host.get("health") as HealthComponent
+	if health == null or spent <= 0.0:
+		return
+	health.heal(spent * dissipate_heal_ratio)
 
 
 func restore(host: Node, amount: float) -> void:
@@ -173,20 +203,7 @@ func _spend_hp_percent(host: Node, percent: float) -> void:
 
 
 func _enemy_in_range(host: Node, radius: float) -> bool:
-	if host is not Node2D:
-		return false
-	var parent := (host as Node2D).get_parent()
-	if parent == null:
-		return false
-	var origin := (host as Node2D).global_position
-	for child in parent.get_children():
-		if child == host or child is not Node2D:
-			continue
-		if not child.has_method("apply_chase_movement"):
-			continue
-		if origin.distance_to((child as Node2D).global_position) <= radius:
-			return true
-	return false
+	return _nearest_enemy(host, radius) != null
 
 
 func _ensure_swarm(host: Node) -> void:
@@ -264,18 +281,13 @@ func _spin_swarm(host: Node, delta: float) -> void:
 
 
 func _nearest_enemy(host: Node, radius: float) -> Node2D:
-	if host is not Node2D:
-		return null
-	var parent := (host as Node2D).get_parent()
-	if parent == null:
+	if host is not Node2D or not host.is_inside_tree():
 		return null
 	var origin := (host as Node2D).global_position
 	var best: Node2D = null
 	var best_d := radius
-	for child in parent.get_children():
+	for child in host.get_tree().get_nodes_in_group("enemies"):
 		if child == host or child is not Node2D:
-			continue
-		if not child.has_method("apply_chase_movement"):
 			continue
 		var d := origin.distance_to((child as Node2D).global_position)
 		if d <= best_d:

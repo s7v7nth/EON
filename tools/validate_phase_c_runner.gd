@@ -14,8 +14,8 @@ func _run() -> void:
 	assert(catalog.all_parts().size() >= 4)
 
 	RunState.reset()
+	MetaSave.unlock_all_for_tests()
 	RunState.choose_architecture(GameplayEnums.ArchitectureId.DEFAULT)
-	# Counter needs magnet+servo from loot.
 	assert(RunState.get_craftable_upgrades().is_empty() or not _has_upgrade(&"default_counter"))
 
 	var magnet := load("res://resources/loot/rusty_magnet.tres") as LootPart

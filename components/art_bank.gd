@@ -24,6 +24,7 @@ const FONT_BODY := "res://assets/fonts/Inter-Regular.ttf"
 const FONT_BODY_BOLD := "res://assets/fonts/Inter-SemiBold.ttf"
 const FONT_BODY_HEAVY := "res://assets/fonts/Inter-Bold.ttf"
 const PORTRAITS := "res://assets/portraits/"
+const ILLUSTRATED := "res://assets/illustrated/"
 const PANEL_GLASS := "res://assets/kenney/ui-scifi/panel_glass.png"
 const PANEL_RECT := "res://assets/kenney/ui-scifi/panel_rectangle.png"
 const CARD_BORDER := "res://assets/kenney/ui-pack/button_rectangle_depth_border.png"
@@ -53,6 +54,8 @@ static func tex(path: String) -> Texture2D:
 		var img := Image.new()
 		if img.load(path) == OK:
 			loaded = ImageTexture.create_from_image(img)
+			if loaded:
+				loaded.take_over_path(path)
 	_cache[path] = loaded
 	return loaded
 
@@ -101,35 +104,48 @@ static func nine_slice(path: String, margin: float = 16.0, tint: Color = Color.W
 	return sb
 
 
-static func panel_style(kind: StringName = &"glass", tint: Color = Color(1, 1, 1, 1)) -> StyleBox:
-	var path := PANEL_GLASS
-	var margin := 18.0
-	match kind:
-		&"rect":
-			path = PANEL_RECT
-			margin = 20.0
-		&"card":
-			path = CARD_BORDER
-			margin = 22.0
-		&"card_hover":
-			path = CARD_GLOSS
-			margin = 22.0
-		&"bar":
-			path = BAR_GLOSS
-			margin = 10.0
-	var sb := nine_slice(path, margin, tint)
-	if sb:
-		return sb
+static func illustrated(stem: String) -> Texture2D:
+	return tex(ILLUSTRATED + stem + ".png")
+
+
+static func illustrated_facing(stem: String, v: Vector2) -> Texture2D:
+	return facing(ILLUSTRATED, stem, v)
+
+
+static func scifi_frame(
+	tint: Color = Color(0.04, 0.08, 0.12, 0.82),
+	border: Color = Color(0.35, 0.85, 1.0, 0.85),
+	width: int = 1
+) -> StyleBoxFlat:
 	var flat := StyleBoxFlat.new()
-	flat.bg_color = Color(0.05, 0.06, 0.09, 0.92)
-	flat.set_corner_radius_all(10)
-	flat.set_border_width_all(2)
-	flat.border_color = Color(0.55, 0.62, 0.78, 0.55)
-	flat.content_margin_left = 12
-	flat.content_margin_right = 12
-	flat.content_margin_top = 10
-	flat.content_margin_bottom = 10
+	flat.bg_color = tint
+	flat.set_corner_radius_all(2)
+	flat.set_border_width_all(width)
+	flat.border_color = border
+	flat.content_margin_left = 10
+	flat.content_margin_right = 10
+	flat.content_margin_top = 8
+	flat.content_margin_bottom = 8
+	flat.shadow_color = Color(0.2, 0.7, 1.0, 0.12)
+	flat.shadow_size = 4
 	return flat
+
+
+static func panel_style(kind: StringName = &"glass", tint: Color = Color(1, 1, 1, 1)) -> StyleBox:
+	## Thin sci-fi HUD, not Kenney candy chrome.
+	var bg := Color(0.04, 0.08, 0.12, 0.84)
+	var border := Color(0.35, 0.85, 1.0, 0.8)
+	match kind:
+		&"card", &"card_hover":
+			bg = Color(0.05, 0.1, 0.14, 0.9).lerp(tint, 0.12)
+			border = Color(0.45, 0.92, 1.0, 0.95) if kind == &"card_hover" else Color(0.3, 0.75, 0.95, 0.75)
+		&"bar":
+			return scifi_frame(Color(0.03, 0.05, 0.08, 0.95), Color(0.2, 0.45, 0.55, 0.7), 1)
+		&"rect":
+			bg = Color(0.03, 0.06, 0.1, 0.88)
+	if tint.a > 0.0 and tint != Color.WHITE:
+		bg = bg.lerp(Color(tint.r, tint.g, tint.b, bg.a), 0.18)
+	return scifi_frame(bg, border, 1)
 
 
 static func button_style(hover: bool = false, tint: Color = Color.WHITE) -> StyleBox:

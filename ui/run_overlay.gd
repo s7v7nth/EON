@@ -452,7 +452,7 @@ func _on_room_cleared() -> void:
 	elif RunState.current_room_kind() == DungeonRoom.RoomKind.TREASURE:
 		_set_wave_text("Cache  ·  walk an orb, then the south door (E)")
 	else:
-		_set_wave_text("South door open   ·   walk down or press E")
+		_set_wave_text("Doors open  ·  walk through")
 
 
 func _on_run_won() -> void:
@@ -576,7 +576,10 @@ func _populate_arch_pick() -> void:
 	for arch in RunState.get_architectures():
 		var btn := Button.new()
 		var desc := arch.description if arch.description != "" else arch.display_name
-		btn.text = "%s — %s" % [arch.display_name, desc]
+		if MetaSave.is_architecture_unlocked(int(arch.architecture_id)):
+			btn.text = "%s — %s" % [arch.display_name, desc]
+		else:
+			btn.text = "%s — locked (%s)" % [arch.display_name, MetaSave.unlock_requirement(int(arch.architecture_id))]
 		btn.pressed.connect(_on_arch_pressed.bind(arch))
 		_skin_button(btn)
 		_arch.add_child(btn)
@@ -586,7 +589,10 @@ func _populate_arch_pick() -> void:
 func _on_arch_pressed(arch: ArchitectureData) -> void:
 	if _mode != Mode.ARCH_PICK:
 		return
-	RunState.choose_architecture_data(arch)
+	if arch == null or not MetaSave.is_architecture_unlocked(int(arch.architecture_id)):
+		return
+	if not RunState.choose_architecture_data(arch):
+		return
 	var player := get_tree().get_first_node_in_group("player") as Player
 	if player == null:
 		player = _find_player()
@@ -757,26 +763,7 @@ func _make_boon_card(upgrade: UpgradeData, hotkey: int = 0, on_pick: Callable = 
 
 
 func _card_style(border: Color, bg: Color) -> StyleBox:
-	var tint := border.lerp(bg, 0.35)
-	var sb := ArtBank.nine_slice(ArtBank.CARD_BORDER, 22.0, tint)
-	if sb:
-		sb.content_margin_left = 16
-		sb.content_margin_right = 16
-		sb.content_margin_top = 18
-		sb.content_margin_bottom = 16
-		return sb
-	var s := StyleBoxFlat.new()
-	s.bg_color = bg
-	s.border_color = border
-	s.set_border_width_all(3)
-	s.set_corner_radius_all(10)
-	s.content_margin_left = 14
-	s.content_margin_right = 14
-	s.content_margin_top = 14
-	s.content_margin_bottom = 14
-	s.shadow_color = Color(0, 0, 0, 0.4)
-	s.shadow_size = 6
-	return s
+	return ArtBank.scifi_frame(Color(bg.r * 0.22, bg.g * 0.22, bg.b * 0.25, 0.92), border, 1)
 
 
 func _handle_reward_hotkeys(event: InputEvent) -> void:

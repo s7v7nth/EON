@@ -33,11 +33,22 @@ func _ready() -> void:
 
 
 func _process(_delta: float) -> void:
+	_hide_illustrated_weapon_poly()
 	if _pose_locked:
 		return
 	var dir := _aim_from_host()
 	if dir.length_squared() > 0.01:
 		hold_aim(dir)
+
+
+func _hide_illustrated_weapon_poly() -> void:
+	if weapon == null:
+		return
+	if body and body.has_method("uses_illustrated") and bool(body.call("uses_illustrated")):
+		weapon.visible = false
+		var wspr := weapon.get_node_or_null("Sprite") as Sprite2D
+		if wspr:
+			wspr.visible = false
 
 
 func _resolve_body() -> void:

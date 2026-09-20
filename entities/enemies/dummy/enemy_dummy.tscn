@@ -1,4 +1,4 @@
-[gd_scene load_steps=22 format=3]
+[gd_scene load_steps=23 format=3]
 
 [ext_resource type="Script" path="res://entities/enemies/dummy/enemy_dummy.gd" id="1_enemy"]
 [ext_resource type="Resource" path="res://resources/stats/enemy_dummy_stats.tres" id="2_stats"]
@@ -8,6 +8,7 @@
 [ext_resource type="Script" path="res://entities/enemies/dummy/states/enemy_attack.gd" id="6_attack"]
 [ext_resource type="Script" path="res://entities/enemies/dummy/states/enemy_ranged_attack.gd" id="7_ranged"]
 [ext_resource type="Script" path="res://entities/enemies/dummy/states/enemy_leap_attack.gd" id="7b_leap"]
+[ext_resource type="Script" path="res://entities/enemies/dummy/states/enemy_hook_attack.gd" id="7c_hook"]
 [ext_resource type="Script" path="res://components/health_component.gd" id="8_health"]
 [ext_resource type="Script" path="res://components/hurtbox_component.gd" id="9_hurt"]
 [ext_resource type="Script" path="res://components/hitbox_component.gd" id="10_hit"]
@@ -66,6 +67,9 @@ script = ExtResource("7_ranged")
 
 [node name="LeapAttack" type="Node" parent="StateMachine"]
 script = ExtResource("7b_leap")
+
+[node name="HookAttack" type="Node" parent="StateMachine"]
+script = ExtResource("7c_hook")
 
 [node name="HealthComponent" type="Node" parent="."]
 script = ExtResource("8_health")

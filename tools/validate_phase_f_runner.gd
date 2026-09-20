@@ -9,6 +9,7 @@ func _ready() -> void:
 
 func _run() -> void:
 	RunState.reset()
+	MetaSave.unlock_all_for_tests()
 
 	# Routes
 	var routes := RunState.get_available_routes()
@@ -19,7 +20,7 @@ func _run() -> void:
 	assert(RunState.route_picked)
 	assert(RunState.room_count() == campaign.total_rooms())
 	assert(RunState.biome_for_current_room().biome_id == GameplayEnums.BiomeId.LANDFILL)
-	assert(RunState.current_room_kind() == DungeonRoom.RoomKind.COMBAT)
+	assert(RunState.current_room_kind() == DungeonRoom.RoomKind.START)
 	RunState.seek_room(1)
 	assert(RunState.current_room_kind() == DungeonRoom.RoomKind.SHOP, "campaign room 2 should be a shop")
 	RunState.seek_room(2)

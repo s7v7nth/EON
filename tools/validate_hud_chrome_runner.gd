@@ -22,9 +22,9 @@ func _run() -> void:
 	assert(hud.find_child("HealthBar", true, false) != null)
 	assert(hud.find_child("StyleLabel", true, false) != null)
 	var chrome := hud.find_child("Chrome", true, false) as PanelContainer
-	assert(chrome != null, "HUD should wrap in Kenney chrome")
+	assert(chrome != null, "HUD should wrap in dying-city chrome")
 	var sb: StyleBox = chrome.get_theme_stylebox("panel")
-	assert(sb is StyleBoxTexture, "HUD chrome should be a nine-slice texture")
+	assert(sb is StyleBoxFlat, "HUD chrome should be a thin dying-city frame")
 
 	RunState.reset()
 	RunState.choose_route(RunState.TUTORIAL_ROUTE)
@@ -37,7 +37,7 @@ func _run() -> void:
 	var panel := overlay.get_node("Center/Panel") as PanelContainer
 	assert(panel != null)
 	var overlay_sb: StyleBox = panel.get_theme_stylebox("panel")
-	assert(overlay_sb is StyleBoxTexture, "reward/death panel should be Kenney nine-slice")
+	assert(overlay_sb is StyleBoxFlat, "reward/death panel should be a dying-city frame")
 
 	var land := load("res://resources/waves/tutorial_landfill_waves.tres") as WaveSet
 	assert(land != null and land.wave_count() == 3)

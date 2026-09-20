@@ -9,8 +9,7 @@ func _ready() -> void:
 
 func _run() -> void:
 	RunState.reset()
-
-	# --- Behaviors + vulnerabilities ---
+	MetaSave.unlock_all_for_tests()
 	var bruiser := load("res://resources/enemies/bruiser.tres") as EnemyDefinition
 	var cyborg := load("res://resources/enemies/cyborg.tres") as EnemyDefinition
 	var beast := load("res://resources/enemies/robo_beast.tres") as EnemyDefinition

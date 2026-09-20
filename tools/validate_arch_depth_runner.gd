@@ -16,6 +16,7 @@ func _run() -> void:
 
 func _train_crafts() -> void:
 	RunState.reset()
+	MetaSave.unlock_all_for_tests()
 	RunState.choose_architecture(GameplayEnums.ArchitectureId.ELECTRO_TRAIN)
 	# Starting tags unlock Coil; mid/late need loot tags.
 	var coil := load("res://resources/upgrades/train_coil_overdrive.tres") as UpgradeData
@@ -59,6 +60,7 @@ func _train_crafts() -> void:
 
 func _neuro_crafts() -> void:
 	RunState.reset()
+	MetaSave.unlock_all_for_tests()
 	RunState.choose_architecture(GameplayEnums.ArchitectureId.NEURO_HACKER)
 	var edge := load("res://resources/upgrades/neuro_holo_edge.tres") as UpgradeData
 	assert(RunState.craft_upgrade(edge))

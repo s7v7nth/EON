@@ -38,8 +38,8 @@ rooms_in_act = 1
 script = ExtResource("2")
 act_index = 4
 display_name = "Data Core"
-biomes = Array[Resource]([ExtResource("11"), ExtResource("12")])
-rooms_in_act = 1
+biomes = Array[Resource]([ExtResource("11"), ExtResource("12"), ExtResource("12")])
+rooms_in_act = 3
 boss_biome = ExtResource("12")
 
 [resource]

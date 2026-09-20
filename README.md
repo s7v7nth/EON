@@ -13,7 +13,7 @@ Main scene is class select (`res://ui/class_select.tscn`). Pick a route and an a
 - **WASD** move
 - **LMB** attack (hold to charge-throw on Синтетик)
 - **RMB** special / shield
-- **Space** dash (i-frames)
+- **Space** dash (Hive: hold Dissipate)
 - **Q** architecture special (Lattice Collapse / swarm / Vent / drone)
 - **R** new run (same class) after death
 - **C** class select after death

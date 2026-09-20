@@ -137,5 +137,35 @@ func _run() -> void:
 	revisit.queue_free()
 	RunState.reset()
 
+	# Physical campaign floor: Hive + remnant, no overlap, layout is one floor.
+	RunState.choose_route(RunState.CAMPAIGN_ROUTE)
+	assert(RunState.dungeon != null)
+	assert(RunState.layout_scene_for_current_room().ends_with("floor_world.tscn"))
+	var hive_ok := false
+	var remnant_ok := false
+	for item in RunState.dungeon.all_rooms():
+		var room: DungeonRoom = item
+		if room.boss_id == &"hive":
+			hive_ok = true
+		if room.kind == DungeonRoom.RoomKind.REMNANT or room.remnant:
+			remnant_ok = true
+	assert(hive_ok, "campaign graph must place The Hive")
+	assert(remnant_ok, "campaign graph must place a remnant talk room")
+	assert(not FloorPlacer.any_overlap(RunState.dungeon), "islands must not overlap")
+	assert(AttackData.PatternKind.FAN_SHOT == 5)
+	assert(AttackData.PatternKind.HOOK == 6)
+
+	# Cheater path: class data refuses locked kits even if forced.
+	MetaSave.wipe_for_tests()
+	RunState.reset()
+	assert(MetaSave.is_architecture_unlocked(int(GameplayEnums.ArchitectureId.DEFAULT)))
+	assert(not MetaSave.is_architecture_unlocked(int(GameplayEnums.ArchitectureId.NANOMACHINES)))
+	assert(not RunState.choose_architecture(GameplayEnums.ArchitectureId.NANOMACHINES))
+	assert(RunState.architecture == null or RunState.architecture.architecture_id == GameplayEnums.ArchitectureId.DEFAULT)
+	assert(not RunState.architecture_picked)
+	MetaSave.unlock_all_for_tests()
+	assert(RunState.choose_architecture(GameplayEnums.ArchitectureId.NANOMACHINES))
+	assert(RunState.architecture_picked)
+
 	print("PROCEDURAL_OK seed graph + loot streams")
 	get_tree().quit(0)

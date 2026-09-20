@@ -32,11 +32,11 @@ func _on_map_event(_a = null) -> void:
 
 
 func _refresh_visibility() -> void:
-	visible = RunState.is_procedural_run()
+	visible = RunState.dungeon != null
 
 
 func _draw() -> void:
-	if not RunState.is_procedural_run() or RunState.dungeon == null:
+	if RunState.dungeon == null:
 		return
 	var rooms: Array = RunState.dungeon.all_rooms() if RunState.dungeon.has_method("all_rooms") else []
 	if rooms.is_empty() and "rooms" in RunState.dungeon:
@@ -63,8 +63,8 @@ func _draw() -> void:
 	var origin := Vector2(size.x - grid_w - PAD, PAD)
 
 	# Panel
-	draw_rect(Rect2(origin - Vector2(6, 6), Vector2(grid_w + 12, grid_h + 12)), Color(0.04, 0.06, 0.09, 0.72), true)
-	draw_rect(Rect2(origin - Vector2(6, 6), Vector2(grid_w + 12, grid_h + 12)), Color(0.35, 0.55, 0.75, 0.35), false, 1.0)
+	draw_rect(Rect2(origin - Vector2(6, 6), Vector2(grid_w + 12, grid_h + 12)), Color(0.03, 0.05, 0.07, 0.78), true)
+	draw_rect(Rect2(origin - Vector2(6, 6), Vector2(grid_w + 12, grid_h + 12)), Color(0.35, 0.85, 1.0, 0.45), false, 1.0)
 
 	var current := RunState.current_coord
 	for room in rooms:
@@ -89,6 +89,8 @@ func _draw() -> void:
 			draw_circle(pos + Vector2(CELL * 0.5, CELL * 0.5), 2.2, Color(0.95, 0.8, 0.25, 0.95))
 		elif room.kind == DungeonRoom.RoomKind.SECRET:
 			draw_circle(pos + Vector2(CELL * 0.5, CELL * 0.5), 2.0, Color(0.75, 0.45, 1.0, 0.9))
+		elif room.kind == DungeonRoom.RoomKind.REMNANT:
+			draw_circle(pos + Vector2(CELL * 0.5, CELL * 0.5), 2.0, Color(0.55, 0.85, 1.0, 0.95))
 		# Door ticks
 		for dir in room.door_dirs():
 			var mid := pos + Vector2(CELL * 0.5, CELL * 0.5)

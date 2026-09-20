@@ -13,8 +13,8 @@ const HINTS := {
 	1: {
 		"title": "Улей",
 		"role": "Nano swarm · Blood harvest",
-		"kit": "LMB nano-blade   RMB whip/toad   Space dash (HP)   Q swarm burst",
-		"fantasy": "Spend flesh to keep the swarm alive. Hits and kills drink HP back.",
+		"kit": "LMB nano-blade   RMB whip/toad   hold Space Dissipate   Q swarm burst",
+		"fantasy": "Spend flesh to keep the swarm alive. Hits and kills drink HP back. Hold Space to puddle.",
 	},
 	2: {
 		"title": "Паровоз",
@@ -47,7 +47,10 @@ func _ready() -> void:
 		_select_route(routes[0])
 	var arches := RunState.get_architectures()
 	if not arches.is_empty():
-		_select_arch(arches[0])
+		for arch in arches:
+			if MetaSave.is_architecture_unlocked(int(arch.architecture_id)):
+				_select_arch(arch)
+				break
 	if _Autopilot.is_requested():
 		call_deferred("_autopilot_begin")
 
@@ -57,19 +60,17 @@ func _build() -> void:
 	bg.set_anchors_preset(PRESET_FULL_RECT)
 	bg.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	bg.stretch_mode = TextureRect.STRETCH_SCALE
-	bg.texture = ArtBank.tex("res://assets/kenney/space-shooter/bg/darkPurple.png")
-	if bg.texture == null:
-		bg.texture = ArtBank.tex("res://assets/kenney/space-shooter/bg/black.png")
+	bg.texture = ArtBank.illustrated("sky_dusk")
 	add_child(bg)
 	if bg.texture == null:
 		var fallback := ColorRect.new()
 		fallback.set_anchors_preset(PRESET_FULL_RECT)
-		fallback.color = Color(0.04, 0.045, 0.07, 1)
+		fallback.color = Color(0.04, 0.05, 0.08, 1)
 		add_child(fallback)
 
 	var glow := ColorRect.new()
 	glow.set_anchors_preset(PRESET_FULL_RECT)
-	glow.color = Color(0.04, 0.03, 0.02, 0.62)
+	glow.color = Color(0.02, 0.04, 0.07, 0.42)
 	add_child(glow)
 
 	var margin := MarginContainer.new()
@@ -184,7 +185,7 @@ func _build() -> void:
 	col.add_child(_start)
 
 	var help := Label.new()
-	help.text = "T / C / P pick route · 1–4 pick architecture · Enter begin · in run: WASD · LMB attack · RMB special/block · Space dash · Q cast · R restart"
+	help.text = "T / C / P pick route · 1–4 pick architecture (locked kits refuse) · Enter begin · in run: WASD · LMB attack · RMB special/block · Space dash/Dissipate · Q cast · R restart · F9 skip room"
 	help.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	help.add_theme_font_size_override("font_size", 13)
 	help.add_theme_color_override("font_color", Color(0.48, 0.42, 0.34))
@@ -205,8 +206,8 @@ func _make_arch_card(arch: ArchitectureData) -> Button:
 	btn.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	btn.vertical_icon_alignment = VERTICAL_ALIGNMENT_TOP
 	btn.add_theme_constant_override("icon_max_width", 168)
-	var tex_style := _button_style("res://assets/kenney/ui-pack/button_rectangle_depth_gradient.png")
-	var tex_hover := _button_style("res://assets/kenney/ui-pack/button_rectangle_depth_gloss.png")
+	var tex_style := ArtBank.button_style(false, Color(0.12, 0.18, 0.24, 1))
+	var tex_hover := ArtBank.button_style(true, Color(0.2, 0.38, 0.48, 1))
 	if tex_style:
 		btn.add_theme_stylebox_override("normal", tex_style)
 	if tex_hover:
@@ -246,6 +247,19 @@ func _make_arch_card(arch: ArchitectureData) -> Button:
 	if body:
 		role.add_theme_font_override("font", body)
 	col.add_child(role)
+	if not MetaSave.is_architecture_unlocked(int(arch.architecture_id)):
+		btn.disabled = false
+		var lock := Label.new()
+		lock.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		lock.text = MetaSave.unlock_requirement(int(arch.architecture_id))
+		lock.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		lock.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		lock.add_theme_font_size_override("font_size", 12)
+		lock.add_theme_color_override("font_color", Color(0.95, 0.45, 0.4))
+		if body:
+			lock.add_theme_font_override("font", body)
+		col.add_child(lock)
+		btn.modulate = Color(0.38, 0.36, 0.4)
 	btn.pressed.connect(_select_arch.bind(arch))
 	_arch_buttons.append(btn)
 	return btn
@@ -293,11 +307,18 @@ func _select_route_by_id(route_id: StringName) -> void:
 
 
 func _select_arch(arch: ArchitectureData) -> void:
+	if arch == null:
+		return
+	if not MetaSave.is_architecture_unlocked(int(arch.architecture_id)):
+		_flavor.text = "Locked — %s" % MetaSave.unlock_requirement(int(arch.architecture_id))
+		SignalBus.architecture_unlock_denied.emit(int(arch.architecture_id), MetaSave.unlock_requirement(int(arch.architecture_id)))
+		return
 	_selected_arch = arch
 	for i in _arch_buttons.size():
 		var btn := _arch_buttons[i]
 		var match_arch := RunState.get_architectures()
-		btn.modulate = Color(0.42, 0.38, 0.34)
+		var locked := i < match_arch.size() and not MetaSave.is_architecture_unlocked(int(match_arch[i].architecture_id))
+		btn.modulate = Color(0.38, 0.36, 0.4) if locked else Color(0.42, 0.38, 0.34)
 		if i < match_arch.size() and match_arch[i] == arch:
 			btn.modulate = Color(0.92, 0.72, 0.42)
 	var hint: Dictionary = HINTS.get(int(arch.architecture_id), {})
@@ -335,9 +356,14 @@ func _unhandled_input(event: InputEvent) -> void:
 func _begin_run() -> void:
 	if _selected_route == null or _selected_arch == null:
 		return
+	if not MetaSave.is_architecture_unlocked(int(_selected_arch.architecture_id)):
+		_flavor.text = "Locked — %s" % MetaSave.unlock_requirement(int(_selected_arch.architecture_id))
+		return
 	RunState.reset()
 	RunState.choose_route(_selected_route)
-	RunState.choose_architecture_data(_selected_arch)
+	if not RunState.choose_architecture_data(_selected_arch):
+		_flavor.text = "Locked — %s" % MetaSave.unlock_requirement(int(_selected_arch.architecture_id))
+		return
 	var path := RunState.layout_scene_for_current_room()
 	if path == "":
 		path = "res://levels/rooms/room_01.tscn"

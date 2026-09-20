@@ -9,6 +9,7 @@ enum PatternKind {
 	COMBO,
 	CHARGE_SHOT,
 	FAN_SHOT,
+	HOOK,
 }
 
 @export var damage: float = 10.0
@@ -36,6 +37,8 @@ enum PatternKind {
 @export var pattern_kind: PatternKind = PatternKind.SLASH
 ## Gap-close impulse distance for LUNGE / leap states.
 @export var lunge_distance: float = 0.0
+@export var hook_pull: bool = false
+@export var hook_range: float = 280.0
 ## Fraction of windup after which aim locks (Souls-style commit). 1 = lock only at active.
 @export_range(0.0, 1.0, 0.01) var commit_lock_early: float = 0.7
 ## AI pick weight when selecting from a moveset.
@@ -90,7 +93,7 @@ func is_ranged_pattern() -> bool:
 
 
 func is_leap_pattern() -> bool:
-	return pattern_kind == PatternKind.LUNGE
+	return pattern_kind == PatternKind.LUNGE or pattern_kind == PatternKind.HOOK
 
 
 func in_range_band(distance: float) -> bool:

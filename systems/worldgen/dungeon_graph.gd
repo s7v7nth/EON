@@ -5,6 +5,7 @@ extends RefCounted
 var rooms: Dictionary = {} ## Vector2i → DungeonRoom
 var start_coord: Vector2i = Vector2i.ZERO
 var boss_coord: Vector2i = Vector2i.ZERO
+var room_order: Array[Vector2i] = []
 
 
 func get_room(coord: Vector2i) -> DungeonRoom:
@@ -20,6 +21,38 @@ func all_rooms() -> Array:
 	for key in rooms.keys():
 		out.append(rooms[key])
 	return out
+
+
+func rebuild_order() -> void:
+	room_order.clear()
+	var indexed: Array = []
+	for key in rooms.keys():
+		indexed.append(rooms[key])
+	indexed.sort_custom(func(a, b):
+		var ra := a as DungeonRoom
+		var rb := b as DungeonRoom
+		if ra.linear_index != rb.linear_index:
+			return ra.linear_index < rb.linear_index
+		return _key_less(ra.coord, rb.coord)
+	)
+	for room in indexed:
+		room_order.append((room as DungeonRoom).coord)
+
+
+func coord_at_index(index: int) -> Vector2i:
+	if room_order.is_empty():
+		rebuild_order()
+	if room_order.is_empty():
+		return start_coord
+	var i := clampi(index, 0, room_order.size() - 1)
+	return room_order[i]
+
+
+func index_of(coord: Vector2i) -> int:
+	if room_order.is_empty():
+		rebuild_order()
+	var found := room_order.find(coord)
+	return found if found >= 0 else 0
 
 
 func fingerprint() -> String:
@@ -41,8 +74,10 @@ func fingerprint() -> String:
 			door_bits |= 4
 		if room.has_door(Vector2i(-1, 0)):
 			door_bits |= 8
-		parts.append("%d,%d:%d:%d:%d:%s" % [
-			key.x, key.y, room.kind, biome_id, door_bits, room.layout_path.get_file()
+		var t_bits := int(round(room.door_offset(Vector2i(1, 0)) * 100.0))
+		parts.append("%d,%d:%d:%d:%d:%s:%s:%d" % [
+			key.x, key.y, room.kind, biome_id, door_bits, room.layout_path.get_file(),
+			room.footprint_id, t_bits
 		])
 	return "|".join(parts)
 

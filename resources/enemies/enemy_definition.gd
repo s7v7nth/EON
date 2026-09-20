@@ -24,6 +24,8 @@ extends Resource
 
 @export_group("Boss")
 @export var is_boss: bool = false
+@export var unlock_flag: StringName = &""
+@export var boss_id: StringName = &""
 @export_range(0.05, 0.95, 0.01) var boss_phase2_hp_ratio: float = 0.5
 @export var boss_phase2_action_speed: float = 1.28
 @export var boss_phase2_summon: EnemyDefinition

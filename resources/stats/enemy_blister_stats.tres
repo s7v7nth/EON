@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="CharacterStats" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/stats/character_stats.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+max_health = 130.0
+move_speed = 78.0
+max_energy = 0.0
+energy_regen_rate = 0.0
+dash_speed = 0.0
+dash_duration = 0.0
+dash_cost = 0.0
+dash_cooldown = 0.0
+max_adrenaline = 0.0

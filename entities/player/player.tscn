@@ -1,4 +1,4 @@
-[gd_scene load_steps=27 format=3]
+[gd_scene load_steps=28 format=3]
 
 [ext_resource type="Script" path="res://entities/player/player.gd" id="1_player"]
 [ext_resource type="Resource" path="res://resources/stats/player_stats.tres" id="2_stats"]
@@ -7,6 +7,7 @@
 [ext_resource type="Script" path="res://entities/player/states/player_move.gd" id="5_move"]
 [ext_resource type="Script" path="res://entities/player/states/player_attack.gd" id="6_attack"]
 [ext_resource type="Script" path="res://entities/player/states/player_dash.gd" id="7_dash"]
+[ext_resource type="Script" path="res://entities/player/states/player_dissipate.gd" id="7b_dissipate"]
 [ext_resource type="Script" path="res://entities/player/states/player_ranged_attack.gd" id="8_ranged"]
 [ext_resource type="Script" path="res://entities/player/states/player_parry.gd" id="8b_parry"]
 [ext_resource type="Script" path="res://entities/player/states/player_block.gd" id="8c_block"]
@@ -66,6 +67,9 @@ script = ExtResource("6_attack")
 
 [node name="Dash" type="Node" parent="StateMachine"]
 script = ExtResource("7_dash")
+
+[node name="Dissipate" type="Node" parent="StateMachine"]
+script = ExtResource("7b_dissipate")
 
 [node name="RangedAttack" type="Node" parent="StateMachine"]
 script = ExtResource("8_ranged")

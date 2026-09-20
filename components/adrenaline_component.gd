@@ -82,9 +82,12 @@ func _on_combat_changed(in_combat: bool) -> void:
 func _apply_regen_from_adrenaline() -> void:
 	if energy_component == null or stats == null:
 		return
-	## Adrenaline drives regen even while leaving combat (until it decays to 0).
 	var regen := 0.0
-	if current_adrenaline > 0.01:
+	var in_combat := engagement != null and engagement.in_combat
+	if not in_combat:
+		## Out of combat: leftover pool + a slow trickle. No adrenaline.
+		regen = stats.energy_regen_rate
+	elif current_adrenaline > 0.01:
 		if current_adrenaline >= stats.baseline_adrenaline:
 			var span := maxf(stats.max_adrenaline - stats.baseline_adrenaline, 1.0)
 			var above := current_adrenaline - stats.baseline_adrenaline

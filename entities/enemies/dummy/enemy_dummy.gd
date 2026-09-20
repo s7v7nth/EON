@@ -209,7 +209,10 @@ func apply_definition(def: EnemyDefinition) -> void:
 			hp_bar_boss.visible = false
 		var vis_boss := get_node_or_null("Visual") as Node2D
 		if vis_boss:
-			vis_boss.scale = Vector2(1.55, 1.55)
+			if definition.boss_id == &"hive":
+				vis_boss.scale = Vector2(1.18, 1.18)
+			else:
+				vis_boss.scale = Vector2(1.28, 1.28)
 	var vis := get_node_or_null("Visual") as Node2D
 	if vis and def:
 		var swarm := false
@@ -395,6 +398,19 @@ func _on_died() -> void:
 			behavior.on_death(self)
 	if definition and definition.on_death_effect:
 		definition.on_death_effect.on_proc(self, {"power": 1.0})
+	if definition:
+		if definition.boss_id != StringName():
+			MetaSave.note_boss_killed(definition.boss_id)
+		elif definition.unlock_flag == MetaSave.FLAG_HIVE:
+			MetaSave.note_boss_killed(&"hive")
+		elif definition.unlock_flag == MetaSave.FLAG_WARDEN:
+			MetaSave.note_boss_killed(&"warden")
+		else:
+			for tag in definition.tags:
+				if String(tag) == "hive_boss":
+					MetaSave.note_boss_killed(&"hive")
+				elif String(tag) == "warden":
+					MetaSave.note_boss_killed(&"warden")
 	var world := get_parent()
 	var col := Color(0.7, 0.2, 0.25, 1)
 	if definition:
@@ -487,7 +503,10 @@ func pick_and_begin_attack() -> bool:
 	if hitbox and not picked.is_ranged_pattern():
 		hitbox.attack_data = picked
 	if picked.is_leap_pattern():
-		state_machine.transition_to(&"LeapAttack", {"attack": picked})
+		if picked.pattern_kind == AttackData.PatternKind.HOOK or picked.hook_pull:
+			state_machine.transition_to(&"HookAttack", {"attack": picked})
+		else:
+			state_machine.transition_to(&"LeapAttack", {"attack": picked})
 	elif picked.is_ranged_pattern():
 		ranged_attack_data = picked
 		state_machine.transition_to(&"RangedAttack", {"attack": picked})

@@ -43,3 +43,6 @@ signal gold_changed(amount: int)
 signal boss_spawned(boss_name: String)
 signal boss_health_changed(current: float, max_value: float, boss_name: String)
 signal boss_phase(phase: int, boss_name: String)
+signal meta_progress_changed
+signal remnant_spoken
+signal architecture_unlock_denied(architecture_id: int, reason: String)

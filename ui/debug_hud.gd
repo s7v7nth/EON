@@ -116,7 +116,7 @@ func _wrap_hud_chrome() -> void:
 	var chrome := PanelContainer.new()
 	chrome.name = "Chrome"
 	chrome.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	chrome.add_theme_stylebox_override("panel", ArtBank.panel_style(&"glass", Color(0.42, 0.36, 0.28, 0.92)))
+	chrome.add_theme_stylebox_override("panel", ArtBank.panel_style(&"glass", Color(0.08, 0.16, 0.22, 0.88)))
 	var inner := MarginContainer.new()
 	inner.name = "ChromePad"
 	inner.add_theme_constant_override("margin_left", 12)
@@ -142,7 +142,7 @@ func _wrap_location_banner() -> void:
 	plaque.offset_right = 210.0
 	plaque.offset_top = 14.0
 	plaque.offset_bottom = 52.0
-	plaque.add_theme_stylebox_override("panel", ArtBank.panel_style(&"card", Color(0.38, 0.32, 0.24, 0.94)))
+	plaque.add_theme_stylebox_override("panel", ArtBank.panel_style(&"card", Color(0.08, 0.14, 0.2, 0.9)))
 	var parent := location_banner.get_parent()
 	parent.remove_child(location_banner)
 	plaque.add_child(location_banner)
@@ -160,15 +160,14 @@ func _wrap_location_banner() -> void:
 func _style_bar(bar: ProgressBar, fill: Color) -> void:
 	if bar == null:
 		return
-	var bg := ArtBank.panel_style(&"bar", Color(0.14, 0.16, 0.2, 0.95))
+	var bg := ArtBank.panel_style(&"bar", Color(0.06, 0.08, 0.1, 0.95))
 	bar.add_theme_stylebox_override("background", bg)
-	var fg: StyleBox = ArtBank.nine_slice(ArtBank.BAR_GLOSS, 8.0, fill)
-	if fg == null:
-		var flat := StyleBoxFlat.new()
-		flat.bg_color = fill
-		flat.set_corner_radius_all(6)
-		fg = flat
-	bar.add_theme_stylebox_override("fill", fg)
+	var flat := StyleBoxFlat.new()
+	flat.bg_color = fill
+	flat.set_corner_radius_all(2)
+	flat.content_margin_left = 2
+	flat.content_margin_right = 2
+	bar.add_theme_stylebox_override("fill", flat)
 	bar.modulate = Color.WHITE
 	bar.show_percentage = false
 
@@ -383,17 +382,9 @@ func _ensure_gold_label() -> void:
 	var row := HBoxContainer.new()
 	row.name = "GoldRow"
 	row.add_theme_constant_override("separation", 6)
-	var coin := TextureRect.new()
-	coin.custom_minimum_size = Vector2(20, 20)
-	coin.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	coin.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	coin.texture = ArtBank.shooter("bolt_gold")
-	if coin.texture == null:
-		coin.texture = ArtBank.icon("star")
-	row.add_child(coin)
 	_gold_label = Label.new()
 	_gold_label.name = "GoldLabel"
-	_paint_label(_gold_label, 18, Color(1.0, 0.86, 0.32))
+	_paint_label(_gold_label, 18, Color(0.95, 0.82, 0.35))
 	_gold_label.text = "Gold  0"
 	row.add_child(_gold_label)
 	health_bar.get_parent().add_child(row)
@@ -418,7 +409,7 @@ func _ensure_boss_bar() -> void:
 	_boss_wrap.offset_right = -280.0
 	_boss_wrap.offset_top = 58.0
 	_boss_wrap.offset_bottom = 118.0
-	_boss_wrap.add_theme_stylebox_override("panel", ArtBank.panel_style(&"glass", Color(0.55, 0.28, 0.2, 0.94)))
+	_boss_wrap.add_theme_stylebox_override("panel", ArtBank.panel_style(&"glass", Color(0.22, 0.08, 0.1, 0.9)))
 	var col := VBoxContainer.new()
 	col.add_theme_constant_override("separation", 2)
 	_boss_wrap.add_child(col)
