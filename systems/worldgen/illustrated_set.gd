@@ -2,7 +2,7 @@ class_name IllustratedSet
 extends RefCounted
 ## EON illustrated ruin. Neon vs toxic, not a cloned street / clone-pod set.
 
-const TILE_SCALE := 0.5
+const TILE_SCALE := 1.0
 const TILE_W := 256.0
 const TILE_H := 128.0
 
@@ -12,10 +12,10 @@ static func floor_tex(rng: RandomNumberGenerator, want_toxic: bool = false) -> T
 		return ArtBank.illustrated("floor_toxic")
 	var roll := rng.randf() if rng else randf()
 	if roll < 0.28:
-		return ArtBank.illustrated("floor_street_b")
-	if roll < 0.48:
-		return ArtBank.illustrated("floor_street_c")
-	return ArtBank.illustrated("floor_street")
+		return ArtBank.illustrated("floor_ruin_b")
+	if roll < 0.52:
+		return ArtBank.illustrated("floor_ruin_c")
+	return ArtBank.illustrated("floor_ruin")
 
 
 static func place_floor(
@@ -39,7 +39,7 @@ static func place_floor(
 				continue
 			var toxic := rng.randf() < _toxic_chance(biome)
 			var tex := floor_tex(rng, toxic)
-			_sprite(tiles, tex, p, TILE_SCALE, Color.WHITE, 0)
+			_floor_sprite(tiles, tex, p)
 
 
 static func place_dressing(
@@ -173,17 +173,16 @@ static func _toxic_pools(parent: Node2D, rng: RandomNumberGenerator, biome: Biom
 	for p in spots:
 		if rng.randf() < 0.32:
 			continue
-		_sprite(parent, tex, p, 0.42, Color(1, 1, 1, 0.92), 1)
+		_floor_sprite(parent, tex, p, 0.72, 1)
 		_point_light(parent, p, Color(0.42, 0.95, 0.28, 1), 0.7, 1.8)
 
 
-static func _sprite(
+static func _floor_sprite(
 	parent: Node2D,
 	tex: Texture2D,
 	pos: Vector2,
-	scale: float,
-	modulate: Color,
-	z: int
+	width_scale: float = 1.0,
+	z: int = 0
 ) -> Sprite2D:
 	if parent == null or tex == null:
 		return null
@@ -191,11 +190,13 @@ static func _sprite(
 	s.texture = tex
 	s.position = pos
 	s.centered = true
-	s.scale = Vector2(scale, scale)
-	s.modulate = modulate
 	s.z_index = z
+	s.modulate = Color.WHITE
 	s.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 	parent.add_child(s)
+	var sz := ArtBank.apply_opaque_region(s)
+	var sc := (TILE_W * TILE_SCALE * width_scale) / maxf(sz.x, 1.0)
+	s.scale = Vector2(sc, sc)
 	return s
 
 
@@ -210,13 +211,4 @@ static func _point_light(parent: Node2D, pos: Vector2, color: Color, energy: flo
 
 
 static func radial() -> Texture2D:
-	var grad := Gradient.new()
-	grad.colors = PackedColorArray([Color(1, 1, 1, 1), Color(1, 1, 1, 0)])
-	var tex := GradientTexture2D.new()
-	tex.gradient = grad
-	tex.width = 256
-	tex.height = 256
-	tex.fill = GradientTexture2D.FILL_RADIAL
-	tex.fill_from = Vector2(0.5, 0.5)
-	tex.fill_to = Vector2(0.5, 0.0)
-	return tex
+	return ArtBank.radial_light()

@@ -2,6 +2,9 @@ class_name RoomIsland
 extends Node2D
 ## One irregular physical room: floor, walls with offset doors, occupancy.
 
+const _IllustratedSet := preload("res://systems/worldgen/illustrated_set.gd")
+const _RoomFootprint := preload("res://systems/worldgen/room_footprint.gd")
+
 const DOOR_GAP := 118.0
 const WALL_THICK := 38.0
 
@@ -11,7 +14,7 @@ var entities: Node2D
 var spawn_root: Node2D
 var blockers: Dictionary = {} ## Vector2i → StaticBody2D
 var door_sprites: Dictionary = {}
-signal door_crossed(island: RoomIsland, dir: Vector2i, body: Node2D)
+signal door_crossed(island: Node2D, dir: Vector2i, body: Node2D)
 
 var _poly: PackedVector2Array = PackedVector2Array()
 
@@ -19,7 +22,7 @@ var _poly: PackedVector2Array = PackedVector2Array()
 func setup(src: DungeonRoom) -> void:
 	room = src
 	if room.footprint == null:
-		room.footprint = RoomFootprint.make(room.footprint_id)
+		room.footprint = _RoomFootprint.make(room.footprint_id)
 	position = room.world_origin
 	_poly = room.footprint.local_poly
 	name = "Island_%d_%d" % [room.coord.x, room.coord.y]
@@ -59,7 +62,7 @@ func set_doors_locked(locked: bool) -> void:
 			body.visible = locked
 		var spr: Sprite2D = door_sprites.get(dir)
 		if spr:
-			spr.texture = IllustratedSet.wall_tex(_facing_name(dir))
+			spr.texture = _IllustratedSet.wall_tex(_facing_name(dir))
 			ArtBank.fit_height(spr, 96.0, true)
 			spr.modulate = Color(0.45, 0.9, 1.0, 1) if not locked else Color(0.35, 0.22, 0.2, 1)
 
@@ -147,7 +150,7 @@ func _add_door_prop(dir: Vector2i) -> void:
 	spr.z_index = 2
 	spr.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 	spr.position = door_local(dir)
-	spr.texture = IllustratedSet.wall_tex(_facing_name(dir))
+	spr.texture = _IllustratedSet.wall_tex(_facing_name(dir))
 	ArtBank.fit_height(spr, 96.0, true)
 	spr.modulate = Color(0.32, 0.2, 0.18, 1)
 	add_child(spr)
@@ -236,7 +239,7 @@ func _dress() -> void:
 	root.z_index = -12
 	add_child(root)
 	var seed_value := int(room.coord.x * 7919 + room.coord.y * 104729 + 11)
-	var sky := IllustratedSet.dusk_sky()
+	var sky := _IllustratedSet.dusk_sky()
 	if sky:
 		var bg := Sprite2D.new()
 		bg.name = "NightSky"
@@ -247,14 +250,14 @@ func _dress() -> void:
 		bg.modulate = Color.WHITE
 		bg.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 		root.add_child(bg)
-	IllustratedSet.place_floor(
+	_IllustratedSet.place_floor(
 		root,
 		room.biome,
 		func(p: Vector2) -> bool: return Geometry2D.is_point_in_polygon(p, _poly),
 		seed_value
 	)
 	_add_edge_walls(root)
-	IllustratedSet.place_dressing(
+	_IllustratedSet.place_dressing(
 		root,
 		room.biome,
 		seed_value + 17,
@@ -284,7 +287,7 @@ func _add_edge_walls(root: Node2D) -> void:
 		spr.z_index = -1
 		spr.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 		var facing := (b - a).orthogonal().normalized()
-		spr.texture = IllustratedSet.wall_tex(ArtBank.dir4_from(facing))
+		spr.texture = _IllustratedSet.wall_tex(ArtBank.dir4_from(facing))
 		if spr.texture:
 			ArtBank.fit_height(spr, 88.0, true)
 			spr.position = mid
@@ -317,7 +320,7 @@ func _add_boss_stain(root: Node2D) -> void:
 	stain.z_index = -3
 	root.add_child(stain)
 	var glow := PointLight2D.new()
-	glow.texture = IllustratedSet.radial()
+	glow.texture = ArtBank.radial_light()
 	glow.color = Color(0.95, 0.18, 0.12, 1)
 	glow.energy = 0.9
 	glow.texture_scale = 2.8

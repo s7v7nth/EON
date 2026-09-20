@@ -14,7 +14,7 @@ var doors: Dictionary = {} ## Vector2i dir → true
 var door_t: Dictionary = {} ## Vector2i dir → float
 var hall_length: Dictionary = {} ## Vector2i dir → float
 var footprint_id: String = "notch"
-var footprint: RoomFootprint
+var footprint
 var world_origin: Vector2 = Vector2.INF
 var linear_index: int = 0
 var boss_id: StringName = &""

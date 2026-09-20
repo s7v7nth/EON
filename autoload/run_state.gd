@@ -300,7 +300,8 @@ func _begin_procedural_dungeon() -> void:
 func _begin_authored_floor() -> void:
 	run_seed = _fresh_seed()
 	rng = RunRng.new(run_seed)
-	dungeon = RouteGraph.build(current_route)
+	const _RouteGraph := preload("res://systems/worldgen/route_graph.gd")
+	dungeon = _RouteGraph.build(current_route)
 	current_coord = dungeon.start_coord if dungeon else Vector2i.ZERO
 	pending_exit_dir = Vector2i.ZERO
 	entry_travel_dir = Vector2i.ZERO

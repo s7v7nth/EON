@@ -1,6 +1,8 @@
 extends Node
 ## Procedural dungeon smoke: same seed → identical graph fingerprint; doors/biomes wired.
 
+const _FloorPlacer := preload("res://systems/worldgen/floor_placer.gd")
+
 
 func _ready() -> void:
 	await get_tree().process_frame
@@ -151,7 +153,7 @@ func _run() -> void:
 			remnant_ok = true
 	assert(hive_ok, "campaign graph must place The Hive")
 	assert(remnant_ok, "campaign graph must place a remnant talk room")
-	assert(not FloorPlacer.any_overlap(RunState.dungeon), "islands must not overlap")
+	assert(not _FloorPlacer.any_overlap(RunState.dungeon), "islands must not overlap")
 	assert(AttackData.PatternKind.FAN_SHOT == 5)
 	assert(AttackData.PatternKind.HOOK == 6)
 

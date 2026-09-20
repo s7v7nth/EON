@@ -2,6 +2,9 @@ class_name DungeonGenerator
 extends RefCounted
 ## Isaac-style grid: grow rooms from start, pick layouts/biomes from pools via map RNG.
 
+const _FloorPlacer := preload("res://systems/worldgen/floor_placer.gd")
+const _RoomFootprint := preload("res://systems/worldgen/room_footprint.gd")
+
 const DIRS: Array[Vector2i] = [
 	Vector2i(0, -1),
 	Vector2i(1, 0),
@@ -82,7 +85,7 @@ static func generate(rng: RunRng, room_count: int = DEFAULT_ROOM_COUNT) -> Dunge
 	_assign_special_rooms(graph, rng)
 	_apply_blends(graph)
 	graph.rebuild_order()
-	FloorPlacer.place(graph)
+	_FloorPlacer.place(graph)
 	return graph
 
 
@@ -100,7 +103,7 @@ static func _link(a: DungeonRoom, b: DungeonRoom, dir_a_to_b: Vector2i, rng: Run
 
 
 static func _pick_shape(rng: RunRng) -> String:
-	var pool := RoomFootprint.pool()
+	var pool := _RoomFootprint.pool()
 	return pool[rng.map.randi() % pool.size()]
 
 

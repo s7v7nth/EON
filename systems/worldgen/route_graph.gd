@@ -2,6 +2,8 @@ class_name RouteGraph
 extends RefCounted
 ## Authored irregular graphs for tutorial / campaign so every route uses a floor.
 
+const _FloorPlacer := preload("res://systems/worldgen/floor_placer.gd")
+
 
 static func build(route: ActRoute) -> DungeonGraph:
 	if route == null:
@@ -24,7 +26,7 @@ static func _tutorial(route: ActRoute) -> DungeonGraph:
 	g.start_coord = a.coord
 	g.boss_coord = last.coord
 	g.rebuild_order()
-	FloorPlacer.place(g)
+	_FloorPlacer.place(g)
 	return g
 
 
@@ -51,7 +53,7 @@ static func _campaign(route: ActRoute) -> DungeonGraph:
 	g.start_coord = start.coord
 	g.boss_coord = hive.coord
 	g.rebuild_order()
-	FloorPlacer.place(g)
+	_FloorPlacer.place(g)
 	return g
 
 

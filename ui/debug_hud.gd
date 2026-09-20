@@ -116,7 +116,7 @@ func _wrap_hud_chrome() -> void:
 	var chrome := PanelContainer.new()
 	chrome.name = "Chrome"
 	chrome.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	chrome.add_theme_stylebox_override("panel", ArtBank.panel_style(&"glass", Color(0.08, 0.16, 0.22, 0.88)))
+	chrome.add_theme_stylebox_override("panel", ArtBank.panel_style(&"glass", Color(0.14, 0.07, 0.05, 0.9)))
 	var inner := MarginContainer.new()
 	inner.name = "ChromePad"
 	inner.add_theme_constant_override("margin_left", 12)
@@ -142,7 +142,7 @@ func _wrap_location_banner() -> void:
 	plaque.offset_right = 210.0
 	plaque.offset_top = 14.0
 	plaque.offset_bottom = 52.0
-	plaque.add_theme_stylebox_override("panel", ArtBank.panel_style(&"card", Color(0.08, 0.14, 0.2, 0.9)))
+	plaque.add_theme_stylebox_override("panel", ArtBank.panel_style(&"card", Color(0.12, 0.07, 0.05, 0.92)))
 	var parent := location_banner.get_parent()
 	parent.remove_child(location_banner)
 	plaque.add_child(location_banner)
@@ -160,7 +160,7 @@ func _wrap_location_banner() -> void:
 func _style_bar(bar: ProgressBar, fill: Color) -> void:
 	if bar == null:
 		return
-	var bg := ArtBank.panel_style(&"bar", Color(0.06, 0.08, 0.1, 0.95))
+	var bg := ArtBank.panel_style(&"bar", Color(0.05, 0.03, 0.03, 0.95))
 	bar.add_theme_stylebox_override("background", bg)
 	var flat := StyleBoxFlat.new()
 	flat.bg_color = fill

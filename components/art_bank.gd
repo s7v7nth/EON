@@ -113,36 +113,36 @@ static func illustrated_facing(stem: String, v: Vector2) -> Texture2D:
 
 
 static func scifi_frame(
-	tint: Color = Color(0.04, 0.08, 0.12, 0.82),
-	border: Color = Color(0.35, 0.85, 1.0, 0.85),
+	tint: Color = Color(0.07, 0.04, 0.04, 0.9),
+	border: Color = Color(0.62, 0.38, 0.22, 0.8),
 	width: int = 1
 ) -> StyleBoxFlat:
+	## Thin dying-city frame: rust plate + a little sick neon. Not Kenney, not clone HUD.
 	var flat := StyleBoxFlat.new()
 	flat.bg_color = tint
-	flat.set_corner_radius_all(2)
+	flat.set_corner_radius_all(1)
 	flat.set_border_width_all(width)
 	flat.border_color = border
 	flat.content_margin_left = 10
 	flat.content_margin_right = 10
 	flat.content_margin_top = 8
 	flat.content_margin_bottom = 8
-	flat.shadow_color = Color(0.2, 0.7, 1.0, 0.12)
-	flat.shadow_size = 4
+	flat.shadow_color = Color(0.15, 0.55, 0.7, 0.08)
+	flat.shadow_size = 3
 	return flat
 
 
 static func panel_style(kind: StringName = &"glass", tint: Color = Color(1, 1, 1, 1)) -> StyleBox:
-	## Thin sci-fi HUD, not Kenney candy chrome.
-	var bg := Color(0.04, 0.08, 0.12, 0.84)
-	var border := Color(0.35, 0.85, 1.0, 0.8)
+	var bg := Color(0.07, 0.04, 0.045, 0.9)
+	var border := Color(0.38, 0.72, 0.82, 0.45)
 	match kind:
 		&"card", &"card_hover":
-			bg = Color(0.05, 0.1, 0.14, 0.9).lerp(tint, 0.12)
-			border = Color(0.45, 0.92, 1.0, 0.95) if kind == &"card_hover" else Color(0.3, 0.75, 0.95, 0.75)
+			bg = Color(0.09, 0.05, 0.04, 0.92).lerp(tint, 0.14)
+			border = Color(0.72, 0.55, 0.28, 0.9) if kind == &"card_hover" else Color(0.55, 0.36, 0.22, 0.7)
 		&"bar":
-			return scifi_frame(Color(0.03, 0.05, 0.08, 0.95), Color(0.2, 0.45, 0.55, 0.7), 1)
+			return scifi_frame(Color(0.04, 0.03, 0.03, 0.95), Color(0.45, 0.28, 0.18, 0.7), 1)
 		&"rect":
-			bg = Color(0.03, 0.06, 0.1, 0.88)
+			bg = Color(0.05, 0.04, 0.04, 0.9)
 	if tint.a > 0.0 and tint != Color.WHITE:
 		bg = bg.lerp(Color(tint.r, tint.g, tint.b, bg.a), 0.18)
 	return scifi_frame(bg, border, 1)
@@ -379,6 +379,19 @@ static func add_sprite(
 	s.scale = Vector2(scale, scale)
 	parent.add_child(s)
 	return s
+
+
+static func radial_light() -> Texture2D:
+	var grad := Gradient.new()
+	grad.colors = PackedColorArray([Color(1, 1, 1, 1), Color(1, 1, 1, 0)])
+	var tex := GradientTexture2D.new()
+	tex.gradient = grad
+	tex.width = 256
+	tex.height = 256
+	tex.fill = GradientTexture2D.FILL_RADIAL
+	tex.fill_from = Vector2(0.5, 0.5)
+	tex.fill_to = Vector2(0.5, 0.0)
+	return tex
 
 
 static func add_fitted(

@@ -62,9 +62,9 @@ func _draw() -> void:
 	var grid_h := float(rows) * (CELL + GAP) - GAP
 	var origin := Vector2(size.x - grid_w - PAD, PAD)
 
-	# Panel
-	draw_rect(Rect2(origin - Vector2(6, 6), Vector2(grid_w + 12, grid_h + 12)), Color(0.03, 0.05, 0.07, 0.78), true)
-	draw_rect(Rect2(origin - Vector2(6, 6), Vector2(grid_w + 12, grid_h + 12)), Color(0.35, 0.85, 1.0, 0.45), false, 1.0)
+	# Thin dying-city plate — Isaac cells, not clone-pod chrome.
+	draw_rect(Rect2(origin - Vector2(6, 6), Vector2(grid_w + 12, grid_h + 12)), Color(0.05, 0.03, 0.03, 0.82), true)
+	draw_rect(Rect2(origin - Vector2(6, 6), Vector2(grid_w + 12, grid_h + 12)), Color(0.62, 0.38, 0.22, 0.5), false, 1.0)
 
 	var current := RunState.current_coord
 	for room in rooms:
@@ -78,7 +78,7 @@ func _draw() -> void:
 		var pos := origin + Vector2(float(local.x) * (CELL + GAP), float(local.y) * (CELL + GAP))
 		var fill := _cell_color(room, room.coord == current, explored)
 		draw_rect(Rect2(pos, Vector2(CELL, CELL)), fill, true)
-		draw_rect(Rect2(pos, Vector2(CELL, CELL)), Color(0.7, 0.85, 1.0, 0.25), false, 1.0)
+		draw_rect(Rect2(pos, Vector2(CELL, CELL)), Color(0.55, 0.4, 0.28, 0.35), false, 1.0)
 		if room.kind == DungeonRoom.RoomKind.BOSS:
 			draw_circle(pos + Vector2(CELL * 0.5, CELL * 0.5), 2.6, Color(0.95, 0.35, 0.4, 0.95))
 		elif room.kind == DungeonRoom.RoomKind.START:

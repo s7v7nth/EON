@@ -2,6 +2,8 @@ class_name FloorPlacer
 extends RefCounted
 ## Places irregular room islands so reversed doors align and collision never overlaps.
 
+const _RoomFootprint := preload("res://systems/worldgen/room_footprint.gd")
+
 const MIN_HALL := 160.0
 const HALL_STEP := 140.0
 const MAX_HALL_TRIES := 14
@@ -15,7 +17,7 @@ static func place(graph: DungeonGraph) -> void:
 	if start == null:
 		return
 	start.world_origin = Vector2.ZERO
-	start.footprint = RoomFootprint.make(start.footprint_id)
+	start.footprint = _RoomFootprint.make(start.footprint_id)
 	var placed: Array[DungeonRoom] = [start]
 	var open: Array[DungeonRoom] = [start]
 	while not open.is_empty():
@@ -25,7 +27,7 @@ static func place(graph: DungeonGraph) -> void:
 			if to == null:
 				continue
 			if to.footprint == null:
-				to.footprint = RoomFootprint.make(to.footprint_id)
+				to.footprint = _RoomFootprint.make(to.footprint_id)
 			if to.world_origin != Vector2.INF and _already_placed(to, placed):
 				continue
 			var hall := MIN_HALL
@@ -49,7 +51,7 @@ static func door_world(room: DungeonRoom, dir: Vector2i) -> Vector2:
 	if room == null:
 		return Vector2.ZERO
 	if room.footprint == null:
-		room.footprint = RoomFootprint.make(room.footprint_id)
+		room.footprint = _RoomFootprint.make(room.footprint_id)
 	var t := float(room.door_t.get(dir, 0.5))
 	return room.world_origin + room.footprint.door_local(dir, t)
 

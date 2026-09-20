@@ -2,6 +2,8 @@ class_name RoomDresser
 extends RefCounted
 ## Illustrated isometric floors, walls, and EON ruin props. No Kenney voxel wash.
 
+const _IllustratedSet := preload("res://systems/worldgen/illustrated_set.gd")
+
 
 static func dress(arena: Node2D, biome: BiomeDefinition) -> void:
 	if arena == null or biome == null:
@@ -16,14 +18,14 @@ static func dress(arena: Node2D, biome: BiomeDefinition) -> void:
 	_paint_underlay(arena)
 	_hide_box_walls(arena)
 	_add_backdrop(root)
-	IllustratedSet.place_floor(
+	_IllustratedSet.place_floor(
 		root,
 		biome,
 		func(p: Vector2) -> bool: return absf(p.x) <= 860.0 and absf(p.y) <= 500.0,
 		int(biome.biome_id) * 7919 + 42
 	)
 	_add_edge_walls(arena, biome)
-	IllustratedSet.place_dressing(root, biome, int(biome.biome_id) * 4243 + 88, _is_boss_room())
+	_IllustratedSet.place_dressing(root, biome, int(biome.biome_id) * 4243 + 88, _is_boss_room())
 	_add_lighting(arena, biome)
 
 
@@ -68,7 +70,7 @@ static func _hide_box_walls(arena: Node2D) -> void:
 
 
 static func _add_backdrop(root: Node2D) -> void:
-	var tex := IllustratedSet.dusk_sky()
+	var tex := _IllustratedSet.dusk_sky()
 	if tex == null:
 		return
 	var bg := Sprite2D.new()
@@ -105,8 +107,8 @@ static func _add_edge_walls(arena: Node2D, biome: BiomeDefinition) -> void:
 	arena.add_child(walls)
 	var doors := _door_dirs()
 	var tile_scale := 0.72
-	var tw := IllustratedSet.TILE_W
-	var th := IllustratedSet.TILE_H
+	var tw := _IllustratedSet.TILE_W
+	var th := _IllustratedSet.TILE_H
 	var n := 4
 	_iso_corner(walls, biome, _iso_cell(-n, -n, tw, th), "N", tile_scale)
 	_iso_corner(walls, biome, _iso_cell(n, -n, tw, th), "E", tile_scale)
@@ -156,19 +158,19 @@ static func _iso_door_gap(doors: Array[Vector2i], pos: Vector2) -> bool:
 
 
 static func _iso_wall(parent: Node2D, biome: BiomeDefinition, pos: Vector2, facing: String, tile_scale: float) -> void:
-	_place_iso_piece(parent, IllustratedSet.wall_tex(facing), pos, tile_scale, _wall_modulate(biome), 1)
+	_place_iso_piece(parent, _IllustratedSet.wall_tex(facing), pos, tile_scale, _wall_modulate(biome), 1)
 
 
 static func _iso_corner(parent: Node2D, biome: BiomeDefinition, pos: Vector2, facing: String, tile_scale: float) -> void:
-	_place_iso_piece(parent, IllustratedSet.wall_tex(facing), pos, tile_scale, _wall_modulate(biome), 1)
+	_place_iso_piece(parent, _IllustratedSet.wall_tex(facing), pos, tile_scale, _wall_modulate(biome), 1)
 
 
 static func _iso_arch(parent: Node2D, biome: BiomeDefinition, pos: Vector2, facing: String, tile_scale: float) -> void:
-	var spr := _place_iso_piece(parent, IllustratedSet.wall_tex(facing), pos, tile_scale * 0.92, Color(0.55, 0.9, 1.0, 1), 1)
+	var spr := _place_iso_piece(parent, _IllustratedSet.wall_tex(facing), pos, tile_scale * 0.92, Color(0.55, 0.9, 1.0, 1), 1)
 	if spr:
 		var light := PointLight2D.new()
 		light.position = pos + Vector2(0, -20)
-		light.texture = IllustratedSet.radial()
+		light.texture = ArtBank.radial_light()
 		light.color = Color(0.4, 0.85, 1.0, 1)
 		light.energy = 0.85
 		light.texture_scale = 1.6
@@ -191,10 +193,10 @@ static func _place_iso_piece(
 	s.position = pos
 	s.centered = true
 	s.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
-	s.scale = Vector2(tile_scale, tile_scale)
 	s.modulate = modulate
 	s.z_index = z
 	parent.add_child(s)
+	ArtBank.fit_height(s, 102.0 * tile_scale, true)
 	return s
 
 
@@ -224,7 +226,7 @@ static func _add_lighting(arena: Node2D, biome: BiomeDefinition) -> void:
 	if biome and (biome.biome_id == GameplayEnums.BiomeId.LANDFILL or biome.biome_id == GameplayEnums.BiomeId.WASTELAND):
 		grade.color = Color(0.92, 0.90, 0.86, 1)
 	layer.add_child(grade)
-	var tex := IllustratedSet.radial()
+	var tex := ArtBank.radial_light()
 	var moon := PointLight2D.new()
 	moon.name = "Moon"
 	moon.position = Vector2(-80, -220)

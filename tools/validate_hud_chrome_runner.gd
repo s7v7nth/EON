@@ -81,6 +81,9 @@ func _run() -> void:
 	var gold_lab := hud.find_child("GoldLabel", true, false) as Label
 	assert(gold_lab != null)
 	assert(gold_lab.text.begins_with("Gold"), "gold should be mixed-case")
+	var hp_lab := hud.find_child("HealthValue", true, false) as Label
+	var joined := "%s %s" % [gold_lab.text, hp_lab.text if hp_lab else ""]
+	assert(joined.find("Clonal") < 0, "HUD must keep EON resource names, not cloned copy")
 	RunState.choose_route(RunState.CAMPAIGN_ROUTE)
 	RunState.seek_room(2)
 	assert(RunState.is_elite_room())

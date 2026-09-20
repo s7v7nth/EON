@@ -2,6 +2,9 @@ class_name FloorController
 extends Node2D
 ## One physical floor: irregular islands, offset doors, hallways, per-room combat.
 
+const _FloorPlacer := preload("res://systems/worldgen/floor_placer.gd")
+const _Island := preload("res://levels/floor/room_island.gd")
+
 const ENEMY_SCENE := preload("res://entities/enemies/dummy/enemy_dummy.tscn")
 const DEFAULT_WAVES := preload("res://resources/waves/default_waves.tres")
 const BOSS_WAVE_SET := preload("res://resources/waves/boss_encounter_waves.tres")
@@ -11,8 +14,8 @@ const PLAYER_SCENE := preload("res://entities/player/player.tscn")
 
 @export var use_faction_weights: bool = true
 
-var _islands: Dictionary = {} ## Vector2i → RoomIsland
-var _current: RoomIsland
+var _islands: Dictionary = {}
+var _current: Node2D
 var _wave_index: int = -1
 var _alive_enemies: int = 0
 var _spawning: bool = false
@@ -53,13 +56,13 @@ func _build_floor() -> void:
 		push_error("FloorController: no dungeon graph")
 		return
 	if graph.get_room(graph.start_coord) and graph.get_room(graph.start_coord).world_origin == Vector2.INF:
-		FloorPlacer.place(graph)
+		_FloorPlacer.place(graph)
 	var islands := Node2D.new()
 	islands.name = "Islands"
 	islands.y_sort_enabled = true
 	add_child(islands)
 	for room in graph.all_rooms():
-		var island := RoomIsland.new()
+		var island := _Island.new()
 		island.setup(room)
 		islands.add_child(island)
 		_islands[room.coord] = island
@@ -68,7 +71,7 @@ func _build_floor() -> void:
 			island.occupancy.body_entered.connect(_on_occupancy.bind(island))
 	_build_hallways()
 	_add_floor_atmosphere()
-	var start: RoomIsland = _islands.get(graph.start_coord)
+	var start: Node2D = _islands.get(graph.start_coord)
 	_current = start
 
 
@@ -93,8 +96,8 @@ func _build_hallways() -> void:
 
 
 func _make_hall(root: Node2D, a: DungeonRoom, b: DungeonRoom, dir: Vector2i) -> void:
-	var p0 := FloorPlacer.door_world(a, dir)
-	var p1 := FloorPlacer.door_world(b, -dir)
+	var p0 := _FloorPlacer.door_world(a, dir)
+	var p1 := _FloorPlacer.door_world(b, -dir)
 	var delta := p1 - p0
 	var length := delta.length()
 	if length < 8.0:
@@ -114,14 +117,13 @@ func _make_hall(root: Node2D, a: DungeonRoom, b: DungeonRoom, dir: Vector2i) -> 
 	floor.color = Color(0.07, 0.06, 0.07, 1)
 	hall.add_child(floor)
 	var tile := Sprite2D.new()
-	tile.texture = ArtBank.illustrated("floor_street")
+	tile.texture = ArtBank.illustrated("floor_ruin")
 	if tile.texture:
 		tile.centered = true
-		tile.rotation = 0.0
-		tile.scale = Vector2(length / 512.0, 0.42)
-		tile.modulate = Color.WHITE
 		tile.z_index = -18
 		hall.add_child(tile)
+		var sz := ArtBank.apply_opaque_region(tile)
+		tile.scale = Vector2(length / maxf(sz.x, 1.0), (hw * 2.15) / maxf(sz.y, 1.0))
 	var walls := StaticBody2D.new()
 	walls.collision_layer = 1
 	walls.collision_mask = 0
@@ -148,7 +150,7 @@ func _add_floor_atmosphere() -> void:
 	var moon := PointLight2D.new()
 	moon.name = "Moon"
 	moon.position = Vector2(-40, -180)
-	moon.texture = IllustratedSet.radial()
+	moon.texture = ArtBank.radial_light()
 	moon.color = Color(0.5, 0.72, 1.0, 1)
 	moon.energy = 0.5
 	moon.texture_scale = 6.0
@@ -218,7 +220,7 @@ func _tune_camera() -> void:
 	cam.position_smoothing_speed = 7.5
 
 
-func _on_occupancy(body: Node2D, island: RoomIsland) -> void:
+func _on_occupancy(body: Node2D, island: Node2D) -> void:
 	if body is not Player:
 		return
 	if island == _current:
@@ -226,7 +228,7 @@ func _on_occupancy(body: Node2D, island: RoomIsland) -> void:
 	_switch_room(island)
 
 
-func _switch_room(island: RoomIsland) -> void:
+func _switch_room(island: Node2D) -> void:
 	_current = island
 	var room := island.room
 	if room == null:
@@ -466,7 +468,7 @@ func force_clear_room() -> void:
 	_on_all_waves_cleared()
 
 
-func _on_door_crossed(island: RoomIsland, _dir: Vector2i, body: Node2D) -> void:
+func _on_door_crossed(island: Node2D, _dir: Vector2i, body: Node2D) -> void:
 	if body is not Player:
 		return
 	if island.room == null or not island.room.cleared:

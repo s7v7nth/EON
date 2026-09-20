@@ -129,7 +129,7 @@ func _ensure_sprites() -> void:
 	if _rim == null:
 		_rim = PointLight2D.new()
 		_rim.name = "RimLight"
-		_rim.texture = IllustratedSet.radial()
+		_rim.texture = ArtBank.radial_light()
 		_rim.energy = 0.95
 		_rim.texture_scale = 1.35
 		_rim.position = Vector2(10, -28)
