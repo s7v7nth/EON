@@ -300,22 +300,22 @@ func _dress_exit_marker() -> void:
 	if plaque == null:
 		plaque = PanelContainer.new()
 		plaque.name = "ExitPlaque"
-		plaque.position = Vector2(-92, -78)
-		plaque.custom_minimum_size = Vector2(184, 30)
+		plaque.position = Vector2(-108, -86)
+		plaque.custom_minimum_size = Vector2(216, 34)
 		plaque.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		plaque.add_theme_stylebox_override("panel", ArtBank.panel_style(&"card", Color(0.55, 1.0, 0.72, 0.96)))
 		var lab := Label.new()
 		lab.name = "ExitHint"
 		lab.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		lab.custom_minimum_size = Vector2(176, 22)
-		lab.add_theme_font_size_override("font_size", 14)
+		lab.custom_minimum_size = Vector2(208, 26)
+		lab.add_theme_font_size_override("font_size", 15)
 		lab.add_theme_color_override("font_color", Color(0.08, 0.18, 0.1, 1))
 		lab.add_theme_color_override("font_outline_color", Color(1, 1, 1, 0.35))
 		lab.add_theme_constant_override("outline_size", 2)
 		var font := ArtBank.body_bold()
 		if font:
 			lab.add_theme_font_override("font", font)
-		lab.text = "South door"
+		lab.text = "Door open"
 		plaque.add_child(lab)
 		exit_node.add_child(plaque)
 	var shape_node := exit_node.get_node_or_null("ExitShape") as CollisionShape2D
@@ -714,11 +714,29 @@ func _heal_player_between_waves(fraction: float) -> void:
 
 func _on_all_waves_cleared() -> void:
 	_room_cleared = true
+	_stabilize_player_after_clear()
 	RunState.mark_current_room_cleared()
 	RunState.grant_loot_for_room_rank()
 	SignalBus.room_cleared.emit()
 	# Always offer exit → reward/craft, including the final room (win after reward).
 	_show_exit()
+
+
+func _stabilize_player_after_clear() -> void:
+	## Don't let leftover burn/acid eat the walk to the door.
+	if player_path == NodePath() or not has_node(player_path):
+		return
+	var player := get_node(player_path) as Player
+	if player == null:
+		return
+	if player.status:
+		player.status.clear_all()
+	if player.health:
+		player.health.heal(player.health.get_max_health() * 0.18)
+	for trap in get_tree().get_nodes_in_group("biome_traps"):
+		if trap is Area2D:
+			(trap as Area2D).monitoring = false
+			trap.set_physics_process(false)
 
 
 func force_clear_room() -> void:
