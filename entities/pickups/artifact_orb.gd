@@ -66,14 +66,15 @@ func _ready() -> void:
 	add_child(coin)
 	_label = Label.new()
 	_label.text = "Artifact"
-	_label.position = Vector2(-70, -58)
+	_label.position = Vector2(-64, -72)
 	_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_label.custom_minimum_size = Vector2(140, 18)
-	_label.add_theme_font_size_override("font_size", 14)
+	_label.custom_minimum_size = Vector2(128, 36)
+	_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_label.add_theme_font_size_override("font_size", 13)
 	_label.add_theme_color_override("font_color", Color(1, 0.9, 0.45))
 	_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
 	_label.add_theme_constant_override("outline_size", 4)
-	var font := ArtBank.ui_font()
+	var font := ArtBank.body_bold()
 	if font:
 		_label.add_theme_font_override("font", font)
 	add_child(_label)
@@ -88,11 +89,12 @@ func _ready() -> void:
 	_price_label = Label.new()
 	_price_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_price_label.custom_minimum_size = Vector2(110, 18)
-	_price_label.add_theme_font_size_override("font_size", 14)
+	_price_label.add_theme_font_size_override("font_size", 13)
 	_price_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
 	_price_label.add_theme_constant_override("outline_size", 4)
-	if font:
-		_price_label.add_theme_font_override("font", font)
+	var price_font := ArtBank.body_bold()
+	if price_font:
+		_price_label.add_theme_font_override("font", price_font)
 	plaque.add_child(_price_label)
 	_light = PointLight2D.new()
 	var grad := Gradient.new()

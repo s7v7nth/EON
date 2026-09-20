@@ -201,7 +201,7 @@ func _spawn_special_artifacts(kind: int) -> void:
 	if offers.is_empty():
 		return
 	var orbs: Array[ArtifactOrb] = []
-	var spacing := 96.0
+	var spacing := 168.0
 	var start_x := -spacing * float(offers.size() - 1) * 0.5
 	for i in offers.size():
 		var pos := Vector2(start_x + spacing * float(i), 48.0)
