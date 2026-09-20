@@ -73,6 +73,7 @@ func _build_look() -> void:
 	_prompt.add_theme_font_size_override("font_size", 13)
 	_prompt.add_theme_color_override("font_color", Color(0.72, 0.55, 0.32))
 	_prompt.text = "E  listen"
+	_prompt.visible = false
 	add_child(_prompt)
 	_build_scrap_banner()
 
@@ -170,11 +171,15 @@ func _build_scrap_banner() -> void:
 
 func _process(delta: float) -> void:
 	_listen_cool = maxf(_listen_cool - delta, 0.0)
-	if _plaque and _plaque.visible and not _player_in_range():
+	var near := _player_in_range()
+	if _prompt:
+		_prompt.visible = near
+		_prompt.modulate = Color(1.1, 0.9, 0.55, 1) if near else Color.WHITE
+	if _plaque and _plaque.visible and not near:
 		_plaque.visible = false
 	if _listen_cool > 0.0:
 		return
-	if not _player_in_range():
+	if not near:
 		return
 	if Input.is_physical_key_pressed(KEY_E):
 		speak()
@@ -208,7 +213,7 @@ func _player_in_range() -> bool:
 	if _near:
 		return true
 	var player := get_tree().get_first_node_in_group("player") as Node2D
-	return player != null and player.global_position.distance_to(global_position) <= 110.0
+	return player != null and player.global_position.distance_to(global_position) <= 150.0
 
 
 func _on_body_entered(body: Node2D) -> void:

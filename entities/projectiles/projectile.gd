@@ -535,6 +535,8 @@ func _drop_puddle_if_needed() -> void:
 	if attack_data.returning:
 		return
 	var parent := get_parent()
+	if parent and parent.name == "Entities" and parent.get_parent():
+		parent = parent.get_parent()
 	if parent == null:
 		return
 	_puddle_dropped = true

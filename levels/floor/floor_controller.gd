@@ -56,14 +56,21 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _try_clerk_talk() -> bool:
-	if _current == null or _player == null:
+	if _player == null:
 		return false
-	var npc := _current.find_child("Remnant", true, false)
-	if npc == null or not npc.has_method("speak"):
+	var best: Node2D = null
+	var best_d := 200.0
+	for node in get_tree().get_nodes_in_group("plaza_clerk"):
+		if node is not Node2D:
+			continue
+		var npc := node as Node2D
+		var d := _player.global_position.distance_to(npc.global_position)
+		if d <= best_d and npc.has_method("speak"):
+			best_d = d
+			best = npc
+	if best == null:
 		return false
-	if _player.global_position.distance_to((npc as Node2D).global_position) > 280.0:
-		return false
-	npc.call("speak")
+	best.call("speak")
 	return true
 
 
@@ -216,9 +223,10 @@ func _place_player() -> void:
 		_player.name = "Player"
 		entities.add_child(_player)
 	if _current:
-		var local := Vector2(-80, 40)
+		# Center-ish so cardinal door gaps are reachable with a straight WASD walk.
+		var local := Vector2(0, 20)
 		if not bool(_current.call("contains_point", _current.position + local)):
-			local = Vector2(0, 20)
+			local = Vector2(-40, 36)
 		_player.global_position = _current.position + local
 	RunState.apply_to_player(_player)
 
@@ -236,6 +244,25 @@ func _tune_camera() -> void:
 	cam.limit_enabled = false
 	cam.position_smoothing_enabled = true
 	cam.position_smoothing_speed = 7.5
+
+
+func _physics_process(_delta: float) -> void:
+	if get_tree().paused or _player == null:
+		return
+	_rescan_occupancy()
+
+
+func _rescan_occupancy() -> void:
+	## Occupancy Area2D can miss after overlay pause. If you're on an island, you're in it.
+	if _player == null:
+		return
+	for coord in _islands.keys():
+		var island: Node2D = _islands[coord]
+		if island == _current or island == null:
+			continue
+		if island.has_method("contains_point") and bool(island.call("contains_point", _player.global_position)):
+			_switch_room(island)
+			return
 
 
 func _on_occupancy(body: Node2D, island: Node2D) -> void:

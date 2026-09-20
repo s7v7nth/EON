@@ -79,6 +79,7 @@ func _run() -> void:
 	assert(slam.modulate.a > 0.0 or slam.get_child_count() > 0)
 	assert(slam.get_node_or_null("Rim") != null)
 	assert(slam.get_node_or_null("OliveRim") != null)
+	assert(slam.z_index >= 0)
 	slam.queue_free()
 
 	var bile: Area2D = _Bile.new()

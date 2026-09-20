@@ -15,7 +15,7 @@ func setup(damage: float, duration: float, radius: float = 46.0) -> void:
 
 
 func _ready() -> void:
-	z_index = -6
+	z_index = 1
 	z_as_relative = false
 	monitoring = true
 	monitorable = false

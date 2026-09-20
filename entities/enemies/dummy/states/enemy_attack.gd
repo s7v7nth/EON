@@ -207,11 +207,18 @@ func _begin_hive_slam() -> void:
 		_vis_scale = vis.scale
 		vis.position = _vis_rest + Vector2(0, -22)
 		vis.scale = _vis_scale * Vector2(1.04, 1.12)
-	var parent := enemy.get_parent()
-	if parent == null:
+	# Draw with the player, not under island floor tiles / behind the hero sprite.
+	var host: Node = enemy.get_parent()
+	if enemy.target and enemy.target.get_parent():
+		host = enemy.target.get_parent()
+	if host == null:
 		return
 	_slam = _SlamCircle.new()
-	parent.add_child(_slam)
+	host.add_child(_slam)
+	if enemy.target:
+		_slam.global_position = enemy.target.global_position
+	else:
+		_slam.global_position = enemy.global_position
 	_slam.call("setup", maxf(_attack.circular_radius, 96.0))
 	if enemy.target:
 		_slam.call("follow", enemy.target)

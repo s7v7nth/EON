@@ -10,7 +10,8 @@ var _rim: Line2D
 
 func setup(circle_radius: float) -> void:
 	radius = maxf(circle_radius, 48.0)
-	z_index = -8
+	# Sit on the night tiles, under characters but above floor sprites.
+	z_index = 2
 	z_as_relative = false
 	_ensure_visuals()
 	modulate.a = 0.0
