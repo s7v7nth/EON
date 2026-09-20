@@ -88,17 +88,15 @@ func _try_start_combat() -> void:
 
 
 func _try_start_special_room() -> bool:
-	if not RunState.is_procedural_run():
-		return false
-	var room := RunState.current_dungeon_room()
-	if room == null:
-		return false
-	match room.kind:
+	var kind := RunState.current_room_kind()
+	match kind:
 		DungeonRoom.RoomKind.SHOP, DungeonRoom.RoomKind.TREASURE, DungeonRoom.RoomKind.SECRET:
 			_wave_index = 0
-			RunState.grant_special_room_loot(room.kind)
-			_spawn_special_marker(room.kind)
-			_spawn_special_artifacts(room.kind)
+			RunState.grant_special_room_loot(kind)
+			if kind == DungeonRoom.RoomKind.SHOP and RunState.gold < 22:
+				RunState.add_gold(22 - RunState.gold)
+			_spawn_special_marker(kind)
+			_spawn_special_artifacts(kind)
 			_finish_special_room()
 			return true
 		_:
@@ -152,18 +150,18 @@ func _spawn_special_marker(kind: int) -> void:
 	hint.add_theme_font_size_override("font_size", 14)
 	hint.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
 	hint.add_theme_constant_override("outline_size", 4)
-	var hint_font := ArtBank.ui_font()
+	var hint_font := ArtBank.body_bold()
 	if hint_font:
 		hint.add_theme_font_override("font", hint_font)
 	match kind:
 		DungeonRoom.RoomKind.SHOP:
-			hint.text = "SHOP — pay gold, pick one"
+			hint.text = "Shop — pay gold, pick one"
 			hint.add_theme_color_override("font_color", Color(0.55, 1.0, 0.7))
 		DungeonRoom.RoomKind.TREASURE:
-			hint.text = "CACHE — walk over to claim"
+			hint.text = "Cache — walk over to claim"
 			hint.add_theme_color_override("font_color", Color(1.0, 0.88, 0.4))
 		_:
-			hint.text = "SECRET — walk over to claim"
+			hint.text = "Secret — walk over to claim"
 			hint.add_theme_color_override("font_color", Color(0.82, 0.65, 1.0))
 	plaque.add_child(hint)
 	marker.add_child(plaque)
@@ -402,10 +400,7 @@ func _resolve_wave_set() -> void:
 		return
 	if biome and biome.wave_set:
 		wave_set = biome.wave_set
-	if not RunState.is_procedural_run():
-		return
-	var room := RunState.current_dungeon_room()
-	if room != null and room.kind == DungeonRoom.RoomKind.BOSS and BOSS_WAVE_SET != null:
+	if RunState.is_boss_room() and BOSS_WAVE_SET != null:
 		wave_set = BOSS_WAVE_SET
 
 
@@ -518,6 +513,8 @@ func _spawn_wave(wave: WaveDefinition) -> void:
 					group.elite_move_mult,
 					group.elite_action_speed
 				)
+			if enemy is EnemyDummy:
+				(enemy as EnemyDummy).apply_route_pressure(RunState.combat_pressure())
 			if enemy is EnemyDummy and (enemy as EnemyDummy).definition and (enemy as EnemyDummy).definition.is_boss:
 				_present_boss(enemy as EnemyDummy)
 			_alive_enemies += 1

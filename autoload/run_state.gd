@@ -232,6 +232,10 @@ func is_tutorial_route() -> bool:
 	return current_route != null and current_route.route_id == &"tutorial"
 
 
+func is_campaign_route() -> bool:
+	return current_route != null and current_route.route_id == &"campaign"
+
+
 func current_dungeon_room() -> DungeonRoom:
 	if dungeon == null:
 		return null
@@ -520,6 +524,8 @@ func _unlock_new_combos() -> void:
 		fx.kind = StringName(str(recipe.get("kind", &"damage")))
 		fx.value = float(recipe.get("value", 1.0))
 		fx.value_b = float(recipe.get("value_b", 0.0))
+		fx.combo_name = last_combo_name
+		fx.combo_desc = combo_upgrade.description
 		if recipe.has("status"):
 			fx.status_id = StringName(str(recipe["status"]))
 		combo_upgrade.effects = [fx]
@@ -662,6 +668,49 @@ func is_last_room() -> bool:
 		var room := current_dungeon_room()
 		return room != null and room.kind == DungeonRoom.RoomKind.BOSS
 	return room_index >= room_count() - 1
+
+
+func current_room_kind() -> int:
+	if is_procedural_run():
+		var room := current_dungeon_room()
+		if room:
+			return room.kind
+		return DungeonRoom.RoomKind.COMBAT
+	if is_tutorial_route():
+		return DungeonRoom.RoomKind.COMBAT
+	if is_last_room():
+		return DungeonRoom.RoomKind.BOSS
+	# Linear campaign: shop after the opener so gold/elites/boss all exist on a real route.
+	if is_campaign_route():
+		match room_index:
+			1:
+				return DungeonRoom.RoomKind.SHOP
+			4:
+				return DungeonRoom.RoomKind.TREASURE
+	return DungeonRoom.RoomKind.COMBAT
+
+
+func is_boss_room() -> bool:
+	return current_room_kind() == DungeonRoom.RoomKind.BOSS
+
+
+func is_elite_room() -> bool:
+	if is_procedural_run():
+		return false
+	if not is_campaign_route():
+		return false
+	return room_index == 2 or room_index == 6
+
+
+func combat_pressure() -> float:
+	if is_tutorial_route() or not route_picked:
+		return 1.0
+	var room_bonus := float(room_index) * 0.06
+	if is_boss_room():
+		return 1.18 + room_bonus
+	if is_elite_room():
+		return 1.28 + room_bonus
+	return 1.18 + room_bonus
 
 
 func biome_for_current_room() -> BiomeDefinition:

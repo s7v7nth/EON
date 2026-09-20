@@ -19,6 +19,12 @@ func _run() -> void:
 	assert(RunState.route_picked)
 	assert(RunState.room_count() == campaign.total_rooms())
 	assert(RunState.biome_for_current_room().biome_id == GameplayEnums.BiomeId.LANDFILL)
+	assert(RunState.current_room_kind() == DungeonRoom.RoomKind.COMBAT)
+	RunState.seek_room(1)
+	assert(RunState.current_room_kind() == DungeonRoom.RoomKind.SHOP, "campaign room 2 should be a shop")
+	RunState.seek_room(campaign.total_rooms() - 1)
+	assert(RunState.is_boss_room(), "campaign last room should be the warden")
+	RunState.seek_room(0)
 
 	# Synergies catalog
 	var catalog := load("res://resources/statuses/status_catalog.tres") as StatusCatalog

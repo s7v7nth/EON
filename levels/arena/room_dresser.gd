@@ -124,10 +124,7 @@ static func _door_dirs() -> Array[Vector2i]:
 
 
 static func _is_boss_room() -> bool:
-	if not RunState.is_procedural_run():
-		return false
-	var room := RunState.current_dungeon_room()
-	return room != null and room.kind == DungeonRoom.RoomKind.BOSS
+	return RunState.is_boss_room()
 
 
 static func _add_iso_floor(root: Node2D, biome: BiomeDefinition) -> void:

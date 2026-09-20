@@ -20,15 +20,19 @@ spawns = Array[ExtResource("3_group")]([SubResource("spawn_w1")])
 
 [sub_resource type="Resource" id="spawn_w2a"]
 script = ExtResource("3_group")
-count = 3
+count = 2
 enemy_scene = ExtResource("4_enemy")
 enemy_definition = ExtResource("5_android")
 
 [sub_resource type="Resource" id="spawn_w2b"]
 script = ExtResource("3_group")
-count = 2
+count = 1
 enemy_scene = ExtResource("4_enemy")
 enemy_definition = ExtResource("6_swarm")
+is_elite = true
+elite_hp_mult = 2.1
+elite_move_mult = 1.12
+elite_action_speed = 1.16
 
 [sub_resource type="Resource" id="wave_2"]
 script = ExtResource("2_def")

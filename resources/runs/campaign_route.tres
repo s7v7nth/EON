@@ -18,14 +18,14 @@ script = ExtResource("2")
 act_index = 1
 display_name = "Outskirts"
 biomes = Array[Resource]([ExtResource("3"), ExtResource("4"), ExtResource("5")])
-rooms_in_act = 3
+rooms_in_act = 2
 
 [sub_resource type="Resource" id="act_2"]
 script = ExtResource("2")
 act_index = 2
 display_name = "Dead Habitats"
 biomes = Array[Resource]([ExtResource("6"), ExtResource("7"), ExtResource("8")])
-rooms_in_act = 3
+rooms_in_act = 2
 
 [sub_resource type="Resource" id="act_3"]
 script = ExtResource("2")
