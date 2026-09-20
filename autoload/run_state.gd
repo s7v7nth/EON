@@ -749,12 +749,12 @@ func room_kind_label() -> String:
 func combat_pressure() -> float:
 	if is_tutorial_route() or not route_picked:
 		return 1.0
-	var room_bonus := float(room_index) * 0.06
+	var room_bonus := float(room_index) * 0.045
 	if is_boss_room():
-		return 1.18 + room_bonus
+		return 1.10 + room_bonus
 	if is_elite_room():
-		return 1.28 + room_bonus
-	return 1.18 + room_bonus
+		return 1.16 + room_bonus
+	return 1.06 + room_bonus
 
 
 func biome_for_current_room() -> BiomeDefinition:

@@ -46,6 +46,10 @@ func _pulse() -> void:
 	for child in parent.get_children():
 		if child == self or child is not Node2D:
 			continue
+		if child is Player or child.is_in_group("player") or child.is_in_group("ally_drone"):
+			continue
+		if not child.is_in_group("enemies"):
+			continue
 		if child.get("health") == null and not child.has_method("apply_knockback"):
 			continue
 		if global_position.distance_to((child as Node2D).global_position) > _radius:
