@@ -61,7 +61,7 @@ static func _origin_for(from: DungeonRoom, to: DungeonRoom, dir: Vector2i, hall:
 	var axis := Vector2(float(dir.x), float(dir.y))
 	var to_door_target := from_door + axis * hall
 	var t_to := float(to.door_t.get(-dir, 0.5))
-	var local := to.footprint.door_local(-dir, t_to)
+	var local: Vector2 = to.footprint.door_local(-dir, t_to)
 	return to_door_target - local
 
 
@@ -73,15 +73,15 @@ static func _already_placed(room: DungeonRoom, placed: Array[DungeonRoom]) -> bo
 
 
 static func _overlaps_any(room: DungeonRoom, placed: Array[DungeonRoom]) -> bool:
-	var poly := room.footprint.world_poly(room.world_origin)
-	var grow := room.footprint.aabb(room.world_origin).grow(PAD)
+	var poly: PackedVector2Array = room.footprint.world_poly(room.world_origin)
+	var grow: Rect2 = room.footprint.aabb(room.world_origin).grow(PAD)
 	for other in placed:
 		if other == room or other.footprint == null:
 			continue
-		var other_aabb := other.footprint.aabb(other.world_origin).grow(PAD)
+		var other_aabb: Rect2 = other.footprint.aabb(other.world_origin).grow(PAD)
 		if not grow.intersects(other_aabb):
 			continue
-		var hit := Geometry2D.intersect_polygons(poly, other.footprint.world_poly(other.world_origin))
+		var hit: Array = Geometry2D.intersect_polygons(poly, other.footprint.world_poly(other.world_origin))
 		if not hit.is_empty():
 			return true
 	return false
