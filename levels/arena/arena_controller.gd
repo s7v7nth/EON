@@ -444,6 +444,18 @@ func _spawn_wave(wave: WaveDefinition) -> void:
 					group.elite_action_speed
 				)
 			_alive_enemies += 1
+	_alert_wave_at_player()
+
+
+func _alert_wave_at_player() -> void:
+	if player_path == NodePath() or not has_node(player_path):
+		return
+	var player := get_node(player_path) as Player
+	if player == null or _entities == null:
+		return
+	for child in _entities.get_children():
+		if child is EnemyDummy:
+			(child as EnemyDummy).receive_room_alert(player)
 
 
 func _on_enemy_spawned(_enemy: Node) -> void:

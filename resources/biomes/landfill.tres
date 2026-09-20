@@ -20,5 +20,5 @@ trap_scene = ExtResource("trap")
 trap_count = 2
 trap_damage = 3.5
 trap_status_id = &"acid"
-trap_status_buildup = 16.0
+trap_status_buildup = 8.0
 trap_color = Color(0.55, 0.85, 0.25, 0.5)
