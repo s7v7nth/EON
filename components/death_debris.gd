@@ -16,6 +16,20 @@ static func burst(
 	_spawn_splat(world, origin)
 	for _i in maxi(chunk_count, 4):
 		_spawn_chunk(world, origin, body_color)
+	var smoke := ArtBank.particle("smoke_08")
+	if smoke:
+		var cloud := Sprite2D.new()
+		cloud.texture = smoke
+		cloud.centered = true
+		cloud.modulate = Color(0.55, 0.18, 0.12, 0.85)
+		cloud.z_index = 7
+		cloud.scale = Vector2(0.25, 0.25)
+		world.add_child(cloud)
+		cloud.global_position = origin + Vector2(0, -16)
+		var tw := cloud.create_tween()
+		tw.tween_property(cloud, "scale", Vector2(0.85, 0.7), 0.28).set_trans(Tween.TRANS_QUAD)
+		tw.parallel().tween_property(cloud, "modulate:a", 0.0, 0.4)
+		tw.tween_callback(cloud.queue_free)
 
 
 static func _spawn_blood_puddle(world: Node, origin: Vector2, body_color: Color) -> void:

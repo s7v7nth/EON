@@ -92,16 +92,26 @@ func _spawn_ghost() -> void:
 		return
 	var spr := visual.get_node_or_null("Sprite") as Sprite2D
 	if spr and spr.texture:
-		var ghost := Sprite2D.new()
-		ghost.texture = spr.texture
-		ghost.offset = spr.offset
-		ghost.centered = spr.centered
+		var ghost := ArtBank.clone_sprite_look(spr)
 		ghost.scale = visual.scale * spr.scale
 		ghost.modulate = GHOST_TINT
 		ghost.z_index = -1
-		ghost.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 		player.get_parent().add_child(ghost)
 		ghost.global_position = player.global_position + spr.position
+		var puff := ArtBank.particle("smoke_04")
+		if puff:
+			var cloud := Sprite2D.new()
+			cloud.texture = puff
+			cloud.centered = true
+			cloud.modulate = Color(0.65, 0.85, 1.0, 0.55)
+			cloud.scale = Vector2(0.35, 0.35)
+			cloud.z_index = -2
+			player.get_parent().add_child(cloud)
+			cloud.global_position = player.global_position + Vector2(0, 8)
+			var puff_tw := cloud.create_tween()
+			puff_tw.tween_property(cloud, "modulate:a", 0.0, 0.22)
+			puff_tw.parallel().tween_property(cloud, "scale", Vector2(0.7, 0.45), 0.22)
+			puff_tw.tween_callback(cloud.queue_free)
 		var tween := ghost.create_tween()
 		tween.tween_property(ghost, "modulate:a", 0.0, GHOST_FADE_TIME)
 		tween.tween_callback(ghost.queue_free)

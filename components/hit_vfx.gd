@@ -192,12 +192,12 @@ static func _sprite_impact(
 	spr.z_index = 31
 	spr.centered = true
 	spr.rotation = dir.angle()
-	spr.scale = Vector2.ONE * (0.35 * impact_scale)
+	spr.scale = Vector2.ONE * (0.55 * impact_scale)
 	spr.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 	world.add_child(spr)
 	spr.global_position = origin
 	var tween := spr.create_tween()
-	tween.tween_property(spr, "scale", Vector2.ONE * (0.85 * impact_scale), 0.08).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tween.tween_property(spr, "scale", Vector2.ONE * (1.15 * impact_scale), 0.08).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	tween.parallel().tween_property(spr, "modulate:a", 0.0, 0.22)
 	tween.tween_callback(spr.queue_free)
 	if damage_type == GameplayEnums.DamageType.PHYSICAL or damage_type == GameplayEnums.DamageType.BLEED:
@@ -210,7 +210,7 @@ static func _sprite_impact(
 			stain.z_index = -4
 			stain.centered = true
 			stain.rotation = randf() * TAU
-			stain.scale = Vector2.ONE * randf_range(0.12, 0.22) * impact_scale
+			stain.scale = Vector2.ONE * randf_range(0.22, 0.38) * impact_scale
 			world.add_child(stain)
 			stain.global_position = origin + Vector2(randf_range(-8, 8), randf_range(4, 14))
 			var fade := stain.create_tween()

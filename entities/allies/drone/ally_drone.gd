@@ -158,5 +158,5 @@ func _ensure_visual() -> void:
 	spr.texture = ArtBank.space("satelliteDish_SE")
 	if spr.texture == null:
 		spr.texture = ArtBank.rts_unit(8)
-	spr.scale = Vector2(0.32, 0.32)
+	ArtBank.fit_height(spr, 38.0, true)
 	spr.modulate = Color(0.78, 0.62, 1.0, 1)

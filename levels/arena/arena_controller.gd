@@ -128,19 +128,19 @@ func _spawn_special_marker(kind: int) -> void:
 		DungeonRoom.RoomKind.SHOP:
 			spr.texture = ArtBank.dungeon("chestClosed_S")
 			if spr.texture == null:
-				spr.texture = ArtBank.icon("coin")
-			spr.scale = Vector2(0.7, 0.7)
+				spr.texture = ArtBank.icon("star")
+			ArtBank.fit_height(spr, 78.0, true)
 		DungeonRoom.RoomKind.TREASURE:
 			spr.texture = ArtBank.dungeon("chestOpen_S")
 			if spr.texture == null:
 				spr.texture = ArtBank.shooter("star_gold")
-			spr.scale = Vector2(0.7, 0.7)
+			ArtBank.fit_height(spr, 78.0, true)
 		_:
 			spr.texture = ArtBank.shooter("powerupBlue_shield")
-			spr.scale = Vector2(0.9, 0.9)
+			ArtBank.fit_height(spr, 48.0, false)
 	marker.add_child(spr)
 	var hint := Label.new()
-	hint.position = Vector2(-90, -48)
+	hint.position = Vector2(-110, -92)
 	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	hint.custom_minimum_size = Vector2(180, 20)
 	hint.add_theme_font_size_override("font_size", 14)
@@ -286,7 +286,7 @@ func _make_door(dir: Vector2i) -> Area2D:
 		Vector2(half.x + 8, half.y + 8),
 		Vector2(-half.x - 8, half.y + 8),
 	])
-	frame.color = Color(frame_col.r, frame_col.g, frame_col.b, 0.35)
+	frame.color = Color(frame_col.r, frame_col.g, frame_col.b, 0.12)
 	door.add_child(frame)
 	var visual := Polygon2D.new()
 	visual.name = "DoorVisual"
@@ -296,7 +296,7 @@ func _make_door(dir: Vector2i) -> Area2D:
 		Vector2(half.x, half.y),
 		Vector2(-half.x, half.y),
 	])
-	visual.color = Color(frame_col.r * 0.35, frame_col.g * 0.35, frame_col.b * 0.35, 0.55)
+	visual.color = Color(frame_col.r * 0.35, frame_col.g * 0.35, frame_col.b * 0.35, 0.16)
 	door.add_child(visual)
 	# Threshold glow into the carved wall gap.
 	var threshold := Polygon2D.new()
@@ -313,6 +313,15 @@ func _make_door(dir: Vector2i) -> Area2D:
 		])
 	threshold.color = Color(frame_col.r, frame_col.g, frame_col.b, 0.2)
 	door.add_child(threshold)
+	var door_spr := Sprite2D.new()
+	door_spr.name = "DoorSprite"
+	door_spr.centered = true
+	door_spr.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	door_spr.texture = ArtBank.dungeon_facing("stoneWallDoorClosed", Vector2(dir))
+	if door_spr.texture == null:
+		door_spr.texture = ArtBank.dungeon_facing("stoneWallArchway", Vector2(dir))
+	ArtBank.fit_height(door_spr, 124.0, true)
+	door.add_child(door_spr)
 	door.body_entered.connect(_on_door_body_entered.bind(dir))
 	door.body_exited.connect(_on_door_body_exited.bind(dir))
 	return door
@@ -472,6 +481,20 @@ func _present_boss(enemy: EnemyDummy) -> void:
 	if enemy.definition and enemy.definition.display_name != "":
 		name_txt = enemy.definition.display_name
 	SignalBus.boss_spawned.emit(name_txt)
+	var plate := Label.new()
+	plate.name = "BossPlate"
+	plate.text = name_txt.to_upper()
+	plate.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	plate.position = Vector2(-90, -128)
+	plate.custom_minimum_size = Vector2(180, 24)
+	plate.add_theme_font_size_override("font_size", 18)
+	plate.add_theme_color_override("font_color", Color(1.0, 0.38, 0.28))
+	plate.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.95))
+	plate.add_theme_constant_override("outline_size", 6)
+	var plate_font := ArtBank.title_font()
+	if plate_font:
+		plate.add_theme_font_override("font", plate_font)
+	enemy.add_child(plate)
 	var tex := _radial_boss_tex()
 	for i in 3:
 		var light := PointLight2D.new()
@@ -633,13 +656,20 @@ func _set_door_unlocked_look(door: Area2D) -> void:
 	var frame_col := DOOR_COLORS.get(dir, Color(0.3, 0.75, 0.45, 0.7)) as Color
 	var visual := door.get_node_or_null("DoorVisual") as Polygon2D
 	if visual:
-		visual.color = Color(frame_col.r, frame_col.g, frame_col.b, 0.8)
+		visual.color = Color(frame_col.r, frame_col.g, frame_col.b, 0.22)
 	var frame := door.get_node_or_null("DoorFrame") as Polygon2D
 	if frame:
-		frame.color = Color(frame_col.r, frame_col.g, frame_col.b, 0.65)
+		frame.color = Color(frame_col.r, frame_col.g, frame_col.b, 0.18)
 	var threshold := door.get_node_or_null("DoorThreshold") as Polygon2D
 	if threshold:
 		threshold.color = Color(frame_col.r, frame_col.g, frame_col.b, 0.45)
+	var door_spr := door.get_node_or_null("DoorSprite") as Sprite2D
+	if door_spr:
+		door_spr.texture = ArtBank.dungeon_facing("stoneWallDoorOpen", Vector2(dir))
+		if door_spr.texture == null:
+			door_spr.texture = ArtBank.dungeon_facing("stoneWallArchway", Vector2(dir))
+		ArtBank.fit_height(door_spr, 124.0, true)
+		door_spr.modulate = Color(1.15, 1.2, 1.05)
 
 
 func _on_player_died() -> void:

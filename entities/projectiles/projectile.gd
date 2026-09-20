@@ -200,8 +200,14 @@ func _ensure_visuals() -> void:
 	if laser == null:
 		laser = ArtBank.particle("slash_01")
 	bolt.texture = laser
+	ArtBank.apply_opaque_region(bolt)
 	bolt.rotation = 0.0
-	bolt.scale = Vector2(0.7, 0.55)
+	ArtBank.fit_height(bolt, 42.0, false)
+	bolt.rotation = PI * 0.5
+	if _visual:
+		_visual.modulate.a = 0.35
+	if _core:
+		_core.modulate.a = 0.7
 
 
 func _apply_visual_style() -> void:
@@ -231,19 +237,34 @@ func _apply_visual_style() -> void:
 
 
 func _spawn_trail() -> void:
-	if _visual == null or get_parent() == null:
+	if get_parent() == null:
 		return
-	var ghost := Polygon2D.new()
-	ghost.polygon = _visual.polygon
-	ghost.color = Color(_visual.color.r, _visual.color.g, _visual.color.b, 0.55)
-	ghost.z_index = 19
-	get_parent().add_child(ghost)
-	ghost.global_position = global_position
-	ghost.global_rotation = global_rotation
-	var tween := ghost.create_tween()
-	tween.tween_property(ghost, "color:a", 0.0, 0.14)
-	tween.parallel().tween_property(ghost, "scale", Vector2(0.4, 0.4), 0.14)
-	tween.tween_callback(ghost.queue_free)
+	var bolt := get_node_or_null("Bolt") as Sprite2D
+	if bolt and bolt.texture:
+		var ghost := ArtBank.clone_sprite_look(bolt)
+		ghost.modulate = Color(bolt.modulate.r, bolt.modulate.g, bolt.modulate.b, 0.45)
+		ghost.z_index = 19
+		get_parent().add_child(ghost)
+		ghost.global_position = global_position
+		ghost.global_rotation = global_rotation
+		var tween := ghost.create_tween()
+		tween.tween_property(ghost, "modulate:a", 0.0, 0.14)
+		tween.parallel().tween_property(ghost, "scale", ghost.scale * 0.4, 0.14)
+		tween.tween_callback(ghost.queue_free)
+		return
+	if _visual == null:
+		return
+	var poly := Polygon2D.new()
+	poly.polygon = _visual.polygon
+	poly.color = Color(_visual.color.r, _visual.color.g, _visual.color.b, 0.55)
+	poly.z_index = 19
+	get_parent().add_child(poly)
+	poly.global_position = global_position
+	poly.global_rotation = global_rotation
+	var tween_poly := poly.create_tween()
+	tween_poly.tween_property(poly, "color:a", 0.0, 0.14)
+	tween_poly.parallel().tween_property(poly, "scale", Vector2(0.4, 0.4), 0.14)
+	tween_poly.tween_callback(poly.queue_free)
 
 
 func apply_mirror_ricochet(mirror: Node2D) -> bool:

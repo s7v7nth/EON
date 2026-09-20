@@ -15,6 +15,8 @@ static func dress(arena: Node2D, biome: BiomeDefinition) -> void:
 	var floor_c := biome.get_floor_color()
 	var accent := _biome_accent(biome)
 	_paint_underlay(arena, floor_c)
+	_hide_box_walls(arena)
+	_add_backdrop(root, biome)
 	_add_iso_floor(root, biome)
 	_add_floor_decals(root, biome, accent)
 	_add_edge_walls(root, biome)
@@ -60,10 +62,55 @@ static func _biome_accent(biome: BiomeDefinition) -> Color:
 static func _paint_underlay(arena: Node2D, floor_c: Color) -> void:
 	var floor_poly := arena.get_node_or_null("Floor") as Polygon2D
 	if floor_poly:
-		var c := floor_c.darkened(0.45)
+		var c := floor_c.darkened(0.62)
 		c.a = 1.0
 		floor_poly.color = c
 		floor_poly.z_index = -22
+
+
+static func _hide_box_walls(arena: Node2D) -> void:
+	var visuals := arena.get_node_or_null("WallVisuals") as Node2D
+	if visuals:
+		visuals.visible = false
+
+
+static func _add_backdrop(root: Node2D, biome: BiomeDefinition) -> void:
+	var path := "res://assets/kenney/space-shooter/bg/darkPurple.png"
+	match biome.biome_id:
+		GameplayEnums.BiomeId.LANDFILL, GameplayEnums.BiomeId.WASTELAND:
+			path = "res://assets/kenney/space-shooter/bg/black.png"
+		GameplayEnums.BiomeId.DATA_CENTER, GameplayEnums.BiomeId.GATEWAY:
+			path = "res://assets/kenney/space-shooter/bg/blue.png"
+		GameplayEnums.BiomeId.JUNGLE, GameplayEnums.BiomeId.TAIGA:
+			path = "res://assets/kenney/space-shooter/bg/black.png"
+		GameplayEnums.BiomeId.DOWNTOWN, GameplayEnums.BiomeId.MALL, GameplayEnums.BiomeId.ALLEY:
+			path = "res://assets/kenney/space-shooter/bg/purple.png"
+		_:
+			path = "res://assets/kenney/space-shooter/bg/darkPurple.png"
+	var tex := ArtBank.tex(path)
+	if tex == null:
+		return
+	var bg := Sprite2D.new()
+	bg.name = "Nebula"
+	bg.texture = tex
+	bg.centered = true
+	bg.z_index = -18
+	bg.scale = Vector2(7.2, 4.6)
+	bg.modulate = Color(0.55, 0.6, 0.68, 1)
+	bg.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	root.add_child(bg)
+	var grit_path := "res://assets/kenney/patterns/pattern08.png"
+	if int(biome.biome_id) % 2 == 0:
+		grit_path = "res://assets/kenney/patterns/pattern03.png"
+	var grit := ArtBank.tex(grit_path)
+	if grit:
+		var overlay := Sprite2D.new()
+		overlay.texture = grit
+		overlay.centered = true
+		overlay.z_index = -17
+		overlay.scale = Vector2(14.0, 10.0)
+		overlay.modulate = Color(1, 1, 1, 0.07)
+		root.add_child(overlay)
 
 
 static func _door_dirs() -> Array[Vector2i]:
@@ -91,13 +138,14 @@ static func _add_iso_floor(root: Node2D, biome: BiomeDefinition) -> void:
 	var stems := _floor_stems(biome)
 	var rng := RandomNumberGenerator.new()
 	rng.seed = int(biome.biome_id) * 7919 + 42
-	# Diamond lattice — reads as an isometric plane, not a square grid.
-	var tw := 148.0
-	var th := 86.0
-	for ix in range(-9, 10):
-		for iy in range(-8, 9):
+	# Kenney iso diamonds are 256×128 once the padded canvas is cropped.
+	var tile_scale := 0.84
+	var tw := 256.0 * tile_scale
+	var th := 128.0 * tile_scale
+	for ix in range(-11, 12):
+		for iy in range(-10, 11):
 			var p := Vector2((ix - iy) * tw * 0.5, (ix + iy) * th * 0.5)
-			if absf(p.x) > 820.0 or absf(p.y) > 470.0:
+			if absf(p.x) > 860.0 or absf(p.y) > 500.0:
 				continue
 			var stem: String = stems[rng.randi() % stems.size()]
 			var tex := ArtBank.dungeon_facing(stem, Vector2(0, 1))
@@ -105,7 +153,7 @@ static func _add_iso_floor(root: Node2D, biome: BiomeDefinition) -> void:
 				tex = ArtBank.dungeon(stem + "_S")
 			if tex == null:
 				tex = ArtBank.space("terrain_SE")
-			var spr := ArtBank.add_sprite(tiles, tex, p, 0.58, 0, true)
+			var spr := ArtBank.add_sprite(tiles, tex, p, tile_scale, 0, true)
 			if spr:
 				spr.modulate = _floor_modulate(biome, rng)
 
@@ -144,18 +192,18 @@ static func _floor_modulate(biome: BiomeDefinition, rng: RandomNumberGenerator) 
 static func _add_floor_decals(root: Node2D, biome: BiomeDefinition, accent: Color) -> void:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = int(biome.biome_id) * 1337 + 9
-	# Sci-fi metal plates as sparse rugs — not a repeating grid.
 	var spots := [
 		Vector2(-220, -80), Vector2(260, 40), Vector2(-40, 160),
-		Vector2(180, -180), Vector2(-340, 120), Vector2(90, 240)
+		Vector2(180, -180), Vector2(-340, 120), Vector2(90, 240),
+		Vector2(-120, -240), Vector2(320, -120)
 	]
 	for i in spots.size():
 		var idx := 1 + (int(biome.biome_id) + i * 3) % 16
 		var tex := ArtBank.rts_tile(idx)
-		var spr := ArtBank.add_sprite(root, tex, spots[i] + Vector2(rng.randf_range(-18, 18), rng.randf_range(-12, 12)), 1.15, 1, true)
+		var spr := ArtBank.add_sprite(root, tex, spots[i] + Vector2(rng.randf_range(-18, 18), rng.randf_range(-12, 12)), 2.15, 1, true)
 		if spr:
 			spr.modulate = Color(accent.r, accent.g, accent.b, 0.55).lightened(0.2)
-			spr.modulate.a = 0.55
+			spr.modulate.a = 0.42
 
 
 static func _add_edge_walls(root: Node2D, biome: BiomeDefinition) -> void:
@@ -182,7 +230,7 @@ static func _add_edge_walls(root: Node2D, biome: BiomeDefinition) -> void:
 	# Corner columns
 	for c in [Vector2(-700, -360), Vector2(700, -360), Vector2(-700, 360), Vector2(700, 360)]:
 		var col := ArtBank.dungeon_facing("stoneColumn", Vector2(0, 1))
-		ArtBank.add_sprite(root, col, c, 0.55, 4, true)
+		ArtBank.add_fitted(root, col, c, 168.0, 4, true)
 
 
 static func _gap_blocks(doors: Array[Vector2i], dir: Vector2i, pos: Vector2, gap: float) -> bool:
@@ -199,7 +247,7 @@ static func _wall_piece(root: Node2D, biome: BiomeDefinition, stem: String, pos:
 		tex = ArtBank.space_facing("corridor_wall", facing)
 	else:
 		tex = ArtBank.dungeon_facing(stem, facing)
-	var spr := ArtBank.add_sprite(root, tex, pos, 0.5, 3, true)
+	var spr := ArtBank.add_fitted(root, tex, pos, 132.0, 3, true)
 	if spr == null:
 		return
 	match biome.biome_id:
@@ -228,6 +276,11 @@ static func _add_props(root: Node2D, biome: BiomeDefinition, accent: Color) -> v
 		clusters = [Vector2(-520, -240), Vector2(530, -230), Vector2(-500, 250), Vector2(510, 240)]
 	for i in clusters.size():
 		_scatter_cluster(props, biome, clusters[i], rng, accent, i)
+	# Larger RTS silhouettes so the room isn't just barrels.
+	var landmarks: Array[Vector2] = [Vector2(-560, -40), Vector2(570, 30), Vector2(40, -340)]
+	for i in landmarks.size():
+		var struct := ArtBank.rts_struct(1 + (int(biome.biome_id) + i * 4) % 12)
+		ArtBank.add_fitted(props, struct, landmarks[i], 92.0, 2, true)
 
 
 static func _scatter_cluster(
@@ -248,9 +301,9 @@ static func _scatter_cluster(
 			tex = ArtBank.dungeon_facing(stem, Vector2(0, 1))
 		if tex == null:
 			tex = ArtBank.rts_env(1 + ((salt + j) % 18))
-		var spr := ArtBank.add_sprite(props, tex, origin + offset, rng.randf_range(0.42, 0.58), 0, true)
+		var spr := ArtBank.add_fitted(props, tex, origin + offset, rng.randf_range(52.0, 78.0), 0, true)
 		if spr:
-			spr.modulate = Color(0.9, 0.92, 0.95).lerp(accent, 0.12)
+			spr.modulate = Color(0.92, 0.94, 0.96).lerp(accent, 0.14)
 
 
 static func _prop_stems(biome: BiomeDefinition) -> PackedStringArray:
@@ -279,8 +332,8 @@ static func _add_centerpiece(root: Node2D, biome: BiomeDefinition, accent: Color
 	var plat := ArtBank.space("platform_center_SE")
 	if plat == null:
 		plat = ArtBank.space("platform_large_SE")
-	var scale := 0.85 if boss else 0.62
-	var spr := ArtBank.add_sprite(root, plat, Vector2(0, 18), scale, 1, true)
+	var scale_h := 110.0 if boss else 78.0
+	var spr := ArtBank.add_fitted(root, plat, Vector2(0, 18), scale_h, 1, false)
 	if spr:
 		spr.modulate = Color(0.75, 0.8, 0.9).lerp(accent, 0.35)
 	if boss:
@@ -289,7 +342,7 @@ static func _add_centerpiece(root: Node2D, biome: BiomeDefinition, accent: Color
 		if glow:
 			glow.modulate = Color(1.0, 0.28, 0.22, 0.55)
 		var dish := ArtBank.space("satelliteDish_large_SE")
-		ArtBank.add_sprite(root, dish, Vector2(0, -40), 0.55, 3, true)
+		ArtBank.add_fitted(root, dish, Vector2(0, -40), 96.0, 3, true)
 
 
 static func _add_lighting(arena: Node2D, accent: Color, biome: BiomeDefinition) -> void:

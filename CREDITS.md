@@ -11,11 +11,12 @@ Third-party art and audio are **CC0 1.0**. Copies live under `assets/` with per-
 - Sci-Fi RTS — metal tiles, units, structures, environment pieces
 - Tiny Dungeon / Tiny Battle — extra 16×16 tiles
 - Particle Pack, Smoke Particles, Splat Pack — hit / death VFX
-- Pattern Pack — floor decals
+- Pattern Pack — floor grit
 - UI Pack + UI Pack Sci-Fi — HUD chrome and Kenney Future fonts
 - Space Shooter Redux — pickups, lasers, backgrounds, extra SFX
 - Pixel Platformer, Abstract Platformer, Game Icons — extras
 - Impact Sounds, Sci-Fi Sounds, Interface Sounds, RPG Audio, Digital Audio
+- Music Jingles — pickup / room-clear / boss stings
 
 ## OpenGameArt.org
 

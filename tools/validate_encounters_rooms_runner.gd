@@ -101,7 +101,11 @@ func _run() -> void:
 	assert(ArtBank.space("astronautA_SE") != null, "space kit astronaut missing")
 	assert(ArtBank.dungeon("stoneTile_S") != null, "iso dungeon floor missing")
 	assert(ArtBank.particle("slash_02") != null, "particle slash missing")
+	assert(ArtBank.portrait("synthetic") != null, "architecture portrait missing")
+	var crop: Rect2 = ArtBank.opaque_rect(ArtBank.space("astronautA_SE"))
+	assert(crop.size.y > 40.0 and crop.size.y < 140.0, "astronaut should crop off 512 padding")
 	assert(ResourceLoader.exists("res://assets/sfx/impact/impactPunch_medium_000.ogg"))
+	assert(ResourceLoader.exists("res://assets/sfx/jingles/jingles_HIT00.ogg"))
 
 	print("ENCOUNTERS_ROOMS_OK")
 	get_tree().quit(0)

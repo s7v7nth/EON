@@ -354,12 +354,24 @@ func _artifact_line() -> String:
 func _ensure_gold_label() -> void:
 	if _gold_label:
 		return
+	var row := HBoxContainer.new()
+	row.name = "GoldRow"
+	row.add_theme_constant_override("separation", 6)
+	var coin := TextureRect.new()
+	coin.custom_minimum_size = Vector2(18, 18)
+	coin.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	coin.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	coin.texture = ArtBank.shooter("bolt_gold")
+	if coin.texture == null:
+		coin.texture = ArtBank.icon("star")
+	row.add_child(coin)
 	_gold_label = Label.new()
 	_gold_label.name = "GoldLabel"
-	_paint_label(_gold_label, 15, Color(1.0, 0.86, 0.32))
+	_paint_label(_gold_label, 16, Color(1.0, 0.86, 0.32))
 	_gold_label.text = "Gold  0"
-	health_bar.get_parent().add_child(_gold_label)
-	health_bar.get_parent().move_child(_gold_label, 0)
+	row.add_child(_gold_label)
+	health_bar.get_parent().add_child(row)
+	health_bar.get_parent().move_child(row, 0)
 	_on_gold_changed(RunState.gold)
 
 

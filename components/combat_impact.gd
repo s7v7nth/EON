@@ -11,9 +11,9 @@ static func apply_hit_juice(hp_damage: float, max_hp: float, attack_data: Attack
 	## Returns frac used for further scaling (knockback etc.).
 	var frac: float = hp_frac(hp_damage, max_hp)
 	var weight: float = clampf(frac * 1.35, 0.0, 1.0)
-	var ts: float = lerpf(0.12, 0.04, weight)
-	var dur: float = lerpf(0.04, 0.13, weight)
-	var trauma: float = lerpf(0.1, 0.62, sqrt(clampf(frac, 0.0, 1.0)))
+	var ts: float = lerpf(0.1, 0.03, weight)
+	var dur: float = lerpf(0.05, 0.16, weight)
+	var trauma: float = lerpf(0.16, 0.78, sqrt(clampf(frac, 0.0, 1.0)))
 	if attack_data != null:
 		ts = minf(ts, attack_data.hit_stop_scale)
 		dur = maxf(dur, attack_data.hit_stop_duration * lerpf(0.75, 1.35, weight))

@@ -40,7 +40,7 @@ var _combat_locked: bool = false
 var _sprite: Sprite2D
 var _shadow: Sprite2D
 var _stem: String = "astronautA"
-var _base_scale: float = 0.46
+var _target_h: float = 88.0
 var _last_dir_key: String = ""
 
 
@@ -110,28 +110,28 @@ func _refresh_stem() -> void:
 	match body_style:
 		BodyStyle.NANO:
 			_stem = "astronautB"
-			_base_scale = 0.46
+			_target_h = 88.0
 		BodyStyle.TRAIN:
 			_stem = "rover"
-			_base_scale = 0.42
+			_target_h = 72.0
 		BodyStyle.NEURO:
 			_stem = "astronautA"
-			_base_scale = 0.46
+			_target_h = 88.0
 		BodyStyle.ANDROID:
 			_stem = "turret_single"
-			_base_scale = 0.5
+			_target_h = 84.0
 		BodyStyle.CYBORG:
 			_stem = "craft_speederA"
-			_base_scale = 0.4
+			_target_h = 92.0
 		BodyStyle.BEAST:
 			_stem = "alien"
-			_base_scale = 0.52
+			_target_h = 90.0
 		BodyStyle.SAVAGE:
 			_stem = "alien"
-			_base_scale = 0.48
+			_target_h = 86.0
 		_:
 			_stem = "astronautA"
-			_base_scale = 0.46
+			_target_h = 88.0
 
 
 func _process(delta: float) -> void:
@@ -163,14 +163,15 @@ func _apply_texture() -> void:
 		return
 	_last_dir_key = key
 	_sprite.texture = tex
-	_sprite.scale = Vector2(_base_scale, _base_scale)
-	# Feet near origin so y-sort reads as a standing figure.
-	var h := float(tex.get_height()) * _base_scale
-	_sprite.offset = Vector2(0.0, -h * 0.38 / maxf(_base_scale, 0.01))
+	ArtBank.fit_height(_sprite, _target_h, true)
 	if _shadow:
 		_shadow.texture = tex
-		_shadow.scale = Vector2(_base_scale * 0.92, _base_scale * 0.28)
-		_shadow.offset = Vector2(0.0, 8.0)
+		ArtBank.apply_opaque_region(_shadow)
+		var sz := ArtBank.drawn_size(_shadow)
+		var sc := _target_h / maxf(sz.y, 1.0)
+		_shadow.scale = Vector2(sc * 0.92, sc * 0.28)
+		_shadow.centered = true
+		_shadow.offset = Vector2(0.0, 6.0)
 		_shadow.modulate = Color(0, 0, 0, 0.4)
 
 
@@ -194,7 +195,7 @@ func _draw() -> void:
 	# Ground contact ellipse so sprites don't float.
 	draw_colored_polygon(
 		PackedVector2Array([
-			Vector2(-14, 4), Vector2(14, 4), Vector2(10, 9), Vector2(-10, 9)
+			Vector2(-18, 2), Vector2(18, 2), Vector2(13, 10), Vector2(-13, 10)
 		]),
-		Color(0, 0, 0, 0.28)
+		Color(0, 0, 0, 0.32)
 	)

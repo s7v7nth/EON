@@ -4,7 +4,7 @@ extends Node2D
 
 @export var health_component: HealthComponent
 @export var bar_size: Vector2 = Vector2(48, 6)
-@export var offset: Vector2 = Vector2(0, -58)
+@export var offset: Vector2 = Vector2(0, -96)
 @export var hide_when_full: bool = true
 @export var hide_delay: float = 1.5
 @export var fill_color: Color = Color(0.85, 0.22, 0.22, 0.95)
@@ -71,7 +71,9 @@ func _draw() -> void:
 		draw_rect(Rect2(-half.x, -half.y, fill_w, bar_size.y), fill_color)
 	if label_text.is_empty():
 		return
-	var font := ThemeDB.fallback_font
+	var font := ArtBank.ui_font()
+	if font == null:
+		font = ThemeDB.fallback_font
 	if font == null:
 		return
 	var text_pos := Vector2(-half.x, -half.y - 4.0)

@@ -12,6 +12,7 @@ var _label: Label
 var _price_label: Label
 var _light: PointLight2D
 var _deny_flash: float = 0.0
+var _sprite_base_scale: Vector2 = Vector2.ONE
 
 
 static func spawn_at(parent: Node, local_pos: Vector2, preset: UpgradeData = null) -> ArtifactOrb:
@@ -37,15 +38,38 @@ func _ready() -> void:
 	_sprite = Sprite2D.new()
 	_sprite.texture = _pick_texture()
 	_sprite.centered = true
-	_sprite.scale = Vector2(0.85, 0.85)
 	_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	ArtBank.fit_height(_sprite, 42.0, false)
+	_sprite_base_scale = _sprite.scale
 	add_child(_sprite)
+	var pedestal := Sprite2D.new()
+	pedestal.name = "Pedestal"
+	pedestal.texture = ArtBank.dungeon("woodenCrate_S")
+	if pedestal.texture == null:
+		pedestal.texture = ArtBank.space("platform_small_SE")
+	pedestal.centered = true
+	pedestal.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	pedestal.z_index = -1
+	ArtBank.fit_height(pedestal, 36.0, true)
+	pedestal.modulate = Color(0.85, 0.8, 0.7, 0.95)
+	add_child(pedestal)
+	var coin := Sprite2D.new()
+	coin.name = "PriceCoin"
+	coin.texture = ArtBank.shooter("bolt_gold")
+	if coin.texture == null:
+		coin.texture = ArtBank.icon("star")
+	coin.centered = true
+	coin.position = Vector2(-36, 28)
+	coin.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	ArtBank.fit_height(coin, 16.0, false)
+	coin.visible = false
+	add_child(coin)
 	_label = Label.new()
 	_label.text = "ARTIFACT"
 	_label.position = Vector2(-70, -58)
 	_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_label.custom_minimum_size = Vector2(140, 18)
-	_label.add_theme_font_size_override("font_size", 13)
+	_label.add_theme_font_size_override("font_size", 14)
 	_label.add_theme_color_override("font_color", Color(1, 0.9, 0.45))
 	_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
 	_label.add_theme_constant_override("outline_size", 4)
@@ -54,10 +78,10 @@ func _ready() -> void:
 		_label.add_theme_font_override("font", font)
 	add_child(_label)
 	_price_label = Label.new()
-	_price_label.position = Vector2(-70, 22)
+	_price_label.position = Vector2(-50, 22)
 	_price_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_price_label.custom_minimum_size = Vector2(140, 16)
-	_price_label.add_theme_font_size_override("font_size", 12)
+	_price_label.custom_minimum_size = Vector2(140, 18)
+	_price_label.add_theme_font_size_override("font_size", 15)
 	_price_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
 	_price_label.add_theme_constant_override("outline_size", 4)
 	if font:
@@ -121,16 +145,22 @@ func _refresh_price() -> void:
 		_price_label.text = "FREE"
 		_price_label.add_theme_color_override("font_color", Color(0.75, 0.9, 0.7))
 		_price_label.visible = false
+		var coin := get_node_or_null("PriceCoin") as Sprite2D
+		if coin:
+			coin.visible = false
 		return
 	_price_label.visible = true
-	_price_label.text = "%d G" % price_gold
+	_price_label.text = "%d GOLD" % price_gold
 	_price_label.add_theme_color_override("font_color", Color(1.0, 0.86, 0.32))
+	var coin_on := get_node_or_null("PriceCoin") as Sprite2D
+	if coin_on:
+		coin_on.visible = true
 
 
 func _process(delta: float) -> void:
 	_pulse += delta * 4.0
 	if _sprite:
-		_sprite.scale = Vector2.ONE * (0.85 + sin(_pulse) * 0.06)
+		_sprite.scale = _sprite_base_scale * (1.0 + sin(_pulse) * 0.07)
 		_sprite.rotation = sin(_pulse * 0.5) * 0.15
 	if _deny_flash > 0.0:
 		_deny_flash = maxf(0.0, _deny_flash - delta)

@@ -75,6 +75,7 @@ func _ensure_nodes() -> void:
 	parry_shield = _make_poly("ParryShield", Color(1, 1, 0.55, 0.0), _shield_poly())
 	parry_shield.z_index = 4
 	parry_shield.position = Vector2(10, -22)
+	_ensure_weapon_sprite()
 	charge_bar_bg = _make_poly("ChargeBarBg", Color(0.06, 0.1, 0.16, 0.0), _bar_poly(_charge_bar_width, 5.0))
 	charge_bar_bg.z_index = 5
 	charge_bar_bg.position = Vector2(0, 18)
@@ -84,6 +85,26 @@ func _ensure_nodes() -> void:
 	charge_aim_beam = _make_poly("ChargeAimBeam", Color(0.45, 0.85, 1.0, 0.0), _aim_beam_poly(48.0))
 	charge_aim_beam.z_index = 0
 	charge_aim_beam.position = Vector2(0, -16)
+
+
+func _ensure_weapon_sprite() -> void:
+	if weapon == null:
+		return
+	var wspr := weapon.get_node_or_null("Sprite") as Sprite2D
+	if wspr == null:
+		wspr = Sprite2D.new()
+		wspr.name = "Sprite"
+		wspr.centered = true
+		wspr.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+		weapon.add_child(wspr)
+	var tex := ArtBank.particle("slash_01")
+	if tex == null:
+		tex = ArtBank.shooter("laserBlue01")
+	wspr.texture = tex
+	if wspr.texture:
+		ArtBank.fit_height(wspr, 46.0, false)
+	wspr.position = Vector2(12, 0)
+	wspr.modulate = Color(1.15, 1.1, 1.0, 0.95)
 
 
 func _make_poly(node_name: String, color: Color, poly: PackedVector2Array) -> Polygon2D:
@@ -157,7 +178,7 @@ func apply_weapon_look(weapon_data: WeaponData, arch: ArchitectureData = null) -
 	else:
 		_accent = _element_color_from_tag(weapon_data.element_tag)
 	weapon.color = tint
-	weapon.modulate = Color(1, 1, 1, 1)
+	weapon.modulate = Color(1, 1, 1, 0.55)
 	match String(weapon_data.shape_tag):
 		"whip":
 			weapon.polygon = _whip_poly()
@@ -174,6 +195,21 @@ func apply_weapon_look(weapon_data: WeaponData, arch: ArchitectureData = null) -
 	weapon.position = _weapon_rest_pos
 	weapon.rotation = -0.35
 	weapon.scale = Vector2.ONE
+	_ensure_weapon_sprite()
+	var wspr := weapon.get_node_or_null("Sprite") as Sprite2D
+	if wspr:
+		var stem := "slash_01"
+		match String(weapon_data.shape_tag):
+			"gun", "mortar":
+				stem = "laserBlue01"
+				wspr.texture = ArtBank.shooter(stem)
+			"whip", "toad":
+				wspr.texture = ArtBank.particle("slash_02")
+			_:
+				wspr.texture = ArtBank.particle("slash_01")
+		if wspr.texture:
+			ArtBank.fit_height(wspr, 48.0, false)
+			wspr.modulate = Color(tint.r, tint.g, tint.b, 1.0).lightened(0.25)
 
 
 func apply_faction_look(faction: GameplayEnums.Faction, base_color: Color) -> void:

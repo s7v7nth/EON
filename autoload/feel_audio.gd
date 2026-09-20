@@ -19,6 +19,8 @@ var _coins: Array[AudioStream] = []
 var _boss: Array[AudioStream] = []
 var _specials: Array[AudioStream] = []
 var _parries: Array[AudioStream] = []
+var _jingle_win: Array[AudioStream] = []
+var _jingle_boss: Array[AudioStream] = []
 
 
 func _ready() -> void:
@@ -45,6 +47,8 @@ func _ready() -> void:
 		SignalBus.enemy_died.connect(_on_enemy_died)
 	if not SignalBus.player_died.is_connected(_on_player_died):
 		SignalBus.player_died.connect(_on_player_died)
+	if not SignalBus.room_cleared.is_connected(_on_room_cleared):
+		SignalBus.room_cleared.connect(_on_room_cleared)
 
 
 func _load_banks() -> void:
@@ -119,6 +123,18 @@ func _load_banks() -> void:
 		"res://assets/sfx/digital/highUp.ogg",
 		"res://assets/sfx/space-shooter/sfx_shieldUp.ogg",
 	])
+	_jingle_win = _load_many([
+		"res://assets/sfx/jingles/jingles_HIT01.ogg",
+		"res://assets/sfx/jingles/jingles_HIT05.ogg",
+		"res://assets/sfx/jingles/jingles_HIT10.ogg",
+		"res://assets/sfx/jingles/jingles_STEEL03.ogg",
+	])
+	_jingle_boss = _load_many([
+		"res://assets/sfx/jingles/jingles_SAX00.ogg",
+		"res://assets/sfx/jingles/jingles_SAX05.ogg",
+		"res://assets/sfx/jingles/jingles_SAX08.ogg",
+		"res://assets/sfx/jingles/jingles_STEEL07.ogg",
+	])
 
 
 func _load_many(paths: PackedStringArray) -> Array[AudioStream]:
@@ -152,6 +168,7 @@ func play_dash() -> void:
 
 func play_pickup() -> void:
 	_play_bank(_pickups, -6.0, randf_range(0.98, 1.08), 0.0)
+	_play_bank(_jingle_win, -12.0, 1.08, 0.02)
 
 
 func play_death() -> void:
@@ -183,6 +200,7 @@ func play_coin() -> void:
 
 func play_boss() -> void:
 	_play_bank(_boss, -3.0, 0.9, 0.0)
+	_play_bank(_jingle_boss, -6.0, 0.92, 0.04)
 	_rumble(0.6, 0.8, 0.28)
 
 
@@ -233,6 +251,11 @@ func _on_enemy_died(_enemy: Node) -> void:
 
 func _on_player_died() -> void:
 	play_player_death()
+
+
+func _on_room_cleared() -> void:
+	_play_bank(_jingle_win, -8.0, 1.0, 0.0)
+	_rumble(0.2, 0.3, 0.1)
 
 
 func _play_bank(bank: Array[AudioStream], volume_db: float, pitch: float, delay: float) -> void:

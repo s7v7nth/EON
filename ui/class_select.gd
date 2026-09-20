@@ -142,8 +142,14 @@ func _build() -> void:
 
 	_start = Button.new()
 	_start.text = "BEGIN RUN"
-	_start.custom_minimum_size = Vector2(0, 52)
-	_start.add_theme_font_size_override("font_size", 20)
+	_start.custom_minimum_size = Vector2(0, 56)
+	_start.add_theme_font_size_override("font_size", 22)
+	var start_font := ArtBank.title_font()
+	if start_font:
+		_start.add_theme_font_override("font", start_font)
+	var start_style := _button_style("res://assets/kenney/ui-scifi/button_rectangle.png")
+	if start_style:
+		_start.add_theme_stylebox_override("normal", start_style)
 	_start.pressed.connect(_begin_run)
 	col.add_child(_start)
 
@@ -159,37 +165,55 @@ func _make_arch_card(arch: ArchitectureData) -> Button:
 	var btn := Button.new()
 	btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	btn.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	btn.custom_minimum_size = Vector2(180, 260)
+	btn.custom_minimum_size = Vector2(200, 320)
 	var hint: Dictionary = HINTS.get(int(arch.architecture_id), {})
 	var title := str(hint.get("title", arch.display_name))
 	var role := str(hint.get("role", arch.description))
-	btn.text = "%s\n\n%s\n\n%s" % [title, role, arch.description]
+	btn.text = "%s\n%s" % [title, role]
 	btn.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	var font := ArtBank.ui_font()
 	if font:
 		btn.add_theme_font_override("font", font)
+	btn.add_theme_font_size_override("font_size", 16)
 	btn.icon = _portrait_for(arch)
-	btn.expand_icon = false
+	btn.expand_icon = true
 	btn.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	btn.vertical_icon_alignment = VERTICAL_ALIGNMENT_TOP
-	btn.add_theme_constant_override("icon_max_width", 96)
+	btn.add_theme_constant_override("icon_max_width", 168)
+	var tex_style := _button_style("res://assets/kenney/ui-pack/button_rectangle_depth_gradient.png")
+	var tex_hover := _button_style("res://assets/kenney/ui-pack/button_rectangle_depth_gloss.png")
+	if tex_style:
+		btn.add_theme_stylebox_override("normal", tex_style)
+	if tex_hover:
+		btn.add_theme_stylebox_override("hover", tex_hover)
+		btn.add_theme_stylebox_override("pressed", tex_hover)
 	btn.pressed.connect(_select_arch.bind(arch))
 	_arch_buttons.append(btn)
 	return btn
 
 
+func _button_style(path: String) -> StyleBoxTexture:
+	var tex := ArtBank.tex(path)
+	if tex == null:
+		return null
+	var sb := StyleBoxTexture.new()
+	sb.texture = tex
+	sb.set_texture_margin_all(16)
+	return sb
+
+
 func _portrait_for(arch: ArchitectureData) -> Texture2D:
 	if arch == null:
-		return ArtBank.space("astronautA_SE")
+		return ArtBank.portrait("synthetic")
 	match arch.architecture_id:
 		GameplayEnums.ArchitectureId.NANOMACHINES:
-			return ArtBank.space("astronautB_SE")
+			return ArtBank.portrait("hive")
 		GameplayEnums.ArchitectureId.ELECTRO_TRAIN:
-			return ArtBank.space("rover_SE")
+			return ArtBank.portrait("train")
 		GameplayEnums.ArchitectureId.NEURO_HACKER:
-			return ArtBank.space("astronautA_NE")
+			return ArtBank.portrait("neuro")
 		_:
-			return ArtBank.space("astronautA_SE")
+			return ArtBank.portrait("synthetic")
 
 
 func _select_route(route: ActRoute) -> void:
@@ -245,4 +269,6 @@ func _begin_run() -> void:
 	var path := RunState.layout_scene_for_current_room()
 	if path == "":
 		path = "res://levels/rooms/room_01.tscn"
+	if FeelAudio:
+		FeelAudio.play_ui()
 	get_tree().change_scene_to_file(path)
