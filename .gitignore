@@ -1,5 +1,8 @@
-# Godot 4
-.godot/
+# Godot 4 — keep class/uid caches so a fresh clone can parse scripts
+# without an editor pass. Imported textures stay local.
+.godot/**
+!.godot/global_script_class_cache.cfg
+!.godot/uid_cache.bin
 *.translation
 export.cfg
 export_presets.cfg
