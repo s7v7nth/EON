@@ -55,6 +55,7 @@ func _run() -> void:
 	assert(is_equal_approx(player.effective_damage_multiplier() / player.damage_multiplier, 2.0))
 	assert(player.try_special())
 	assert(is_equal_approx(float(player.active_economy.get("heat")), 0.0))
+	assert(player.active_economy.incoming_multiplier(player) < 0.9, "Parovoz hull should soak hits")
 
 	room.queue_free()
 	RunState.reset()

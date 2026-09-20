@@ -18,6 +18,6 @@ starting_tags = PackedStringArray("train", "plasma")
 visual_tint = Color(0.4, 0.7, 1.0, 1)
 resist_physical = 0.18
 resist_electricity = 0.25
-resist_corrosion = 0.08
+resist_corrosion = 0.22
 resist_fire = 0.22
 resist_bleed = 0.1

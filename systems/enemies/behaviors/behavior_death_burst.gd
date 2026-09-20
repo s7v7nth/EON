@@ -28,7 +28,7 @@ func on_death(host: Node) -> void:
 		var health: HealthComponent = child.get("health") as HealthComponent
 		if child is Player:
 			if health:
-				health.take_damage(damage * 0.35)
+				health.take_damage(damage * 0.22)
 			continue
 		if health:
 			health.take_damage(damage)

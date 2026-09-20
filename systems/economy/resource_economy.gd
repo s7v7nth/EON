@@ -34,6 +34,10 @@ func damage_multiplier(_host: Node) -> float:
 	return 1.0
 
 
+func incoming_multiplier(_host: Node) -> float:
+	return 1.0
+
+
 func attack_speed_multiplier(_host: Node) -> float:
 	return 1.0
 

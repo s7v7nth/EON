@@ -69,7 +69,10 @@ func receive_hit(attack_data: AttackData, source: Node) -> bool:
 		blocked.emit(attack_data, source, before - damage)
 
 	if get_parent() is Player:
-		damage *= maxf((get_parent() as Player).incoming_damage_mult, 0.2)
+		var player := get_parent() as Player
+		damage *= maxf(player.incoming_damage_mult, 0.2)
+		if player.active_economy:
+			damage *= maxf(player.active_economy.incoming_multiplier(player), 0.2)
 
 	var hp_damage := damage
 	if energy_component and damage > 0.0:

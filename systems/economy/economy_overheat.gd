@@ -10,6 +10,7 @@ extends "res://systems/economy/resource_economy.gd"
 @export var yellow_damage_mult: float = 1.5
 @export var red_damage_mult: float = 2.0
 @export var red_self_dps: float = 0.8
+@export var hull_incoming_mult: float = 0.78
 @export var vent_base_damage: float = 20.0
 @export var vent_radius: float = 120.0
 @export var vent_cooldown_base: float = 0.6
@@ -92,6 +93,10 @@ func damage_multiplier(_host: Node) -> float:
 	if heat >= yellow_threshold:
 		return yellow_damage_mult
 	return 1.0
+
+
+func incoming_multiplier(_host: Node) -> float:
+	return hull_incoming_mult
 
 
 func on_hit(_host: Node, target: Node) -> void:
