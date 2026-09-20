@@ -20,6 +20,9 @@ const PATTERNS := "res://assets/kenney/patterns/"
 const ABSTRACT := "res://assets/kenney/abstract/"
 const FONT_TITLE := "res://assets/kenney/ui-scifi/fonts/Kenney Future.ttf"
 const FONT_UI := "res://assets/kenney/ui-scifi/fonts/Kenney Future Narrow.ttf"
+const FONT_BODY := "res://assets/fonts/Inter-Regular.ttf"
+const FONT_BODY_BOLD := "res://assets/fonts/Inter-SemiBold.ttf"
+const FONT_BODY_HEAVY := "res://assets/fonts/Inter-Bold.ttf"
 const PORTRAITS := "res://assets/portraits/"
 const PANEL_GLASS := "res://assets/kenney/ui-scifi/panel_glass.png"
 const PANEL_RECT := "res://assets/kenney/ui-scifi/panel_rectangle.png"
@@ -33,6 +36,9 @@ static var _cache: Dictionary = {}
 static var _opaque_rects: Dictionary = {}
 static var _font_title: FontFile
 static var _font_ui: FontFile
+static var _font_body: FontFile
+static var _font_body_bold: FontFile
+static var _font_body_heavy: FontFile
 
 
 static func tex(path: String) -> Texture2D:
@@ -153,9 +159,41 @@ static func title_font() -> FontFile:
 
 
 static func ui_font() -> FontFile:
+	## Mixed-case body. Kenney Future is all-caps — keep it for titles only.
+	return body_font()
+
+
+static func pixel_font() -> FontFile:
 	if _font_ui == null:
 		_font_ui = _load_font(FONT_UI)
 	return _font_ui
+
+
+static func body_font() -> FontFile:
+	if _font_body == null:
+		_font_body = _load_font(FONT_BODY)
+	if _font_body:
+		return _font_body
+	return pixel_font()
+
+
+static func body_bold() -> FontFile:
+	if _font_body_bold == null:
+		_font_body_bold = _load_font(FONT_BODY_BOLD)
+	if _font_body_bold:
+		return _font_body_bold
+	var heavy := body_heavy()
+	if heavy:
+		return heavy
+	return body_font()
+
+
+static func body_heavy() -> FontFile:
+	if _font_body_heavy == null:
+		_font_body_heavy = _load_font(FONT_BODY_HEAVY)
+	if _font_body_heavy:
+		return _font_body_heavy
+	return body_bold()
 
 
 static func _load_font(path: String) -> FontFile:

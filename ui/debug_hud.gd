@@ -42,7 +42,7 @@ func _ready() -> void:
 	health_bar.modulate = Color.WHITE
 	energy_bar.modulate = Color.WHITE
 	adrenaline_bar.modulate = Color.WHITE
-	_paint_label(location_banner, 22, Color(0.94, 0.96, 1.0, 0.98), true)
+	_paint_label(location_banner, 18, Color(0.94, 0.96, 1.0, 0.98), false)
 	_paint_label(style_label, 16, Color(1.0, 0.86, 0.42))
 	_paint_label(status_label, 13, Color(1.0, 0.82, 0.28))
 	status_label.visible = false
@@ -81,6 +81,7 @@ func _ready() -> void:
 	_ensure_boss_bar()
 	SignalBus.upgrade_crafted.connect(_on_upgrade_crafted)
 	SignalBus.combo_unlocked.connect(_on_combo_hud)
+	SignalBus.combo_proc.connect(_on_combo_hud)
 	SignalBus.gold_changed.connect(_on_gold_changed)
 	SignalBus.boss_spawned.connect(_on_boss_spawned)
 	SignalBus.boss_health_changed.connect(_on_boss_health)
@@ -247,7 +248,7 @@ func _apply_bar(bar: ProgressBar, label: Label, data: Dictionary) -> void:
 
 func _on_style_changed(score: int, multiplier: float, rank: String) -> void:
 	if style_label:
-		style_label.text = "STYLE  %s   ×%.1f   %d" % [rank, multiplier, score]
+		style_label.text = "Style  %s   ×%.1f   %d" % [rank, multiplier, score]
 		if rank != _last_style_rank and _last_style_rank != "":
 			style_label.modulate = Color(1.4, 1.2, 0.6)
 			var tw := create_tween()
@@ -344,7 +345,7 @@ func _on_upgrade_crafted(_id: StringName) -> void:
 
 func _on_combo_hud(combo_name: String, _desc: String) -> void:
 	if _artifact_label:
-		_artifact_label.text = "COMBO  %s\n%s" % [combo_name, _artifact_line()]
+		_artifact_label.text = "Combo  %s\n%s" % [combo_name, _artifact_line()]
 		return
 	_refresh_artifacts()
 

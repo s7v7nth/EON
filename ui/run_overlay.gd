@@ -29,6 +29,10 @@ var _style_tween: Tween
 var _end_nodes: Array[Node] = []
 var _win_nodes: Array[Node] = []
 var _wave_plaque: PanelContainer
+var _combo_toast: PanelContainer
+var _combo_title: Label
+var _combo_body: Label
+var _combo_tween: Tween
 
 
 func _ready() -> void:
@@ -64,24 +68,27 @@ func _ready() -> void:
 	if get_parent() == get_tree().current_scene and RunState.room_index == 0 and not RunState.architecture_picked:
 		call_deferred("_show_start_flow")
 	SignalBus.combo_unlocked.connect(_on_combo_unlocked)
+	SignalBus.combo_proc.connect(_on_combo_proc)
+	SignalBus.synergy_triggered.connect(_on_synergy_triggered)
 	_ensure_boss_banner()
 	SignalBus.boss_spawned.connect(_on_boss_spawned)
 	SignalBus.boss_phase.connect(_on_boss_phase)
-	var ui_font := ArtBank.ui_font()
+	var body := ArtBank.body_font()
 	var title_font := ArtBank.title_font()
 	if title_font:
 		_title.add_theme_font_override("font", title_font)
-	if ui_font:
-		_subtitle.add_theme_font_override("font", ui_font)
-		_wave_label.add_theme_font_override("font", ui_font)
+	if body:
+		_subtitle.add_theme_font_override("font", body)
+		_wave_label.add_theme_font_override("font", body)
 		if _style_banner:
-			_style_banner.add_theme_font_override("font", title_font if title_font else ui_font)
+			_style_banner.add_theme_font_override("font", title_font if title_font else body)
 	_title.add_theme_font_size_override("font_size", 32)
 	_title.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
 	_title.add_theme_constant_override("outline_size", 6)
 	_subtitle.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_wrap_wave_plaque()
+	_ensure_combo_toast()
 
 
 func _wrap_wave_plaque() -> void:
@@ -184,11 +191,82 @@ func _skin_button(btn: Button, tint: Color = Color(0.95, 0.97, 1.0, 1)) -> void:
 	btn.add_theme_stylebox_override("pressed", ArtBank.button_style(true, tint.darkened(0.08)))
 	btn.add_theme_color_override("font_color", Color(0.94, 0.96, 1.0))
 	btn.add_theme_color_override("font_hover_color", Color.WHITE)
-	var font := ArtBank.ui_font()
+	var font := ArtBank.body_bold()
 	if font:
 		btn.add_theme_font_override("font", font)
-	btn.add_theme_font_size_override("font_size", 15)
-	btn.custom_minimum_size.y = maxf(btn.custom_minimum_size.y, 44.0)
+	btn.add_theme_font_size_override("font_size", 16)
+	btn.custom_minimum_size.y = maxf(btn.custom_minimum_size.y, 48.0)
+
+
+func _ensure_combo_toast() -> void:
+	if _combo_toast:
+		return
+	_combo_toast = PanelContainer.new()
+	_combo_toast.name = "ComboToast"
+	_combo_toast.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_combo_toast.set_anchors_preset(Control.PRESET_CENTER_TOP)
+	_combo_toast.anchor_left = 0.5
+	_combo_toast.anchor_right = 0.5
+	_combo_toast.offset_left = -220.0
+	_combo_toast.offset_right = 220.0
+	_combo_toast.offset_top = 72.0
+	_combo_toast.offset_bottom = 148.0
+	_combo_toast.add_theme_stylebox_override("panel", ArtBank.panel_style(&"card", Color(1.0, 0.92, 0.55, 0.97)))
+	_combo_toast.modulate.a = 0.0
+	var pad := MarginContainer.new()
+	pad.add_theme_constant_override("margin_left", 16)
+	pad.add_theme_constant_override("margin_right", 16)
+	pad.add_theme_constant_override("margin_top", 10)
+	pad.add_theme_constant_override("margin_bottom", 10)
+	_combo_toast.add_child(pad)
+	var col := VBoxContainer.new()
+	col.add_theme_constant_override("separation", 2)
+	pad.add_child(col)
+	var kicker := Label.new()
+	kicker.text = "Combo"
+	kicker.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	kicker.add_theme_font_size_override("font_size", 12)
+	kicker.add_theme_color_override("font_color", Color(0.35, 0.22, 0.08, 1))
+	var kicker_font := ArtBank.body_bold()
+	if kicker_font:
+		kicker.add_theme_font_override("font", kicker_font)
+	col.add_child(kicker)
+	_combo_title = Label.new()
+	_combo_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_combo_title.add_theme_font_size_override("font_size", 22)
+	_combo_title.add_theme_color_override("font_color", Color(0.12, 0.08, 0.04, 1))
+	var title_font := ArtBank.body_heavy()
+	if title_font:
+		_combo_title.add_theme_font_override("font", title_font)
+	col.add_child(_combo_title)
+	_combo_body = Label.new()
+	_combo_body.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_combo_body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_combo_body.add_theme_font_size_override("font_size", 14)
+	_combo_body.add_theme_color_override("font_color", Color(0.22, 0.16, 0.1, 1))
+	var body := ArtBank.body_font()
+	if body:
+		_combo_body.add_theme_font_override("font", body)
+	col.add_child(_combo_body)
+	add_child(_combo_toast)
+
+
+func _show_combo_toast(combo_name: String, description: String) -> void:
+	_ensure_combo_toast()
+	if _combo_title:
+		_combo_title.text = combo_name
+	if _combo_body:
+		_combo_body.text = description
+	_combo_toast.modulate = Color.WHITE
+	_combo_toast.scale = Vector2(1.08, 1.08)
+	if _combo_tween and _combo_tween.is_valid():
+		_combo_tween.kill()
+	_combo_tween = create_tween()
+	_combo_tween.tween_property(_combo_toast, "scale", Vector2.ONE, 0.16).set_trans(Tween.TRANS_BACK)
+	_combo_tween.tween_interval(1.45)
+	_combo_tween.tween_property(_combo_toast, "modulate:a", 0.0, 0.35)
+	if FeelAudio:
+		FeelAudio.play_ui()
 
 
 func _ensure_boss_banner() -> void:
@@ -265,13 +343,13 @@ func _on_player_died() -> void:
 
 
 func _on_wave_started(index: int, total: int) -> void:
-	_set_wave_text("ROOM %d / %d   ·   WAVE %d OF %d" % [
+	_set_wave_text("Room %d / %d   ·   Wave %d of %d" % [
 		RunState.room_index + 1, RunState.room_count(), index + 1, total
 	])
 
 
 func _on_wave_cleared(index: int) -> void:
-	_set_wave_text("WAVE %d CLEAR   ·   RANK %s" % [index + 1, RunState.current_room_rank()])
+	_set_wave_text("Wave %d clear   ·   Rank %s" % [index + 1, RunState.current_room_rank()])
 
 
 func _on_run_won() -> void:
@@ -296,7 +374,7 @@ func _on_exit_reached() -> void:
 	if not RunState.last_loot.is_empty():
 		loot_line = "Loot: %s — then pick an artifact (1–3)" % RunState.loot_summary()
 	if RunState.last_combo_name != "":
-		loot_line = "COMBO %s — %s" % [RunState.last_combo_name, loot_line]
+		loot_line = "%s — %s" % [RunState.last_combo_name, loot_line]
 	var title := "Room Cleared — Rank %s" % RunState.current_room_rank()
 	if RunState.is_last_room():
 		title = "Act Clear — Rank %s" % RunState.current_room_rank()
@@ -320,7 +398,7 @@ func _on_style_changed(score: int, multiplier: float, rank: String) -> void:
 	_last_style_rank = rank
 	if first:
 		return
-	_style_banner.text = "STYLE  %s    ×%.1f    %d" % [rank, multiplier, score]
+	_style_banner.text = "Style  %s    ×%.1f    %d" % [rank, multiplier, score]
 	_style_banner.modulate = Color.WHITE
 	if _style_tween and _style_tween.is_valid():
 		_style_tween.kill()
@@ -477,25 +555,71 @@ func _populate_reward_upgrades() -> void:
 
 func _make_boon_card(upgrade: UpgradeData, hotkey: int = 0) -> Button:
 	var btn := Button.new()
-	btn.custom_minimum_size = Vector2(210, 248)
+	btn.custom_minimum_size = Vector2(228, 268)
 	btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	var house := UpgradeData.house_name(upgrade.house)
-	var rare := UpgradeData.rarity_name(upgrade.rarity)
-	var key_line := "[ %d ]" % hotkey if hotkey > 0 else ""
-	btn.text = "%s\n%s · %s\n\n%s\n\n%s" % [key_line, rare, house, upgrade.display_name, upgrade.description]
-	btn.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	btn.text = ""
+	btn.clip_text = false
 	var tint := UpgradeData.rarity_color(upgrade.rarity)
 	var house_c := UpgradeData.house_color(upgrade.house)
-	btn.add_theme_color_override("font_color", Color(0.94, 0.96, 1.0))
-	btn.add_theme_color_override("font_hover_color", Color.WHITE)
-	btn.add_theme_font_size_override("font_size", 15)
-	var font := ArtBank.ui_font()
-	if font:
-		btn.add_theme_font_override("font", font)
 	btn.add_theme_stylebox_override("normal", _card_style(tint, Color(0.92, 0.94, 1.0, 1)))
 	btn.add_theme_stylebox_override("hover", _card_style(tint.lightened(0.18), Color(1.05, 1.05, 1.08, 1)))
 	btn.add_theme_stylebox_override("pressed", _card_style(house_c, Color(0.9, 0.9, 1.0, 1)))
 	btn.pressed.connect(_on_reward_upgrade.bind(upgrade))
+	var pad := MarginContainer.new()
+	pad.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	pad.set_anchors_preset(Control.PRESET_FULL_RECT)
+	pad.add_theme_constant_override("margin_left", 14)
+	pad.add_theme_constant_override("margin_right", 14)
+	pad.add_theme_constant_override("margin_top", 14)
+	pad.add_theme_constant_override("margin_bottom", 14)
+	btn.add_child(pad)
+	var col := VBoxContainer.new()
+	col.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	col.add_theme_constant_override("separation", 6)
+	pad.add_child(col)
+	var key := Label.new()
+	key.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	key.text = "[ %d ]" % hotkey if hotkey > 0 else ""
+	key.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	key.add_theme_font_size_override("font_size", 12)
+	key.add_theme_color_override("font_color", Color(0.78, 0.82, 0.9))
+	var key_font := ArtBank.body_bold()
+	if key_font:
+		key.add_theme_font_override("font", key_font)
+	col.add_child(key)
+	var meta := Label.new()
+	meta.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	meta.text = "%s · %s" % [UpgradeData.rarity_name(upgrade.rarity), UpgradeData.house_name(upgrade.house)]
+	meta.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	meta.add_theme_font_size_override("font_size", 12)
+	meta.add_theme_color_override("font_color", tint.lightened(0.25))
+	var meta_font := ArtBank.body_font()
+	if meta_font:
+		meta.add_theme_font_override("font", meta_font)
+	col.add_child(meta)
+	var title := Label.new()
+	title.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	title.text = upgrade.display_name
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	title.add_theme_font_size_override("font_size", 18)
+	title.add_theme_color_override("font_color", Color(0.96, 0.97, 1.0))
+	var title_font := ArtBank.body_heavy()
+	if title_font:
+		title.add_theme_font_override("font", title_font)
+	col.add_child(title)
+	var desc := Label.new()
+	desc.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	desc.text = upgrade.description
+	desc.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	desc.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	desc.add_theme_font_size_override("font_size", 13)
+	desc.add_theme_color_override("font_color", Color(0.78, 0.82, 0.9))
+	var desc_font := ArtBank.body_font()
+	if desc_font:
+		desc.add_theme_font_override("font", desc_font)
+	col.add_child(desc)
 	return btn
 
 
@@ -545,15 +669,15 @@ func _handle_reward_hotkeys(event: InputEvent) -> void:
 
 
 func _on_combo_unlocked(combo_name: String, description: String) -> void:
-	if _style_banner == null:
-		return
-	_style_banner.text = "COMBO  %s  —  %s" % [combo_name, description]
-	_style_banner.modulate = Color.WHITE
-	if _style_tween and _style_tween.is_valid():
-		_style_tween.kill()
-	_style_tween = create_tween()
-	_style_tween.tween_interval(1.6)
-	_style_tween.tween_property(_style_banner, "modulate:a", 0.0, 0.4)
+	_show_combo_toast(combo_name, description)
+
+
+func _on_combo_proc(combo_name: String, description: String) -> void:
+	_show_combo_toast(combo_name, description)
+
+
+func _on_synergy_triggered(_target: Node, recipe_id: StringName) -> void:
+	_show_combo_toast(ArtifactCombos.synergy_title(recipe_id), ArtifactCombos.synergy_blurb(recipe_id))
 
 
 func _on_reward_upgrade(upgrade: UpgradeData) -> void:
@@ -687,12 +811,12 @@ func _populate_end_actions() -> void:
 	_vbox.add_child(row)
 	_end_nodes.append(row)
 	var again := Button.new()
-	again.text = "NEW RUN"
+	again.text = "New run"
 	again.pressed.connect(func() -> void: RunState.restart_run())
 	_skin_button(again, Color(1.0, 0.9, 0.45, 1))
 	row.add_child(again)
 	var classes := Button.new()
-	classes.text = "CLASS SELECT"
+	classes.text = "Class select"
 	classes.pressed.connect(func() -> void: RunState.return_to_class_select())
 	_skin_button(classes, Color(0.85, 0.9, 1.0, 1))
 	row.add_child(classes)

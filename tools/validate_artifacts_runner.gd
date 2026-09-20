@@ -45,6 +45,14 @@ func _run() -> void:
 	assert(RunState.grant_upgrade(eye) or RunState._already_crafted(&"executioners_eye"))
 	assert(RunState.unlocked_combos.has(&"mercy_kill") or RunState._already_crafted(&"mercy_kill"), "Mercy Kill combo should unlock")
 
+	var proc_name := {"v": ""}
+	var proc_cb := func(n: String, _d: String) -> void:
+		proc_name["v"] = n
+	SignalBus.combo_proc.connect(proc_cb)
+	ArtifactCombos.announce_proc("Mercy Kill", "Executes heal you.", 0)
+	assert(proc_name["v"] == "Mercy Kill", "named combo toast should fire on proc")
+	SignalBus.combo_proc.disconnect(proc_cb)
+
 	var player: Player = (load("res://entities/player/player.tscn") as PackedScene).instantiate() as Player
 	add_child(player)
 	await get_tree().process_frame

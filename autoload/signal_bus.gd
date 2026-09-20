@@ -37,6 +37,7 @@ signal special_triggered(source: Node)
 signal vent_triggered(source: Node)
 signal ram_slots_changed(used: int, max_slots: int)
 signal combo_unlocked(combo_name: String, description: String)
+signal combo_proc(combo_name: String, description: String)
 signal artifact_pickup_available
 signal gold_changed(amount: int)
 signal boss_spawned(boss_name: String)

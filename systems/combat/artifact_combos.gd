@@ -102,6 +102,9 @@ const RECIPES: Array[Dictionary] = [
 ]
 
 
+static var _last_proc_ms: Dictionary = {}
+
+
 static func unlocked_for(owned_ids: Array[StringName]) -> Array[Dictionary]:
 	var have := {}
 	for id in owned_ids:
@@ -116,3 +119,52 @@ static func unlocked_for(owned_ids: Array[StringName]) -> Array[Dictionary]:
 		if ok:
 			out.append(recipe)
 	return out
+
+
+static func recipe_named(combo_id: StringName) -> Dictionary:
+	for recipe in RECIPES:
+		if StringName(str(recipe.get("id", &""))) == combo_id:
+			return recipe
+	return {}
+
+
+static func synergy_title(recipe_id: StringName) -> String:
+	match recipe_id:
+		&"napalm_rend":
+			return "Napalm Rend"
+		&"system_crash":
+			return "System Crash"
+		&"chemical_short":
+			return "Chemical Short"
+		&"concussive_ignition":
+			return "Concussive Ignition"
+		_:
+			var pretty := String(recipe_id).replace("_", " ")
+			if pretty.is_empty():
+				return "Combo"
+			return pretty.capitalize()
+
+
+static func synergy_blurb(recipe_id: StringName) -> String:
+	match recipe_id:
+		&"napalm_rend":
+			return "Burn + Bleed ignites the cluster."
+		&"system_crash":
+			return "Glitch + Shock hard-reboots robots."
+		&"chemical_short":
+			return "Acid + Shock paralyzes the pack."
+		&"concussive_ignition":
+			return "Burn + Stagger detonates a stun blast."
+		_:
+			return "Pairing fired."
+
+
+static func announce_proc(combo_name: String, description: String, cooldown_ms: int = 900) -> void:
+	if combo_name.strip_edges() == "":
+		return
+	var now := Time.get_ticks_msec()
+	var last := int(_last_proc_ms.get(combo_name, 0))
+	if now - last < cooldown_ms:
+		return
+	_last_proc_ms[combo_name] = now
+	SignalBus.combo_proc.emit(combo_name, description)

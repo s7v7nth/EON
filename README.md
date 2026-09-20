@@ -35,6 +35,6 @@ Vulkan issues on some VMs: `godot --rendering-driver opengl3 --path .`
 - Clear rooms, then pick **one of three artifacts** (click or press 1/2/3)
 - Shop / treasure / secret rooms spawn walk-over **artifact orbs**. Shops charge **gold** (rarer = more); caches and elite drops stay free.
 - Enemies drop **gold** on kill (HUD, top-left).
-- Pair artifacts to unlock named **combos** (Storm Step, Mercy Kill, Ion Phase, …)
+- Pair artifacts to unlock named **combos** (Storm Step, Mercy Kill, Ion Phase, …). Pairings toast when they fire.
 
 See `CREDITS.md` for Kenney / OpenGameArt CC0 packs (sprites + SFX).

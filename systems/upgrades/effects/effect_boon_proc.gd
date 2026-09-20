@@ -6,6 +6,8 @@ extends "res://systems/upgrades/upgrade_effect.gd"
 @export var value: float = 0.0
 @export var value_b: float = 0.0
 @export var status_id: StringName = &""
+@export var combo_name: String = ""
+@export var combo_desc: String = ""
 
 var _melee_hits: int = 0
 var _second_wind_used: bool = false
@@ -98,6 +100,8 @@ func on_melee_hit(host: Node, target: Node) -> void:
 		_apply_status_to(target, StatusComponent.STATUS_STAGGER, 40.0, 1.2)
 	if kind == &"hit_energy" and host.has_method("restore_resource"):
 		host.call("restore_resource", value)
+	if kind == &"status_melee" or kind == &"status_hit":
+		_announce_combo()
 
 
 func on_ranged_hit(host: Node, target: Node) -> void:
@@ -105,6 +109,8 @@ func on_ranged_hit(host: Node, target: Node) -> void:
 	_try_chain(host, target)
 	if kind == &"feedback" and host.has_method("refund_ranged_cooldown"):
 		host.call("refund_ranged_cooldown", value)
+	if kind == &"status_hit":
+		_announce_combo()
 
 
 func on_kill(host: Node, _enemy: Node) -> void:
@@ -118,6 +124,7 @@ func on_kill(host: Node, _enemy: Node) -> void:
 		&"kill_frenzy":
 			if host.has_method("grant_frenzy"):
 				host.call("grant_frenzy", value, value_b)
+			_announce_combo()
 		&"kill_energy":
 			if host.has_method("restore_resource"):
 				host.call("restore_resource", value)
@@ -127,6 +134,7 @@ func on_kill(host: Node, _enemy: Node) -> void:
 			var health2: HealthComponent = host.get("health") as HealthComponent
 			if health2:
 				health2.heal(value)
+			_announce_combo()
 
 
 func on_dash(host: Node, _direction: Vector2) -> void:
@@ -135,6 +143,7 @@ func on_dash(host: Node, _direction: Vector2) -> void:
 	match kind:
 		&"dash_pulse":
 			_pulse(host, value, value_b)
+			_announce_combo()
 		&"dash_status":
 			for enemy in _enemies_near(host, maxf(value_b, 70.0)):
 				_apply_status_to(enemy, status_id, value, 1.0)
@@ -222,6 +231,8 @@ func _try_chain(host: Node, target: Node) -> void:
 		from_pos = next.global_position
 		last = next
 		dmg *= 0.85
+	if kind == &"thunderhead" or kind == &"chain":
+		_announce_combo()
 
 
 func _sledge_burst(host: Node, target: Node) -> void:
@@ -273,6 +284,12 @@ func _apply_status_to(target: Node, sid: StringName, buildup: float, power: floa
 			status = node.get("status") as StatusComponent
 	if status:
 		status.add_buildup(sid, buildup, power)
+
+
+func _announce_combo() -> void:
+	if combo_name == "":
+		return
+	ArtifactCombos.announce_proc(combo_name, combo_desc)
 
 
 func _bolt(host: Node2D, from_pos: Vector2, to_pos: Vector2) -> void:

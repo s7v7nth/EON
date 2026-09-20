@@ -60,6 +60,9 @@ func _run() -> void:
 	assert(splat != null and splat.visible)
 	assert(hud.find_child("LocationChrome", true, false) != null, "location should sit in a Kenney plaque")
 	assert(overlay.find_child("WavePlaque", true, false) != null, "wave counter should sit in a Kenney plaque")
+	assert(overlay.find_child("ComboToast", true, false) != null, "combo toast should exist")
+	assert(ArtBank.body_font() != null, "Inter body font must load")
+	assert(ArtBank.body_font() != ArtBank.title_font(), "body type should not be Kenney Future")
 
 	print("HUD_CHROME_OK")
 	get_tree().quit(0)

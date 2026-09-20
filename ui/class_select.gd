@@ -102,12 +102,18 @@ func _build() -> void:
 	sub.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	sub.add_theme_font_size_override("font_size", 16)
 	sub.add_theme_color_override("font_color", Color(0.7, 0.76, 0.86))
+	var sub_font := ArtBank.body_font()
+	if sub_font:
+		sub.add_theme_font_override("font", sub_font)
 	col.add_child(sub)
 
 	var route_label := Label.new()
-	route_label.text = "ROUTE"
-	route_label.add_theme_font_size_override("font_size", 13)
+	route_label.text = "Route"
+	route_label.add_theme_font_size_override("font_size", 14)
 	route_label.add_theme_color_override("font_color", Color(0.55, 0.85, 1.0))
+	var section_font := ArtBank.body_bold()
+	if section_font:
+		route_label.add_theme_font_override("font", section_font)
 	col.add_child(route_label)
 
 	var route_row := HBoxContainer.new()
@@ -125,13 +131,19 @@ func _build() -> void:
 			btn.add_theme_stylebox_override("normal", route_style)
 		if route_hover:
 			btn.add_theme_stylebox_override("hover", route_hover)
+		var route_font := ArtBank.body_bold()
+		if route_font:
+			btn.add_theme_font_override("font", route_font)
+		btn.add_theme_font_size_override("font_size", 15)
 		route_row.add_child(btn)
 		_route_buttons.append(btn)
 
 	var arch_label := Label.new()
-	arch_label.text = "ARCHITECTURE"
-	arch_label.add_theme_font_size_override("font_size", 13)
+	arch_label.text = "Architecture"
+	arch_label.add_theme_font_size_override("font_size", 14)
 	arch_label.add_theme_color_override("font_color", Color(1.0, 0.78, 0.35))
+	if section_font:
+		arch_label.add_theme_font_override("font", section_font)
 	col.add_child(arch_label)
 
 	var arch_row := HBoxContainer.new()
@@ -147,11 +159,14 @@ func _build() -> void:
 	_flavor.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_flavor.add_theme_font_size_override("font_size", 15)
 	_flavor.add_theme_color_override("font_color", Color(0.82, 0.86, 0.92))
+	var flavor_font := ArtBank.body_font()
+	if flavor_font:
+		_flavor.add_theme_font_override("font", flavor_font)
 	_flavor.custom_minimum_size = Vector2(0, 48)
 	col.add_child(_flavor)
 
 	_start = Button.new()
-	_start.text = "BEGIN RUN"
+	_start.text = "Begin run"
 	_start.custom_minimum_size = Vector2(0, 56)
 	_start.add_theme_font_size_override("font_size", 22)
 	var start_font := ArtBank.title_font()
@@ -173,6 +188,8 @@ func _build() -> void:
 	help.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	help.add_theme_font_size_override("font_size", 13)
 	help.add_theme_color_override("font_color", Color(0.55, 0.6, 0.68))
+	if flavor_font:
+		help.add_theme_font_override("font", flavor_font)
 	col.add_child(help)
 
 
@@ -180,16 +197,9 @@ func _make_arch_card(arch: ArchitectureData) -> Button:
 	var btn := Button.new()
 	btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	btn.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	btn.custom_minimum_size = Vector2(200, 320)
-	var hint: Dictionary = HINTS.get(int(arch.architecture_id), {})
-	var title := str(hint.get("title", arch.display_name))
-	var role := str(hint.get("role", arch.description))
-	btn.text = "%s\n%s" % [title, role]
-	btn.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	var font := ArtBank.ui_font()
-	if font:
-		btn.add_theme_font_override("font", font)
-	btn.add_theme_font_size_override("font_size", 16)
+	btn.custom_minimum_size = Vector2(200, 340)
+	btn.text = ""
+	btn.clip_text = false
 	btn.icon = _portrait_for(arch)
 	btn.expand_icon = true
 	btn.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -202,6 +212,40 @@ func _make_arch_card(arch: ArchitectureData) -> Button:
 	if tex_hover:
 		btn.add_theme_stylebox_override("hover", tex_hover)
 		btn.add_theme_stylebox_override("pressed", tex_hover)
+	var hint: Dictionary = HINTS.get(int(arch.architecture_id), {})
+	var pad := MarginContainer.new()
+	pad.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	pad.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
+	pad.offset_top = -118.0
+	pad.add_theme_constant_override("margin_left", 10)
+	pad.add_theme_constant_override("margin_right", 10)
+	pad.add_theme_constant_override("margin_bottom", 12)
+	btn.add_child(pad)
+	var col := VBoxContainer.new()
+	col.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	col.add_theme_constant_override("separation", 4)
+	pad.add_child(col)
+	var title := Label.new()
+	title.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	title.text = str(hint.get("title", arch.display_name))
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_font_size_override("font_size", 20)
+	title.add_theme_color_override("font_color", Color(0.96, 0.97, 1.0))
+	var title_font := ArtBank.body_heavy()
+	if title_font:
+		title.add_theme_font_override("font", title_font)
+	col.add_child(title)
+	var role := Label.new()
+	role.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	role.text = str(hint.get("role", arch.description))
+	role.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	role.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	role.add_theme_font_size_override("font_size", 13)
+	role.add_theme_color_override("font_color", Color(0.78, 0.84, 0.92))
+	var body := ArtBank.body_font()
+	if body:
+		role.add_theme_font_override("font", body)
+	col.add_child(role)
 	btn.pressed.connect(_select_arch.bind(arch))
 	_arch_buttons.append(btn)
 	return btn
