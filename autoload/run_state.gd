@@ -176,7 +176,27 @@ func choose_architecture_data(arch: ArchitectureData) -> void:
 	architecture = arch
 	owned_tags = arch.starting_tags.duplicate()
 	architecture_picked = true
+	_grant_signature_seed()
 	SignalBus.architecture_changed.emit(architecture.architecture_id)
+
+
+func _grant_signature_seed() -> void:
+	## Quiet first half of a named pairing so room-1 rewards can complete it.
+	if architecture == null:
+		return
+	var seed_id := ArtifactCombos.signature_seed_id(int(architecture.architecture_id))
+	if seed_id == &"" or _already_crafted(seed_id):
+		return
+	var boon := _library_boon(seed_id)
+	if boon:
+		_append_upgrade(boon)
+
+
+func _library_boon(id: StringName) -> UpgradeData:
+	for item in ArtifactLibrary.all_boons():
+		if item and item.upgrade_id == id:
+			return item
+	return null
 
 
 func get_available_routes() -> Array[ActRoute]:
@@ -374,6 +394,14 @@ func roll_boon_offers(count: int = 3) -> Array[UpgradeData]:
 	var picked: Array[UpgradeData] = []
 	var used_houses: Dictionary = {}
 	var used_ids: Dictionary = {}
+	var partner_id := ArtifactCombos.completing_partner(owned_upgrade_ids())
+	if partner_id != &"":
+		for upgrade in pool:
+			if upgrade and upgrade.upgrade_id == partner_id:
+				picked.append(upgrade)
+				used_ids[upgrade.upgrade_id] = true
+				used_houses[upgrade.house] = true
+				break
 	for _pass in range(2):
 		if picked.size() >= count:
 			break

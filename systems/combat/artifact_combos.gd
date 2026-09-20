@@ -128,6 +128,34 @@ static func recipe_named(combo_id: StringName) -> Dictionary:
 	return {}
 
 
+static func completing_partner(owned_ids: Array[StringName]) -> StringName:
+	## First missing half of a recipe the player already owns a piece of.
+	var have := {}
+	for id in owned_ids:
+		have[id] = true
+	for recipe in RECIPES:
+		var missing: Array[StringName] = []
+		for need in recipe["need"]:
+			var nid := StringName(str(need))
+			if not have.has(nid):
+				missing.append(nid)
+		if missing.size() == 1:
+			return missing[0]
+	return &""
+
+
+static func signature_seed_id(arch_id: int) -> StringName:
+	match arch_id:
+		GameplayEnums.ArchitectureId.NANOMACHINES:
+			return &"bloodletter"
+		GameplayEnums.ArchitectureId.ELECTRO_TRAIN:
+			return &"sunspot"
+		GameplayEnums.ArchitectureId.NEURO_HACKER:
+			return &"phase_capacitor"
+		_:
+			return &"arc_lash"
+
+
 static func synergy_title(recipe_id: StringName) -> String:
 	match recipe_id:
 		&"napalm_rend":

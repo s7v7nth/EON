@@ -27,10 +27,12 @@ func _run() -> void:
 	var pool := RunState.get_reward_upgrades()
 	assert(pool.size() >= 36, "run pool should include shared boons, got %s" % pool.size())
 
+	assert(RunState._already_crafted(&"arc_lash"), "synthetic seed should be Arc Lash")
 	var offers := RunState.roll_boon_offers(3)
 	assert(offers.size() == 3)
 	assert(offers[0].upgrade_id != offers[1].upgrade_id)
 	assert(offers[1].upgrade_id != offers[2].upgrade_id)
+	assert(offers[0].upgrade_id == &"static_dash", "first card should complete Storm Step")
 
 	var first := offers[0]
 	assert(RunState.grant_upgrade(first))
