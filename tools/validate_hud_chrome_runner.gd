@@ -63,6 +63,9 @@ func _run() -> void:
 	assert(overlay.find_child("ComboToast", true, false) != null, "combo toast should exist")
 	assert(ArtBank.body_font() != null, "Inter body font must load")
 	assert(ArtBank.body_font() != ArtBank.title_font(), "body type should not be Kenney Future")
+	var overlay_title := overlay.get_node("Center/Panel/Margin/VBox/Title") as Label
+	assert(overlay_title != null)
+	assert(overlay_title.get_theme_font("font") != ArtBank.title_font(), "overlay titles should be Inter, not Kenney Future")
 
 	print("HUD_CHROME_OK")
 	get_tree().quit(0)

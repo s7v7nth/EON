@@ -32,7 +32,7 @@ func _ready() -> void:
 	body_entered.connect(_on_body)
 	var shape := CollisionShape2D.new()
 	var circle := CircleShape2D.new()
-	circle.radius = 28.0
+	circle.radius = 38.0
 	shape.shape = circle
 	add_child(shape)
 	_sprite = Sprite2D.new()
@@ -65,7 +65,7 @@ func _ready() -> void:
 	coin.visible = false
 	add_child(coin)
 	_label = Label.new()
-	_label.text = "ARTIFACT"
+	_label.text = "Artifact"
 	_label.position = Vector2(-70, -58)
 	_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_label.custom_minimum_size = Vector2(140, 18)
@@ -162,7 +162,7 @@ func _refresh_price() -> void:
 	_price_label.visible = true
 	if plaque:
 		plaque.visible = true
-	_price_label.text = "%d GOLD" % price_gold
+	_price_label.text = "%d gold" % price_gold
 	_price_label.add_theme_color_override("font_color", Color(1.0, 0.86, 0.32))
 	var coin_on := get_node_or_null("PriceCoin") as Sprite2D
 	if coin_on:
@@ -199,7 +199,7 @@ func try_claim(player: Player) -> bool:
 	if price_gold > 0 and not RunState.try_spend_gold(price_gold):
 		_deny_flash = 0.45
 		if _price_label:
-			_price_label.text = "NEED %d G" % price_gold
+			_price_label.text = "Need %d gold" % price_gold
 			_price_label.add_theme_color_override("font_color", Color(1.0, 0.35, 0.32))
 		var plaque := get_node_or_null("PricePlaque") as CanvasItem
 		if plaque:

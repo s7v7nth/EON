@@ -169,7 +169,7 @@ func _build() -> void:
 	_start.text = "Begin run"
 	_start.custom_minimum_size = Vector2(0, 56)
 	_start.add_theme_font_size_override("font_size", 22)
-	var start_font := ArtBank.title_font()
+	var start_font := ArtBank.body_heavy()
 	if start_font:
 		_start.add_theme_font_override("font", start_font)
 	_start.add_theme_color_override("font_color", Color(0.08, 0.1, 0.14, 1))

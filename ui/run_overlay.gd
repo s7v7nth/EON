@@ -33,6 +33,7 @@ var _combo_toast: PanelContainer
 var _combo_title: Label
 var _combo_body: Label
 var _combo_tween: Tween
+var _finishing_reward: bool = false
 
 
 func _ready() -> void:
@@ -74,15 +75,17 @@ func _ready() -> void:
 	SignalBus.boss_spawned.connect(_on_boss_spawned)
 	SignalBus.boss_phase.connect(_on_boss_phase)
 	var body := ArtBank.body_font()
-	var title_font := ArtBank.title_font()
-	if title_font:
-		_title.add_theme_font_override("font", title_font)
+	var heavy := ArtBank.body_heavy()
+	if heavy:
+		_title.add_theme_font_override("font", heavy)
+	elif body:
+		_title.add_theme_font_override("font", body)
 	if body:
 		_subtitle.add_theme_font_override("font", body)
 		_wave_label.add_theme_font_override("font", body)
 		if _style_banner:
-			_style_banner.add_theme_font_override("font", title_font if title_font else body)
-	_title.add_theme_font_size_override("font_size", 32)
+			_style_banner.add_theme_font_override("font", heavy if heavy else body)
+	_title.add_theme_font_size_override("font_size", 28)
 	_title.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
 	_title.add_theme_constant_override("outline_size", 6)
 	_subtitle.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -207,10 +210,11 @@ func _ensure_combo_toast() -> void:
 	_combo_toast.set_anchors_preset(Control.PRESET_CENTER_TOP)
 	_combo_toast.anchor_left = 0.5
 	_combo_toast.anchor_right = 0.5
-	_combo_toast.offset_left = -220.0
-	_combo_toast.offset_right = 220.0
-	_combo_toast.offset_top = 72.0
-	_combo_toast.offset_bottom = 148.0
+	_combo_toast.offset_left = -260.0
+	_combo_toast.offset_right = 260.0
+	_combo_toast.offset_top = 128.0
+	_combo_toast.offset_bottom = 228.0
+	_combo_toast.z_index = 80
 	_combo_toast.add_theme_stylebox_override("panel", ArtBank.panel_style(&"card", Color(1.0, 0.92, 0.55, 0.97)))
 	_combo_toast.modulate.a = 0.0
 	var pad := MarginContainer.new()
@@ -223,9 +227,9 @@ func _ensure_combo_toast() -> void:
 	col.add_theme_constant_override("separation", 2)
 	pad.add_child(col)
 	var kicker := Label.new()
-	kicker.text = "Combo"
+	kicker.text = "Named combo"
 	kicker.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	kicker.add_theme_font_size_override("font_size", 12)
+	kicker.add_theme_font_size_override("font_size", 13)
 	kicker.add_theme_color_override("font_color", Color(0.35, 0.22, 0.08, 1))
 	var kicker_font := ArtBank.body_bold()
 	if kicker_font:
@@ -233,8 +237,10 @@ func _ensure_combo_toast() -> void:
 	col.add_child(kicker)
 	_combo_title = Label.new()
 	_combo_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_combo_title.add_theme_font_size_override("font_size", 22)
+	_combo_title.add_theme_font_size_override("font_size", 26)
 	_combo_title.add_theme_color_override("font_color", Color(0.12, 0.08, 0.04, 1))
+	_combo_title.add_theme_color_override("font_outline_color", Color(1.0, 0.95, 0.7, 0.55))
+	_combo_title.add_theme_constant_override("outline_size", 4)
 	var title_font := ArtBank.body_heavy()
 	if title_font:
 		_combo_title.add_theme_font_override("font", title_font)
@@ -257,14 +263,17 @@ func _show_combo_toast(combo_name: String, description: String) -> void:
 		_combo_title.text = combo_name
 	if _combo_body:
 		_combo_body.text = description
+	_combo_toast.visible = true
 	_combo_toast.modulate = Color.WHITE
-	_combo_toast.scale = Vector2(1.08, 1.08)
+	_combo_toast.pivot_offset = _combo_toast.size * 0.5
+	_combo_toast.scale = Vector2(1.12, 1.12)
 	if _combo_tween and _combo_tween.is_valid():
 		_combo_tween.kill()
 	_combo_tween = create_tween()
-	_combo_tween.tween_property(_combo_toast, "scale", Vector2.ONE, 0.16).set_trans(Tween.TRANS_BACK)
-	_combo_tween.tween_interval(1.45)
-	_combo_tween.tween_property(_combo_toast, "modulate:a", 0.0, 0.35)
+	_combo_tween.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
+	_combo_tween.tween_property(_combo_toast, "scale", Vector2.ONE, 0.18).set_trans(Tween.TRANS_BACK)
+	_combo_tween.tween_interval(2.15)
+	_combo_tween.tween_property(_combo_toast, "modulate:a", 0.0, 0.4)
 	if FeelAudio:
 		FeelAudio.play_ui()
 
@@ -283,7 +292,7 @@ func _ensure_boss_banner() -> void:
 	_boss_banner.add_theme_color_override("font_color", Color(1.0, 0.32, 0.28))
 	_boss_banner.add_theme_color_override("font_outline_color", Color(0.05, 0, 0, 0.95))
 	_boss_banner.add_theme_constant_override("outline_size", 10)
-	var font := ArtBank.title_font()
+	var font := ArtBank.body_heavy()
 	if font:
 		_boss_banner.add_theme_font_override("font", font)
 	_boss_banner.text = ""
@@ -291,7 +300,7 @@ func _ensure_boss_banner() -> void:
 
 
 func _on_boss_spawned(boss_name: String) -> void:
-	_flash_boss_banner("BOSS  —  %s" % boss_name.to_upper(), Color(1.0, 0.32, 0.28))
+	_flash_boss_banner("Boss — %s" % boss_name, Color(1.0, 0.32, 0.28))
 	if _dimmer:
 		_dimmer.visible = true
 		_dimmer.color = Color(0.18, 0.02, 0.02, 0.38)
@@ -305,7 +314,7 @@ func _on_boss_spawned(boss_name: String) -> void:
 
 
 func _on_boss_phase(phase: int, boss_name: String) -> void:
-	_flash_boss_banner("PHASE %d  —  %s" % [phase, boss_name.to_upper()], Color(1.0, 0.55, 0.2))
+	_flash_boss_banner("Phase %d — %s" % [phase, boss_name], Color(1.0, 0.55, 0.2))
 
 
 func _flash_boss_banner(text: String, color: Color) -> void:
@@ -722,6 +731,9 @@ func _take_modifier(id: StringName) -> void:
 
 
 func _finish_reward() -> void:
+	if _finishing_reward:
+		return
+	_finishing_reward = true
 	_mode = Mode.HIDDEN
 	_panel.visible = false
 	if _dimmer:
@@ -732,7 +744,12 @@ func _finish_reward() -> void:
 		if is_instance_valid(node):
 			node.queue_free()
 	_reward_extra_nodes.clear()
+	var hold_toast := _combo_toast != null and _combo_toast.modulate.a > 0.35
+	if hold_toast:
+		get_tree().paused = false
+		await get_tree().create_timer(1.9, true, false, true).timeout
 	RunState.finish_room_reward()
+	_finishing_reward = false
 
 
 func is_reward_open() -> bool:
