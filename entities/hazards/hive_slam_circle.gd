@@ -54,15 +54,22 @@ func _ensure_visuals() -> void:
 	_fill = Polygon2D.new()
 	_fill.name = "Fill"
 	_fill.polygon = _iso_disk(radius)
-	_fill.color = Color(0.07, 0.05, 0.04, 0.78)
+	_fill.color = Color(0.05, 0.04, 0.03, 0.86)
 	add_child(_fill)
 	_rim = Line2D.new()
 	_rim.name = "Rim"
-	_rim.width = 3.0
-	_rim.default_color = Color(0.12, 0.08, 0.06, 0.95)
+	_rim.width = 4.5
+	_rim.default_color = Color(0.38, 0.16, 0.08, 0.98)
 	_rim.closed = true
 	_rim.points = _iso_disk(radius)
 	add_child(_rim)
+	var inner := Line2D.new()
+	inner.name = "OliveRim"
+	inner.width = 2.0
+	inner.default_color = Color(0.38, 0.52, 0.14, 0.85)
+	inner.closed = true
+	inner.points = _iso_disk(radius * 0.82)
+	add_child(inner)
 	scale = Vector2(1.0, 0.62)
 
 

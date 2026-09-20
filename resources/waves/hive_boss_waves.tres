@@ -14,7 +14,7 @@ enemy_definition = ExtResource("6_boss")
 
 [sub_resource type="Resource" id="wave_boss"]
 script = ExtResource("2_def")
-delay = 0.45
+delay = 1.15
 spawns = Array[ExtResource("3_group")]([SubResource("spawn_boss")])
 
 [resource]

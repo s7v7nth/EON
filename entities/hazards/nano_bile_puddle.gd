@@ -44,8 +44,13 @@ func _eat() -> void:
 	if _player == null or not is_instance_valid(_player):
 		_player = null
 		return
-	if _player.health:
-		_player.health.take_damage(_damage)
+	if _player.hurtbox and _player.hurtbox.is_invincible():
+		return
+	var dmg := _damage
+	if _player.energy:
+		dmg = _player.energy.absorb_damage(_damage)
+	if dmg > 0.0 and _player.health:
+		_player.health.take_damage(dmg)
 	if _player.status:
 		_player.status.add_buildup(StatusComponent.STATUS_ACID, 10.0, 1.6)
 

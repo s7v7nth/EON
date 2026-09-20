@@ -164,6 +164,15 @@ func _configure_melee_hitbox() -> void:
 	var shape_node := enemy.hitbox.get_node_or_null("CollisionShape2D") as CollisionShape2D
 	if shape_node == null:
 		return
+	if _is_hive_slam():
+		# Damage lives on the floor circle, not a 128-radius blob on the butcher.
+		enemy.hitbox.rotation = 0.0
+		enemy.hitbox.position = Vector2(0, -8)
+		var stub := CircleShape2D.new()
+		stub.radius = 12.0
+		shape_node.shape = stub
+		shape_node.position = Vector2.ZERO
+		return
 	if _attack and (_attack.circular or _attack.pattern_kind == AttackData.PatternKind.OVERHEAD_SLAM):
 		enemy.hitbox.rotation = 0.0
 		enemy.hitbox.position = Vector2(0, -8)
@@ -220,6 +229,12 @@ func _place_hive_slam_hitbox() -> void:
 	if _slam and is_instance_valid(_slam):
 		_slam_world = _slam.global_position
 	enemy.hitbox.global_position = _slam_world
+	var shape_node := enemy.hitbox.get_node_or_null("CollisionShape2D") as CollisionShape2D
+	if shape_node:
+		var circle := CircleShape2D.new()
+		circle.radius = maxf(_attack.circular_radius, 56.0) if _attack else 96.0
+		shape_node.shape = circle
+		shape_node.position = Vector2.ZERO
 
 
 func _strike_hive_slam() -> void:

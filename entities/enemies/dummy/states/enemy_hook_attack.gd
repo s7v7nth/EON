@@ -144,7 +144,7 @@ func _ensure_line() -> void:
 		_line = Line2D.new()
 		_line.name = "HookLine"
 		_line.width = 7.0
-		_line.default_color = Color(0.48, 0.28, 0.14, 0.0)
+		_line.default_color = Color(0.42, 0.32, 0.12, 0.0)
 		_line.z_index = 8
 		enemy.add_child(_line)
 
@@ -154,8 +154,8 @@ func _update_line(reach: float, alpha: float) -> void:
 		return
 	var tip := _aim * reach
 	_line.points = PackedVector2Array([Vector2(0, -12), tip])
-	_line.default_color = Color(0.52, 0.22, 0.14, alpha)
-	_line.width = 7.0 if _phase == Phase.FLY else 5.0
+	_line.default_color = Color(0.46, 0.28, 0.12, alpha)
+	_line.width = 8.0 if _phase == Phase.FLY else 5.5
 
 
 func _clear_line() -> void:

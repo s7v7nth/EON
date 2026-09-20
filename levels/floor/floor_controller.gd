@@ -399,12 +399,16 @@ func _spawn_wave(wave: WaveDefinition) -> void:
 			_spawn_cursor += 1
 			var enemy := group.enemy_scene.instantiate() as Node2D
 			(_current.get("entities") as Node2D).add_child(enemy)
-			enemy.global_position = marker.global_position
 			var def := group.enemy_definition
 			var cur_room: DungeonRoom = _current.get("room") as DungeonRoom
-			if cur_room and cur_room.is_elite and not _elite_presented and BLISTER:
+			var is_boss := def != null and (def.is_boss or def.boss_id != StringName())
+			if is_boss:
+				enemy.global_position = _boss_spawn_at()
+			else:
+				enemy.global_position = marker.global_position
+			if not is_boss and cur_room and cur_room.is_elite and not _elite_presented and BLISTER:
 				def = BLISTER
-			if use_faction_weights and RunState.current_biome and RunState.room_index > 0:
+			if not is_boss and use_faction_weights and RunState.current_biome and RunState.room_index > 0:
 				if RunState.spawn_roll() < 0.35:
 					def = RunState.pick_enemy_for_biome(def)
 			if def != null and enemy.has_method("apply_definition"):
@@ -421,11 +425,20 @@ func _spawn_wave(wave: WaveDefinition) -> void:
 	_alert_player()
 
 
+func _boss_spawn_at() -> Vector2:
+	if _current == null:
+		return Vector2.ZERO
+	var local := Vector2(0, 18)
+	if _current.has_method("contains_point") and not bool(_current.call("contains_point", _current.position + local)):
+		local = Vector2(48, 36)
+	return _current.position + local
+
+
 func _present_boss(enemy: EnemyDummy) -> void:
 	var visual := enemy.get_node_or_null("Visual") as Node2D
 	if visual and enemy.definition and enemy.definition.boss_id == &"hive":
-		visual.scale = Vector2(1.22, 1.22)
-		visual.modulate = Color(0.92, 0.95, 0.7, 1)
+		visual.scale = Vector2(1.18, 1.18)
+		visual.modulate = Color(0.78, 0.82, 0.42, 1)
 	CameraFx.add_trauma(0.65)
 	CameraFx.flash(Color(0.7, 0.12, 0.1, 0.5), 0.28)
 	if FeelAudio:

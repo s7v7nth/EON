@@ -96,6 +96,7 @@
 - [ ] Clerk **не** выдаёт Улей; kit снимаешь с The Hive
 - [ ] Улей-босс в графе (campaign/procedural); kill пишет meta unlock
 - [ ] Hive tells: slam = dark floor circle then mass (выйти из круга); nano-bile = olive spit line then lasting puddle; flesh-hook = cable flies, kiss = pull (sidestep the line); swarm chunks fall off — kill or they crawl back and the butcher gets thicker
+- [ ] The Hive stands in the room, not stuffed in the door; slam circle has a rust/olive rim you can actually see on the night floor
 - [ ] Комнаты — illustrated ruin (неон vs toxic, rim-lit hostiles, contrasty night) **без** Kenney-вокселей / Roblox-dim / клона улицы с clone-pod
 - [ ] Переход через дверь: короткий fade (без резкого чёрного кадра / hard cut)
 - [ ] У дверей есть проём в стене + рамка коридора (не сплошная стена с оверлеем); столбы стоят по бокам дыры, не в центре
