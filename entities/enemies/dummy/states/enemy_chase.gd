@@ -14,6 +14,8 @@ func physics_update(_delta: float) -> void:
 	if enemy.is_panicking():
 		enemy.apply_retreat_movement()
 		return
+	if enemy.try_return_to_hive():
+		return
 
 	# Prefer moveset selection whenever any attack CD allows a legal pick.
 	if enemy.attack_cooldown.is_stopped() or enemy.ranged_cooldown.is_stopped():

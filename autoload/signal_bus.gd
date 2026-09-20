@@ -10,6 +10,7 @@ signal damage_dealt(amount: float, target: Node, source: Node)
 signal entity_died(entity: Node)
 signal player_died
 signal enemy_died(enemy: Node)
+signal enemy_despawned(enemy: Node)
 signal enemy_spawned(enemy: Node)
 signal wave_started(index: int, total: int)
 signal wave_cleared(index: int)

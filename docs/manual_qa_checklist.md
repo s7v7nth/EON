@@ -5,8 +5,9 @@
 ## Старт / архитектуры
 - [ ] В начале рана есть выбор маршрута: Tutorial (3) / Campaign (Acts 1–4) / **Procedural (12)**
 - [ ] Виден выбор всех 4 архитектур (Синтетик / Улей / Паровоз / Нейро-хакер)
-- [ ] Синтетик открыт всегда; Улей / Паровоз / Нейро **закрыты** до Hive / Warden / remnant talk
-- [ ] Клавиши 2–4 и читерский клик по locked-карте **не** экипируют закрытый кит
+- [ ] Синтетик открыт всегда; Улей / Паровоз / Нейро **закрыты** до Hive / Warden / remnant hub talk
+- [ ] Class-select lock lines: Улей «The sweeper still has the swarm. Take it off The Hive.» · Паровоз «Roundhouse is sealed. Warden's sitting on the last heat valve.» · Нейро «Core bricked the wires. The stall has the last live node. Talk first.»
+- [ ] Клавиши 2–4 и читерский клик по locked-карте **не** экипируют закрытый кит (город отказывает той же строкой)
 - [ ] HUD primary/secondary меняется под каждую архитектуру (HP / Energy / Adrenaline / Style / Gold — не «Clonal Integrity»)
 - [ ] **Q (special)** работает у всех 4 архитектур (Улей swarm / Паровоз Vent / Нейро drone / Синтетик Lattice Collapse)
 
@@ -90,8 +91,11 @@
 - [ ] Мини-карта на всех маршрутах с графом: current / visited / fog; boss / shop / cache / remnant маркеры; тонкая dying-city рамка (не chrome клона рефа)
 - [ ] Overlay после clear **не телепортирует** — выходишь пешком в коридор
 - [ ] Quiet rooms (remnant / shop / cache): двери сразу проходимы из коридора — не нужно «войти в occupancy чтобы открыть»
-- [ ] Campaign: F9 на старте → юг Remnant (E talk) → восток **The Hive**
+- [ ] Campaign: F9 на старте → юг Remnant (stall clerk, **E = one scrap**) → восток **The Hive**
+- [ ] Clerk: first visit — 12 sequential Hades scraps (не speech dump, не auto-talk от overlap); потом node line «Fine. Drawer node…» → Нейро unlock; repeat visit — 3 scraps
+- [ ] Clerk **не** выдаёт Улей; kit снимаешь с The Hive
 - [ ] Улей-босс в графе (campaign/procedural); kill пишет meta unlock
+- [ ] Hive tells: slam = dark floor circle then mass (выйти из круга); nano-bile = olive spit line then lasting puddle; flesh-hook = cable flies, kiss = pull (sidestep the line); swarm chunks fall off — kill or they crawl back and the butcher gets thicker
 - [ ] Комнаты — illustrated ruin (неон vs toxic, rim-lit hostiles, contrasty night) **без** Kenney-вокселей / Roblox-dim / клона улицы с clone-pod
 - [ ] Переход через дверь: короткий fade (без резкого чёрного кадра / hard cut)
 - [ ] У дверей есть проём в стене + рамка коридора (не сплошная стена с оверлеем); столбы стоят по бокам дыры, не в центре

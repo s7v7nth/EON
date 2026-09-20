@@ -59,6 +59,10 @@ enum PatternKind {
 @export var spread_deg: float = 0.0
 ## Delay between projectiles in a volley.
 @export var projectile_delay: float = 0.0
+## Hive nano-bile: spit dies into a puddle that stays and eats.
+@export var leaves_puddle: bool = false
+@export var puddle_duration: float = 5.5
+@export var puddle_radius: float = 46.0
 
 @export_group("Cost")
 ## Energy spent to perform this attack (architecture may override).

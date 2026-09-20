@@ -3,6 +3,9 @@ extends CharacterBody2D
 ## Aggro → chase → melee up close, ranged shot at mid distance.
 
 const PROJECTILE_SCENE := preload("res://entities/projectiles/projectile.tscn")
+const ENEMY_SCENE := preload("res://entities/enemies/dummy/enemy_dummy.tscn")
+const HIVE_CHUNK := preload("res://resources/enemies/hive_chunk.tres")
+const _ReturnHive := preload("res://systems/enemies/behaviors/behavior_return_to_hive.gd")
 
 @export var stats: CharacterStats
 @export var definition: EnemyDefinition
@@ -44,6 +47,9 @@ var _phase_action_mult: float = 1.0
 var _lunge_vel: Vector2 = Vector2.ZERO
 var _lunge_time: float = 0.0
 var facing_direction: Vector2 = Vector2.RIGHT
+var bonus_max_health: float = 0.0
+var hive_thickness: int = 0
+var _hive_shed_cd: float = 1.55
 
 
 func _ready() -> void:
@@ -92,6 +98,7 @@ func _physics_process(delta: float) -> void:
 	for behavior in _behaviors:
 		if behavior:
 			behavior.tick(self, delta)
+	_tick_hive_shed(delta)
 
 
 func apply_knockback(direction: Vector2, force: float, duration: float = KNOCKBACK_DURATION) -> void:
@@ -210,9 +217,13 @@ func apply_definition(def: EnemyDefinition) -> void:
 		var vis_boss := get_node_or_null("Visual") as Node2D
 		if vis_boss:
 			if definition.boss_id == &"hive":
-				vis_boss.scale = Vector2(1.18, 1.18)
+				vis_boss.scale = Vector2(1.22, 1.22)
 			else:
 				vis_boss.scale = Vector2(1.28, 1.28)
+	if is_hive_chunk():
+		var vis_chunk := get_node_or_null("Visual") as Node2D
+		if vis_chunk:
+			vis_chunk.scale = Vector2.ONE
 	var vis := get_node_or_null("Visual") as Node2D
 	if vis and def:
 		var swarm := false
@@ -220,7 +231,7 @@ func apply_definition(def: EnemyDefinition) -> void:
 			if String(tag) == "swarm":
 				swarm = true
 				break
-		if swarm:
+		if swarm and not is_hive_chunk():
 			vis.scale = Vector2(0.78, 0.78)
 	var hp_bar := get_node_or_null("HealthBar") as HealthBarComponent
 	if hp_bar and not (definition and definition.is_boss):
@@ -609,7 +620,10 @@ func spawn_projectile(direction: Vector2, attack: AttackData = null) -> void:
 			GameplayEnums.DamageType.ELECTRICITY:
 				proj.tint = Color(0.55, 0.48, 0.32, 1)
 			GameplayEnums.DamageType.CORROSION:
-				proj.tint = Color(0.4, 0.45, 0.22, 1)
+				if data.leaves_puddle:
+					proj.tint = Color(0.46, 0.62, 0.18, 1)
+				else:
+					proj.tint = Color(0.4, 0.45, 0.22, 1)
 			_:
 				proj.tint = Color(0.7, 0.38, 0.18, 1)
 	else:
@@ -665,7 +679,129 @@ func _enter_boss_phase2() -> void:
 	CameraFx.flash(Color(1.0, 0.2, 0.15, 0.5), 0.16)
 	var nm := definition.display_name if definition and definition.display_name != "" else "BOSS"
 	SignalBus.boss_phase.emit(2, nm)
-	_summon_boss_adds()
+	if is_hive_boss():
+		shed_hive_chunk(3)
+	else:
+		_summon_boss_adds()
+
+
+func is_hive_boss() -> bool:
+	if definition == null:
+		return false
+	if definition.boss_id == &"hive":
+		return true
+	for tag in definition.tags:
+		if String(tag) == "hive_boss":
+			return true
+	return false
+
+
+func is_hive_chunk() -> bool:
+	if definition == null:
+		return false
+	for tag in definition.tags:
+		if String(tag) == "hive_chunk":
+			return true
+	return false
+
+
+func find_hive_host() -> EnemyDummy:
+	var parent := get_parent()
+	if parent == null:
+		return null
+	for child in parent.get_children():
+		if child == self or child is not EnemyDummy:
+			continue
+		var other := child as EnemyDummy
+		if other.is_hive_boss() and other.health and other.health.current_health > 0.0:
+			return other
+	return null
+
+
+func _count_hive_chunks() -> int:
+	var parent := get_parent()
+	if parent == null:
+		return 0
+	var n := 0
+	for child in parent.get_children():
+		if child is EnemyDummy and (child as EnemyDummy).is_hive_chunk():
+			n += 1
+	return n
+
+
+func _tick_hive_shed(delta: float) -> void:
+	if not is_hive_boss():
+		return
+	if health and health.current_health <= 0.0:
+		return
+	_hive_shed_cd -= delta
+	if _hive_shed_cd > 0.0:
+		return
+	var cap := 4 if boss_phase < 2 else 6
+	_hive_shed_cd = 7.2 if boss_phase < 2 else 4.4
+	if _count_hive_chunks() >= cap:
+		return
+	shed_hive_chunk(1 if boss_phase < 2 else 2)
+
+
+func shed_hive_chunk(count: int = 1) -> void:
+	if not is_hive_boss():
+		return
+	var parent := get_parent()
+	if parent == null or ENEMY_SCENE == null or HIVE_CHUNK == null:
+		return
+	var n := maxi(count, 1)
+	for i in n:
+		if _count_hive_chunks() >= 6:
+			return
+		var add := ENEMY_SCENE.instantiate() as EnemyDummy
+		parent.add_child(add)
+		var ang := TAU * float(i) / float(n) + randf() * 0.4
+		var offset := Vector2(cos(ang), sin(ang)) * 54.0
+		add.global_position = global_position + offset
+		add.apply_definition(HIVE_CHUNK)
+		if target:
+			add.receive_room_alert(target)
+		add.apply_knockback(offset.normalized(), 90.0, 0.18)
+		SignalBus.enemy_spawned.emit(add)
+
+
+func thicken_from_chunk() -> void:
+	hive_thickness += 1
+	if health:
+		health.set_bonus_max(float(hive_thickness) * 22.0)
+		health.heal(14.0)
+	var vis := get_node_or_null("Visual") as Node2D
+	if vis:
+		var next := vis.scale * 1.07
+		vis.scale = Vector2(minf(next.x, 1.7), minf(next.y, 1.7))
+	CameraFx.add_trauma(0.12)
+
+
+func absorb_into_hive() -> void:
+	var hive := find_hive_host()
+	if hive:
+		hive.thicken_from_chunk()
+	SignalBus.enemy_despawned.emit(self)
+	queue_free()
+
+
+func try_return_to_hive() -> bool:
+	if not is_hive_chunk():
+		return false
+	var hive := find_hive_host()
+	if hive == null:
+		return false
+	var to_hive := hive.global_position - global_position
+	if to_hive.length() <= 44.0:
+		absorb_into_hive()
+		return true
+	if to_hive != Vector2.ZERO:
+		facing_direction = to_hive.normalized()
+	velocity = Iso.apply_velocity(to_hive.normalized(), effective_move_speed())
+	velocity += _knockback_vector()
+	move_and_slide()
+	return true
 
 
 func _summon_boss_adds() -> void:
@@ -689,3 +825,4 @@ func _summon_boss_adds() -> void:
 		if target:
 			add.receive_room_alert(target)
 		SignalBus.enemy_spawned.emit(add)
+

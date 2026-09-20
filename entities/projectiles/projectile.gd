@@ -2,6 +2,8 @@ class_name Projectile
 extends Area2D
 ## Straight-flying projectile. Returning mode flies out then home to source.
 
+const _NanoBile := preload("res://entities/hazards/nano_bile_puddle.gd")
+
 signal hit_landed(target: HurtboxComponent)
 signal returned_to_source
 
@@ -37,6 +39,7 @@ var extra_pierce: int = 0
 var _pierced_ids: Dictionary = {}
 ## Prismatic Trap: drop once at first enemy contact (not at end of flight).
 var _prism_spawned: bool = false
+var _puddle_dropped: bool = false
 
 
 func _ready() -> void:
@@ -81,6 +84,7 @@ func _physics_process(delta: float) -> void:
 		if attack_data.returning:
 			_begin_return()
 			return
+		_drop_puddle_if_needed()
 		queue_free()
 		return
 	var speed: float = attack_data.projectile_speed * (0.85 + 0.55 * charge)
@@ -206,6 +210,12 @@ func _ensure_visuals() -> void:
 	bolt.modulate = Color(0.55, 0.46, 0.34, 1)
 	if attack_data and attack_data.damage_type == GameplayEnums.DamageType.GLITCH:
 		bolt.modulate = Color(0.48, 0.3, 0.36, 1)
+	if attack_data and attack_data.leaves_puddle:
+		var glob := ArtBank.particle("circle_05")
+		if glob:
+			bolt.texture = glob
+			ArtBank.fit_height(bolt, 22.0, false)
+		bolt.modulate = Color(0.48, 0.62, 0.16, 0.95)
 	if _visual:
 		_visual.modulate.a = 0.0
 	if _core:
@@ -509,11 +519,34 @@ func _resolve_hit(hurtbox: Node) -> void:
 
 
 func _finish_after_hit() -> void:
+	_drop_puddle_if_needed()
 	if attack_data != null and attack_data.returning:
 		_begin_return()
 		return
 	set_deferred("monitoring", false)
 	queue_free()
+
+
+func _drop_puddle_if_needed() -> void:
+	if _puddle_dropped:
+		return
+	if attack_data == null or not attack_data.leaves_puddle:
+		return
+	if attack_data.returning:
+		return
+	var parent := get_parent()
+	if parent == null:
+		return
+	_puddle_dropped = true
+	var puddle := _NanoBile.new()
+	parent.add_child(puddle)
+	puddle.global_position = global_position
+	puddle.call(
+		"setup",
+		maxf(attack_data.damage * 0.45, 4.0),
+		maxf(attack_data.puddle_duration, 2.5),
+		maxf(attack_data.puddle_radius, 36.0)
+	)
 
 
 func _on_body_entered(body: Node2D) -> void:
@@ -545,5 +578,6 @@ func _on_body_entered(body: Node2D) -> void:
 		_begin_return()
 		return
 	_hit_done = true
+	_drop_puddle_if_needed()
 	set_deferred("monitoring", false)
 	queue_free()

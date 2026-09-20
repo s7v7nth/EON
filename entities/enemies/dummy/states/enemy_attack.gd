@@ -1,6 +1,9 @@
 extends State
 ## Windup → activate hitbox → optional combo_next → cooldown → Chase/Idle.
 ## Supports SLASH / OVERHEAD_SLAM / COMBO with early aim-lock and circular slam.
+## Hive slam: dark circle on the floor under the player, then the mass comes down.
+
+const _SlamCircle := preload("res://entities/hazards/hive_slam_circle.gd")
 
 @onready var enemy: EnemyDummy = owner as EnemyDummy
 
@@ -12,6 +15,10 @@ var _attack: AttackData
 var _aim_angle: float = 0.0
 var _anim_variant: int = 0
 var _locked_aim: bool = false
+var _slam: Node2D
+var _slam_world: Vector2 = Vector2.ZERO
+var _vis_rest: Vector2 = Vector2.ZERO
+var _vis_scale: Vector2 = Vector2.ONE
 
 
 func enter(msg: Dictionary = {}) -> void:
@@ -35,11 +42,16 @@ func enter(msg: Dictionary = {}) -> void:
 	_anim_variant = _variant_for_pattern(_attack)
 	_face_target(true)
 	var speed := enemy.get_action_speed_multiplier()
-	if enemy.combat_visual:
+	if enemy.combat_visual and not (
+		enemy.is_hive_boss()
+		and _attack
+		and (_attack.circular or _attack.pattern_kind == AttackData.PatternKind.OVERHEAD_SLAM)
+	):
 		enemy.combat_visual.play_hostile_pattern_windup(
 			_attack.pattern_kind, _aim_angle, _attack.windup / speed, _anim_variant,
 			_attack.circular_radius if _attack.circular else 0.0
 		)
+	_begin_hive_slam()
 
 
 func physics_update(delta: float) -> void:
@@ -57,6 +69,7 @@ func physics_update(delta: float) -> void:
 			if not _locked_aim and _elapsed >= lock_at:
 				_locked_aim = true
 				_face_target(false)
+				_lock_hive_slam()
 			else:
 				_face_target(true)
 			if _elapsed >= _attack.windup:
@@ -64,9 +77,12 @@ func physics_update(delta: float) -> void:
 				_phase = Phase.ACTIVE
 				_locked_aim = true
 				_face_target(false)
+				_lock_hive_slam()
 				_configure_melee_hitbox()
+				_place_hive_slam_hitbox()
 				_apply_lunge_impulse()
 				enemy.hitbox.activate()
+				_strike_hive_slam()
 				if enemy.combat_visual:
 					if _attack.circular or _attack.pattern_kind == AttackData.PatternKind.OVERHEAD_SLAM:
 						enemy.combat_visual.play_circle_slash(
@@ -81,6 +97,7 @@ func physics_update(delta: float) -> void:
 							_anim_variant
 						)
 		Phase.ACTIVE:
+			_place_hive_slam_hitbox()
 			if _elapsed >= _attack.active_duration:
 				enemy.hitbox.deactivate()
 				if _attack.combo_next != null:
@@ -95,6 +112,7 @@ func physics_update(delta: float) -> void:
 
 func exit() -> void:
 	enemy.hitbox.deactivate()
+	_clear_hive_slam()
 	if enemy.has_meta("is_attacking"):
 		enemy.remove_meta("is_attacking")
 	if enemy.combat_visual:
@@ -162,6 +180,69 @@ func _configure_melee_hitbox() -> void:
 	hit_circle.radius = 34.0
 	shape_node.shape = hit_circle
 	shape_node.position = Vector2.ZERO
+
+
+func _is_hive_slam() -> bool:
+	if enemy == null or not enemy.is_hive_boss() or _attack == null:
+		return false
+	return _attack.circular or _attack.pattern_kind == AttackData.PatternKind.OVERHEAD_SLAM
+
+
+func _begin_hive_slam() -> void:
+	if not _is_hive_slam():
+		return
+	var vis := enemy.get_node_or_null("Visual") as Node2D
+	if vis:
+		_vis_rest = vis.position
+		_vis_scale = vis.scale
+		vis.position = _vis_rest + Vector2(0, -22)
+		vis.scale = _vis_scale * Vector2(1.04, 1.12)
+	var parent := enemy.get_parent()
+	if parent == null:
+		return
+	_slam = _SlamCircle.new()
+	parent.add_child(_slam)
+	_slam.call("setup", maxf(_attack.circular_radius, 96.0))
+	if enemy.target:
+		_slam.call("follow", enemy.target)
+
+
+func _lock_hive_slam() -> void:
+	if _slam == null or not is_instance_valid(_slam):
+		return
+	_slam.call("lock_here")
+	_slam_world = _slam.global_position
+
+
+func _place_hive_slam_hitbox() -> void:
+	if not _is_hive_slam() or enemy.hitbox == null:
+		return
+	if _slam and is_instance_valid(_slam):
+		_slam_world = _slam.global_position
+	enemy.hitbox.global_position = _slam_world
+
+
+func _strike_hive_slam() -> void:
+	var vis := enemy.get_node_or_null("Visual") as Node2D
+	if vis:
+		vis.position = _vis_rest
+		vis.scale = _vis_scale
+	if _slam and is_instance_valid(_slam) and _slam.has_method("strike"):
+		_slam.call("strike")
+		_slam = null
+	CameraFx.add_trauma(0.28)
+
+
+func _clear_hive_slam() -> void:
+	var vis := enemy.get_node_or_null("Visual") as Node2D
+	if vis:
+		vis.position = _vis_rest
+		vis.scale = _vis_scale
+	if _slam and is_instance_valid(_slam):
+		_slam.queue_free()
+	_slam = null
+	if enemy.hitbox:
+		enemy.hitbox.position = Vector2(22, 0)
 
 
 func _variant_for_pattern(atk: AttackData) -> int:

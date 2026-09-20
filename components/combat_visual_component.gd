@@ -731,6 +731,23 @@ func play_hostile_pattern_windup(
 			_tween.tween_property(telegraph, "color:a", 0.92, wind * 0.35)
 			_tween.parallel().tween_property(telegraph, "scale", Vector2(1.35, 1.35), wind)
 			_tween.parallel().tween_property(swing_arc, "modulate:a", 0.85, wind * 0.5)
+		AttackData.PatternKind.HOOK:
+			telegraph.polygon = _line_poly(118.0, 8.0)
+			telegraph.rotation = aim_angle
+			telegraph.position = fwd * 10.0 + Vector2(0, -12)
+			telegraph.scale = Vector2(0.3, 0.9)
+			telegraph.color = Color(0.52, 0.22, 0.14, 0.0)
+			swing_arc.polygon = _line_poly(36.0, 14.0)
+			swing_arc.rotation = aim_angle
+			swing_arc.position = hold + fwd * -12.0
+			swing_arc.color = Color(0.48, 0.28, 0.16, 0.7)
+			swing_arc.modulate.a = 0.0
+			weapon.position = hold + fwd * -16.0
+			_tween = create_tween()
+			_tween.tween_property(telegraph, "color:a", 0.95, wind * 0.28)
+			_tween.parallel().tween_property(telegraph, "scale", Vector2(1.45, 1.0), wind)
+			_tween.parallel().tween_property(weapon, "position", hold + fwd * -22.0, wind)
+			_tween.parallel().tween_property(swing_arc, "modulate:a", 0.9, wind * 0.45)
 		_:
 			play_hostile_melee_windup(aim_angle, duration, variant)
 
@@ -743,7 +760,7 @@ func aim_hostile_pattern_telegraph(pattern: int, aim_angle: float, slam_radius: 
 		AttackData.PatternKind.OVERHEAD_SLAM:
 			telegraph.rotation = 0.0
 			telegraph.position = Vector2(0, -8)
-		AttackData.PatternKind.LUNGE, AttackData.PatternKind.CHARGE_SHOT:
+		AttackData.PatternKind.LUNGE, AttackData.PatternKind.CHARGE_SHOT, AttackData.PatternKind.HOOK:
 			telegraph.rotation = aim_angle
 			telegraph.position = fwd * (22.0 if pattern == AttackData.PatternKind.LUNGE else 28.0) + Vector2(0, -12)
 			if swing_arc:

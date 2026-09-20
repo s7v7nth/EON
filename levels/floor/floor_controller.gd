@@ -9,6 +9,7 @@ const ENEMY_SCENE := preload("res://entities/enemies/dummy/enemy_dummy.tscn")
 const DEFAULT_WAVES := preload("res://resources/waves/default_waves.tres")
 const BOSS_WAVE_SET := preload("res://resources/waves/boss_encounter_waves.tres")
 const HIVE_WAVE_SET := preload("res://resources/waves/hive_boss_waves.tres")
+const _ReturnHive := preload("res://systems/enemies/behaviors/behavior_return_to_hive.gd")
 const BLISTER := preload("res://resources/enemies/blister_host.tres")
 const PLAYER_SCENE := preload("res://entities/player/player.tscn")
 
@@ -29,6 +30,7 @@ var _player: Player
 
 func _ready() -> void:
 	SignalBus.enemy_died.connect(_on_enemy_died)
+	SignalBus.enemy_despawned.connect(_on_enemy_died)
 	SignalBus.enemy_spawned.connect(_on_enemy_spawned)
 	SignalBus.player_died.connect(_on_player_died)
 	if RunState.dungeon == null:
@@ -403,7 +405,8 @@ func _spawn_wave(wave: WaveDefinition) -> void:
 func _present_boss(enemy: EnemyDummy) -> void:
 	var visual := enemy.get_node_or_null("Visual") as Node2D
 	if visual and enemy.definition and enemy.definition.boss_id == &"hive":
-		visual.scale = Vector2(1.18, 1.18)
+		visual.scale = Vector2(1.22, 1.22)
+		visual.modulate = Color(0.92, 0.95, 0.7, 1)
 	CameraFx.add_trauma(0.65)
 	CameraFx.flash(Color(0.7, 0.12, 0.1, 0.5), 0.28)
 	if FeelAudio:

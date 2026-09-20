@@ -13,6 +13,8 @@ var _aim_angle: float = 0.0
 var _locked_aim: bool = false
 var _shots_fired: int = 0
 var _shot_timer: float = 0.0
+var _cough_rest: Vector2 = Vector2.ZERO
+var _coughed: bool = false
 
 
 func enter(msg: Dictionary = {}) -> void:
@@ -38,6 +40,7 @@ func enter(msg: Dictionary = {}) -> void:
 		enemy.combat_visual.play_hostile_pattern_windup(
 			_attack.pattern_kind, _aim_angle, _attack.windup / speed, 0, 0.0
 		)
+	_begin_hive_cough()
 
 
 func physics_update(delta: float) -> void:
@@ -65,6 +68,7 @@ func physics_update(delta: float) -> void:
 				_elapsed = 0.0
 				_phase = Phase.VOLLEY
 				_shot_timer = 0.0
+				_restore_cough()
 				_fire_one()
 		Phase.VOLLEY:
 			var total := maxi(_attack.projectile_count, 1)
@@ -86,6 +90,7 @@ func physics_update(delta: float) -> void:
 
 
 func exit() -> void:
+	_restore_cough()
 	if enemy.has_meta("is_attacking"):
 		enemy.remove_meta("is_attacking")
 	if enemy.combat_visual and _phase != Phase.DONE:
@@ -110,3 +115,28 @@ func _fire_one() -> void:
 		_shots_fired = total
 	if enemy.combat_visual:
 		enemy.combat_visual.play_ranged_fire(_aim_angle, _attack.damage_type)
+
+
+func _is_hive_bile() -> bool:
+	return enemy != null and enemy.is_hive_boss() and _attack != null and _attack.leaves_puddle
+
+
+func _begin_hive_cough() -> void:
+	if not _is_hive_bile():
+		return
+	var vis := enemy.get_node_or_null("Visual") as Node2D
+	if vis == null:
+		return
+	_cough_rest = vis.scale
+	_coughed = true
+	vis.scale = _cough_rest * Vector2(1.12, 0.82)
+
+
+func _restore_cough() -> void:
+	if not _coughed:
+		return
+	var vis := enemy.get_node_or_null("Visual") as Node2D
+	if vis:
+		vis.scale = _cough_rest
+	_coughed = false
+

@@ -5,7 +5,7 @@
 [ext_resource type="Resource" path="res://resources/attacks/enemy_hive_slam.tres" id="3_slam"]
 [ext_resource type="Resource" path="res://resources/attacks/enemy_hive_vomit.tres" id="4_vomit"]
 [ext_resource type="Resource" path="res://resources/attacks/enemy_hive_hook.tres" id="5_hook"]
-[ext_resource type="Resource" path="res://resources/enemies/swarm.tres" id="6_summon"]
+[ext_resource type="Resource" path="res://resources/enemies/hive_chunk.tres" id="6_summon"]
 [ext_resource type="Resource" path="res://resources/enemies/behaviors/aggro_swarm.tres" id="7_beh"]
 
 [resource]
@@ -19,11 +19,11 @@ moveset = Array[Resource]([ExtResource("3_slam"), ExtResource("4_vomit"), ExtRes
 attack_range = 90.0
 ranged_range = 320.0
 detection_radius = 520.0
-visual_color = Color(0.42, 0.16, 0.14, 1)
+visual_color = Color(0.46, 0.44, 0.18, 1)
 prefers_kite = false
 behavior_modules = Array[Resource]([ExtResource("7_beh")])
 tags = PackedStringArray("boss", "hive_boss", "bio")
-visual_stem = "craft_cargoB"
+visual_stem = "hive_boss"
 visual_height = 176.0
 status_vulnerabilities = {
 "burn": 1.25,

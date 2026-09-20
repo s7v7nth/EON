@@ -8,8 +8,15 @@ const SECTION := "progress"
 const FLAG_HIVE := &"hive_killed"
 const FLAG_WARDEN := &"warden_killed"
 const FLAG_REMNANT := &"remnant_spoken"
+const KEY_CLERK := "clerk_scrap"
+
+const LOCK_SYNTHETIC := "You're already steel. That's what washed up."
+const LOCK_HIVE := "The sweeper still has the swarm. Take it off The Hive."
+const LOCK_PAROVOZ := "Roundhouse is sealed. Warden's sitting on the last heat valve."
+const LOCK_NEURO := "Core bricked the wires. The stall has the last live node. Talk first."
 
 var _flags: Dictionary = {}
+var _clerk_scrap: int = 0
 var _loaded: bool = false
 
 
@@ -26,6 +33,9 @@ func reload() -> void:
 		for flag in packed:
 			if String(flag) != "":
 				_flags[StringName(flag)] = true
+		_clerk_scrap = int(cf.get_value(SECTION, KEY_CLERK, 0))
+	else:
+		_clerk_scrap = 0
 	_loaded = true
 
 
@@ -39,6 +49,7 @@ func save() -> void:
 		if _flags[key]:
 			packed.append(String(key))
 	cf.set_value(SECTION, "flags", packed)
+	cf.set_value(SECTION, KEY_CLERK, _clerk_scrap)
 	cf.save(SAVE_PATH)
 
 
@@ -80,11 +91,13 @@ func is_architecture_unlocked(arch_id: int) -> bool:
 func unlock_requirement(arch_id: int) -> String:
 	match arch_id:
 		GameplayEnums.ArchitectureId.NANOMACHINES:
-			return "Defeat The Hive"
+			return LOCK_HIVE
 		GameplayEnums.ArchitectureId.ELECTRO_TRAIN:
-			return "Defeat The Warden"
+			return LOCK_PAROVOZ
 		GameplayEnums.ArchitectureId.NEURO_HACKER:
-			return "Hear the Remnant"
+			return LOCK_NEURO
+		GameplayEnums.ArchitectureId.DEFAULT:
+			return LOCK_SYNTHETIC
 		_:
 			return ""
 
@@ -97,12 +110,34 @@ func note_boss_killed(boss_id: StringName) -> void:
 			set_flag(FLAG_WARDEN, true)
 
 
+func clerk_scrap_index() -> int:
+	if not _loaded:
+		reload()
+	return _clerk_scrap
+
+
+func advance_clerk_scrap() -> int:
+	if not _loaded:
+		reload()
+	_clerk_scrap += 1
+	save()
+	return _clerk_scrap
+
+
 func note_remnant_spoken() -> void:
+	if not _loaded:
+		reload()
+	if _clerk_scrap < 12:
+		_clerk_scrap = 12
+	var already := has_flag(FLAG_REMNANT)
 	set_flag(FLAG_REMNANT, true)
+	if already:
+		save()
 
 
 func wipe_for_tests() -> void:
 	_flags.clear()
+	_clerk_scrap = 0
 	save()
 	SignalBus.meta_progress_changed.emit()
 

@@ -579,7 +579,7 @@ func _populate_arch_pick() -> void:
 		if MetaSave.is_architecture_unlocked(int(arch.architecture_id)):
 			btn.text = "%s — %s" % [arch.display_name, desc]
 		else:
-			btn.text = "%s — locked (%s)" % [arch.display_name, MetaSave.unlock_requirement(int(arch.architecture_id))]
+			btn.text = "%s — %s" % [arch.display_name, MetaSave.unlock_requirement(int(arch.architecture_id))]
 		btn.pressed.connect(_on_arch_pressed.bind(arch))
 		_skin_button(btn)
 		_arch.add_child(btn)

@@ -25,6 +25,7 @@ godot --headless --path . res://tools/validate_artifacts.tscn
 godot --headless --path . res://tools/validate_geometry_rewards.tscn
 godot --headless --path . res://tools/validate_encounters_rooms.tscn
 godot --headless --path . res://tools/validate_hud_chrome.tscn
+godot --headless --path . res://tools/validate_hub_hive.tscn
 ```
 
 Vulkan issues on some VMs: `godot --rendering-driver opengl3 --path .`

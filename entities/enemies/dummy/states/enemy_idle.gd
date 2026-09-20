@@ -10,3 +10,6 @@ func physics_update(_delta: float) -> void:
 		return
 	if enemy.target != null:
 		transition_to(&"Chase")
+		return
+	if enemy.try_return_to_hive():
+		return

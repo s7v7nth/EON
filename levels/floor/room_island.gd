@@ -170,29 +170,20 @@ func _add_door_prop(dir: Vector2i) -> void:
 func _add_door_sill(dir: Vector2i) -> void:
 	var p := door_local(dir)
 	var outward := Vector2(float(dir.x), float(dir.y))
-	var tangent := Vector2(float(-dir.y), float(dir.x))
-	var half := DOOR_GAP * 0.46
-	var poly := Polygon2D.new()
-	poly.name = "Sill_%d_%d" % [dir.x, dir.y]
-	poly.z_index = -16
-	poly.color = Color(0.13, 0.11, 0.12, 1)
-	poly.polygon = PackedVector2Array([
-		p + tangent * -half + outward * -22.0,
-		p + tangent * half + outward * -22.0,
-		p + tangent * half + outward * 78.0,
-		p + tangent * -half + outward * 78.0
-	])
-	add_child(poly)
 	var tile := Sprite2D.new()
+	tile.name = "Sill_%d_%d" % [dir.x, dir.y]
 	tile.texture = ArtBank.illustrated("floor_ruin")
-	if tile.texture:
-		tile.centered = true
-		tile.z_index = -15
-		tile.position = p + outward * 36.0
-		tile.modulate = Color(1.05, 0.98, 0.92, 1)
-		add_child(tile)
-		var sz := ArtBank.apply_opaque_region(tile)
-		tile.scale = Vector2((DOOR_GAP + 24.0) / maxf(sz.x, 1.0), 110.0 / maxf(sz.y, 1.0))
+	if tile.texture == null:
+		return
+	tile.centered = true
+	tile.z_index = -15
+	tile.position = p + outward * 40.0
+	tile.modulate = Color(1.04, 0.97, 0.9, 1)
+	tile.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	add_child(tile)
+	var sz := ArtBank.apply_opaque_region(tile)
+	var sc := 210.0 / maxf(sz.x, 1.0)
+	tile.scale = Vector2(sc, sc)
 
 
 func _add_blocker(dir: Vector2i) -> void:
@@ -357,12 +348,16 @@ func _add_boss_stain(root: Node2D) -> void:
 		return
 	stain.centered = true
 	stain.modulate = Color(0.95, 0.2, 0.18, 0.55)
+	if room and room.boss_id == &"hive":
+		stain.modulate = Color(0.42, 0.55, 0.16, 0.62)
 	stain.scale = Vector2(1.4, 0.9)
 	stain.z_index = -3
 	root.add_child(stain)
 	var glow := PointLight2D.new()
 	glow.texture = ArtBank.radial_light()
 	glow.color = Color(0.95, 0.18, 0.12, 1)
+	if room and room.boss_id == &"hive":
+		glow.color = Color(0.45, 0.72, 0.18, 1)
 	glow.energy = 0.9
 	glow.texture_scale = 2.8
 	root.add_child(glow)

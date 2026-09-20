@@ -50,9 +50,9 @@ Campaign Acts:
 - Campaign: Acts 1–4 on one physical floor (shop / elite / cache / remnant / Warden / **The Hive**)
 - Procedural: Isaac-style сетка ~12 комнат, seed, двери N/E/S/W, соседние биомы + blend, финал = **The Hive** + craft → win
 - All routes: physical islands + hallways, offset doors, reversed entry, walk-back, no overlap; overlay does not teleport
-- Meta unlocks (authoritative `user://eon_meta.cfg`): Synthetic always; Hive kit after The Hive; Parovoz after Warden; Neuro after remnant talk. Class select refuses locked kits.
-- Procedural special rooms: SHOP / TREASURE / SECRET / REMNANT (no waves); layout pool unused (islands)
-- Boss rooms: Hive vomit/hook/slam + phase 2 summons; Warden still has `boss_encounter_waves`
+- Meta unlocks (authoritative `user://eon_meta.cfg`): Synthetic always; Hive kit after beating **The Hive**; Parovoz after the **Warden**; Neuro after remnant **hub talk** (the clerk's drawer-node line). Class select refuses locked kits. Lock copy: Hive «The sweeper still has the swarm. Take it off The Hive.» / Parovoz «Roundhouse is sealed. Warden's sitting on the last heat valve.» / Neuro «Core bricked the wires. The stall has the last live node. Talk first.»
+- Hub clerk: remnant still running municipal issue in a plaza stall. Dry, tired, not a bit. Hades scraps — one tap, one line. First visit 12 sequential; repeats 3; Neuro hand-off: «Fine. Drawer node. Don't jack it in the plaza. Core still thinks it's starving the swarm. You get to be the lie.» Clerk will not give Улей.
+- Boss rooms: **The Hive** is a nanobot Pudge / municipal sweeper that grew a butcher (olive-rust, hook-and-gut, belly vat). Tells: slam dark floor circle then mass; nano-bile spit line then lasting puddle; flesh-hook cable (kiss = pull); swarm chunks fall off and crawl home or the butcher thickens. Warden still has `boss_encounter_waves`.
 - HUD: dying-city frame (HP / Energy / Adrenaline / Style / Gold); Isaac minimap on every dungeon graph
 - Look: illustrated isometric ruin, neon vs toxic, rim-lit hostiles, contrasty night — not Kenney voxels / not a 1:1 clone of the street refs
 

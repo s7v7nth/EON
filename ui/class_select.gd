@@ -217,7 +217,7 @@ func _make_arch_card(arch: ArchitectureData) -> Button:
 	var pad := MarginContainer.new()
 	pad.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	pad.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
-	pad.offset_top = -118.0
+	pad.offset_top = -148.0
 	pad.add_theme_constant_override("margin_left", 10)
 	pad.add_theme_constant_override("margin_right", 10)
 	pad.add_theme_constant_override("margin_bottom", 12)
@@ -314,7 +314,7 @@ func _select_arch(arch: ArchitectureData) -> void:
 	if arch == null:
 		return
 	if not MetaSave.is_architecture_unlocked(int(arch.architecture_id)):
-		_flavor.text = "Locked — %s" % MetaSave.unlock_requirement(int(arch.architecture_id))
+		_flavor.text = MetaSave.unlock_requirement(int(arch.architecture_id))
 		SignalBus.architecture_unlock_denied.emit(int(arch.architecture_id), MetaSave.unlock_requirement(int(arch.architecture_id)))
 		return
 	_selected_arch = arch
@@ -361,12 +361,12 @@ func _begin_run() -> void:
 	if _selected_route == null or _selected_arch == null:
 		return
 	if not MetaSave.is_architecture_unlocked(int(_selected_arch.architecture_id)):
-		_flavor.text = "Locked — %s" % MetaSave.unlock_requirement(int(_selected_arch.architecture_id))
+		_flavor.text = MetaSave.unlock_requirement(int(_selected_arch.architecture_id))
 		return
 	RunState.reset()
 	RunState.choose_route(_selected_route)
 	if not RunState.choose_architecture_data(_selected_arch):
-		_flavor.text = "Locked — %s" % MetaSave.unlock_requirement(int(_selected_arch.architecture_id))
+		_flavor.text = MetaSave.unlock_requirement(int(_selected_arch.architecture_id))
 		return
 	var path := RunState.layout_scene_for_current_room()
 	if path == "":
