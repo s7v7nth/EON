@@ -440,6 +440,9 @@ func _populate_craft() -> bool:
 		_craft.add_child(btn)
 		_craft_nodes.append(btn)
 	return true
+
+
+func _populate_reward_upgrades() -> void:
 	for node in _reward_extra_nodes:
 		if is_instance_valid(node):
 			node.queue_free()
@@ -708,11 +711,11 @@ func _populate_win_relics() -> void:
 		empty.add_theme_color_override("font_color", Color(0.75, 0.78, 0.85))
 		wrap.add_child(empty)
 		return
-	for name in names:
+	for relic_name in names:
 		var chip := PanelContainer.new()
 		chip.add_theme_stylebox_override("panel", ArtBank.panel_style(&"card", Color(0.95, 0.88, 0.55, 0.95)))
 		var lab := Label.new()
-		lab.text = name
+		lab.text = relic_name
 		lab.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		lab.add_theme_font_size_override("font_size", 13)
 		lab.add_theme_color_override("font_color", Color(0.12, 0.1, 0.08))
