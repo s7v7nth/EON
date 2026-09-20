@@ -44,7 +44,8 @@ func _run() -> void:
 	await get_tree().process_frame
 	assert(RunState.current_biome.biome_id == GameplayEnums.BiomeId.LANDFILL)
 	assert((room1 as ArenaController).is_final_room == false)
-	assert((room1 as ArenaController).wave_set == landfill.wave_set)
+	var tutorial_waves := load("res://resources/waves/tutorial_landfill_waves.tres") as WaveSet
+	assert((room1 as ArenaController).wave_set == tutorial_waves, "tutorial room 1 keeps authored waves")
 
 	(room1 as ArenaController).force_clear_room()
 	await get_tree().process_frame

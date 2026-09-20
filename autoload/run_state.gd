@@ -228,6 +228,10 @@ func is_procedural_run() -> bool:
 	return current_route != null and current_route.is_procedural and dungeon != null
 
 
+func is_tutorial_route() -> bool:
+	return current_route != null and current_route.route_id == &"tutorial"
+
+
 func current_dungeon_room() -> DungeonRoom:
 	if dungeon == null:
 		return null

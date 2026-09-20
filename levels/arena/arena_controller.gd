@@ -334,6 +334,7 @@ func _make_door(dir: Vector2i) -> Area2D:
 		Vector2(-half.x - 8, half.y + 8),
 	])
 	frame.color = Color(frame_col.r, frame_col.g, frame_col.b, 0.12)
+	frame.visible = false
 	door.add_child(frame)
 	var visual := Polygon2D.new()
 	visual.name = "DoorVisual"
@@ -344,6 +345,7 @@ func _make_door(dir: Vector2i) -> Area2D:
 		Vector2(-half.x, half.y),
 	])
 	visual.color = Color(frame_col.r * 0.35, frame_col.g * 0.35, frame_col.b * 0.35, 0.16)
+	visual.visible = false
 	door.add_child(visual)
 	# Threshold glow into the carved wall gap.
 	var threshold := Polygon2D.new()
@@ -359,6 +361,7 @@ func _make_door(dir: Vector2i) -> Area2D:
 			Vector2(6, half.y + 4), Vector2(-6, half.y + 4)
 		])
 	threshold.color = Color(frame_col.r, frame_col.g, frame_col.b, 0.2)
+	threshold.visible = false
 	door.add_child(threshold)
 	var door_spr := Sprite2D.new()
 	door_spr.name = "DoorSprite"
@@ -381,13 +384,7 @@ func _apply_biome() -> void:
 	if biome == null:
 		return
 	RunState.current_biome = biome
-	if biome.wave_set:
-		wave_set = biome.wave_set
-	# Boss rooms get a dedicated denser encounter pack.
-	if RunState.is_procedural_run():
-		var room := RunState.current_dungeon_room()
-		if room != null and room.kind == DungeonRoom.RoomKind.BOSS and BOSS_WAVE_SET != null:
-			wave_set = BOSS_WAVE_SET
+	_resolve_wave_set()
 	_apply_doorway_geometry()
 	var floor_poly := get_node_or_null("Floor") as Polygon2D
 	if floor_poly:
@@ -396,6 +393,20 @@ func _apply_biome() -> void:
 	_RoomDresser.dress(self, biome)
 	_spawn_biome_traps()
 	SignalBus.biome_changed.emit(biome.biome_id)
+
+
+func _resolve_wave_set() -> void:
+	## Tutorial layouts keep their authored roster so room 1 stays a teachable clear.
+	## Campaign / procedural rooms take the biome pack (boss rooms override).
+	if RunState.is_tutorial_route():
+		return
+	if biome and biome.wave_set:
+		wave_set = biome.wave_set
+	if not RunState.is_procedural_run():
+		return
+	var room := RunState.current_dungeon_room()
+	if room != null and room.kind == DungeonRoom.RoomKind.BOSS and BOSS_WAVE_SET != null:
+		wave_set = BOSS_WAVE_SET
 
 
 func _apply_doorway_geometry() -> void:
@@ -494,7 +505,7 @@ func _spawn_wave(wave: WaveDefinition) -> void:
 			var def := group.enemy_definition
 			# Remix later rooms only — the opener keeps the authored roster.
 			var allow_remix := use_faction_weights and biome != null and biome.has_faction_weights()
-			if allow_remix and RunState.room_index == 0:
+			if allow_remix and (RunState.room_index == 0 or not RunState.is_procedural_run()):
 				allow_remix = false
 			if allow_remix and RunState.spawn_roll() < 0.4:
 				def = RunState.pick_enemy_for_biome(def)
@@ -518,7 +529,10 @@ func _present_boss(enemy: EnemyDummy) -> void:
 		return
 	var visual := enemy.get_node_or_null("Visual") as Node2D
 	if visual:
-		visual.scale = Vector2(1.9, 1.9)
+		visual.scale = Vector2(2.05, 2.05)
+	var world_hp := enemy.get_node_or_null("HealthBar") as CanvasItem
+	if world_hp:
+		world_hp.visible = false
 	CameraFx.add_trauma(0.65)
 	CameraFx.flash(Color(1.0, 0.18, 0.12, 0.55), 0.28)
 	CameraFx.punch_zoom(0.16, 0.55)
@@ -535,20 +549,25 @@ func _present_boss(enemy: EnemyDummy) -> void:
 			enemy.health.get_max_health(),
 			name_txt
 		)
+	var plate_wrap := PanelContainer.new()
+	plate_wrap.name = "BossPlate"
+	plate_wrap.position = Vector2(-130, -168)
+	plate_wrap.custom_minimum_size = Vector2(260, 36)
+	plate_wrap.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	plate_wrap.add_theme_stylebox_override("panel", ArtBank.panel_style(&"card", Color(1.0, 0.42, 0.32, 0.96)))
 	var plate := Label.new()
-	plate.name = "BossPlate"
 	plate.text = name_txt.to_upper()
 	plate.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	plate.position = Vector2(-110, -148)
-	plate.custom_minimum_size = Vector2(220, 28)
-	plate.add_theme_font_size_override("font_size", 22)
-	plate.add_theme_color_override("font_color", Color(1.0, 0.38, 0.28))
+	plate.custom_minimum_size = Vector2(240, 24)
+	plate.add_theme_font_size_override("font_size", 18)
+	plate.add_theme_color_override("font_color", Color(1.0, 0.92, 0.88))
 	plate.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.95))
-	plate.add_theme_constant_override("outline_size", 8)
+	plate.add_theme_constant_override("outline_size", 6)
 	var plate_font := ArtBank.title_font()
 	if plate_font:
 		plate.add_theme_font_override("font", plate_font)
-	enemy.add_child(plate)
+	plate_wrap.add_child(plate)
+	enemy.add_child(plate_wrap)
 	var ring := Sprite2D.new()
 	ring.name = "BossRing"
 	ring.texture = ArtBank.particle("circle_05")

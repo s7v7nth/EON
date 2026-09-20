@@ -65,11 +65,12 @@ func _fight(player: Player, enemy: EnemyDummy, _delta: float) -> void:
 	var energy_ok := true
 	if player.energy:
 		energy_ok = player.energy.current_energy > 4.0
-	var desired := 48.0 if hp_ratio > 0.55 else 78.0
+	var kite := enemy.prefers_kite or enemy.ranged_range > 220.0
+	var desired := 40.0 if kite else (50.0 if hp_ratio > 0.55 else 78.0)
 	var steer := to_enemy
 	if dist < desired - 8.0:
 		steer = to_enemy.rotated(1.25) * -0.4 + to_enemy.orthogonal()
-	elif dist > desired + 18.0:
+	elif dist > desired + 14.0:
 		steer = to_enemy
 	else:
 		steer = to_enemy.orthogonal() * (1.0 if hp_ratio > 0.5 else 1.4)
@@ -78,12 +79,12 @@ func _fight(player: Player, enemy: EnemyDummy, _delta: float) -> void:
 	if (hp_ratio < 0.62 or dist < 28.0) and _dash_cd <= 0.0 and player.dash_ready():
 		_tap_action("dash")
 		_dash_cd = 0.55
-	if dist > 190.0 and _dash_cd <= 0.0 and player.dash_ready():
+	if dist > 88.0 and _dash_cd <= 0.0 and player.dash_ready():
 		_tap_action("dash")
-		_dash_cd = 0.8
-	if dist <= 56.0 and _attack_cd <= 0.0 and energy_ok and hp_ratio > 0.22:
+		_dash_cd = 0.7 if kite else 0.8
+	if dist <= 64.0 and _attack_cd <= 0.0 and energy_ok and hp_ratio > 0.18:
 		_tap_action("attack")
-		_attack_cd = 0.22
+		_attack_cd = 0.2
 
 
 func _walk_to_exit(player: Player) -> void:
