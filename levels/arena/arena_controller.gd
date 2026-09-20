@@ -431,8 +431,11 @@ func _spawn_wave(wave: WaveDefinition) -> void:
 			_entities.add_child(enemy)
 			enemy.global_position = marker.global_position
 			var def := group.enemy_definition
-			# Soft remix: keep authored defs most of the time, pressure via weights sometimes.
-			if use_faction_weights and biome and biome.has_faction_weights() and RunState.spawn_roll() < 0.4:
+			# Remix later rooms only — the opener keeps the authored roster.
+			var allow_remix := use_faction_weights and biome != null and biome.has_faction_weights()
+			if allow_remix and RunState.room_index == 0:
+				allow_remix = false
+			if allow_remix and RunState.spawn_roll() < 0.4:
 				def = RunState.pick_enemy_for_biome(def)
 			if def != null and enemy.has_method("apply_definition"):
 				enemy.call("apply_definition", def)
