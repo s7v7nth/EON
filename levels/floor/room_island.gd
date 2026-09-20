@@ -158,7 +158,9 @@ func _add_door_prop(dir: Vector2i) -> void:
 		spr.z_index = 2
 		spr.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 		spr.position = door_local(dir) + tangent * (DOOR_GAP * 0.46) * float(side)
-		spr.texture = _IllustratedSet.wall_tex(_facing_name(dir))
+		spr.texture = _IllustratedSet.wall_tex("S" if dir.y != 0 else "E")
+		if spr.texture == null:
+			spr.texture = _IllustratedSet.wall_tex(_facing_name(dir))
 		ArtBank.fit_height(spr, 132.0, true)
 		spr.modulate = Color(0.72, 0.95, 1.0, 1)
 		add_child(spr)
