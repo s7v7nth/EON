@@ -50,7 +50,8 @@ static func tex(path: String) -> Texture2D:
 	if _cache.has(path):
 		return _cache[path] as Texture2D
 	var loaded: Texture2D = null
-	if ResourceLoader.exists(path):
+	var prefer_png := path.contains("/portraits/") or path.contains("floor_city")
+	if not prefer_png and ResourceLoader.exists(path):
 		loaded = load(path) as Texture2D
 	if loaded == null and FileAccess.file_exists(path):
 		var img := Image.new()
