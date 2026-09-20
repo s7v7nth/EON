@@ -50,9 +50,21 @@ func _unhandled_input(event: InputEvent) -> void:
 		if key.physical_keycode == KEY_F9:
 			force_clear_room()
 			get_viewport().set_input_as_handled()
+		elif key.physical_keycode == KEY_E:
+			if _try_clerk_talk():
+				get_viewport().set_input_as_handled()
 
 
-func _build_floor() -> void:
+func _try_clerk_talk() -> bool:
+	if _current == null or _player == null:
+		return false
+	var npc := _current.find_child("Remnant", true, false)
+	if npc == null or not npc.has_method("speak"):
+		return false
+	if _player.global_position.distance_to((npc as Node2D).global_position) > 280.0:
+		return false
+	npc.call("speak")
+	return true
 	var graph := RunState.dungeon
 	if graph == null:
 		push_error("FloorController: no dungeon graph")

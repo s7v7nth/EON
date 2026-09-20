@@ -35,6 +35,7 @@ var _listen_cool: float = 0.0
 
 
 func _ready() -> void:
+	add_to_group("plaza_clerk")
 	collision_layer = 0
 	collision_mask = 2
 	monitoring = true
