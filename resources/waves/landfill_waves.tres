@@ -41,7 +41,7 @@ enemy_definition = ExtResource("5_swarm")
 [sub_resource type="Resource" id="wave_2"]
 script = ExtResource("2_def")
 delay = 1.4
-spawns = Array[ExtResource("3_group")]([SubResource("spawn_w2a"), SubResource("spawn_w2b"), SubResource("spawn_w2c")])
+spawns = Array[ExtResource("3_group")]([SubResource("spawn_w2b"), SubResource("spawn_w2c")])
 
 [sub_resource type="Resource" id="spawn_w3"]
 script = ExtResource("3_group")
