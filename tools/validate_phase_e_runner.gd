@@ -66,6 +66,7 @@ func _run() -> void:
 	assert(player.active_economy.policy == GameplayEnums.EconomyPolicy.RAM_COMPUTE)
 	var econ := player.active_economy as EconomyRam
 	assert(econ != null)
+	assert(player.uses_gun_kit(), "Neuro LMB should be the smart pistol")
 	assert(econ.max_slots == 2)
 	# Starter drone may already occupy a slot; Q should still land a drone in RAM.
 	player.try_special()

@@ -36,9 +36,9 @@ var _spawn_cursor: int = 0
 var _door_nodes: Array[Area2D] = []
 var _elite_presented: bool = false
 ## Tight radius around the marker, plus a south-door band so walking down always leaves.
-const EXIT_CLAIM_RADIUS := 168.0
-const EXIT_SOUTH_Y := 168.0
-const EXIT_SOUTH_X := 420.0
+const EXIT_CLAIM_RADIUS := 210.0
+const EXIT_SOUTH_Y := 90.0
+const EXIT_SOUTH_X := 520.0
 
 @onready var _entities: Node2D = get_node(entities_path)
 @onready var _spawn_points: Node2D = get_node(spawn_points_path)
@@ -85,6 +85,16 @@ func _physics_process(_delta: float) -> void:
 		_claim_exit_if_player_near()
 
 
+func _unhandled_input(event: InputEvent) -> void:
+	if not _room_cleared or _exit_latch:
+		return
+	if event is InputEventKey and event.pressed and not event.echo:
+		var key := event as InputEventKey
+		if key.physical_keycode == KEY_E or key.physical_keycode == KEY_F:
+			_force_claim_exit()
+			get_viewport().set_input_as_handled()
+
+
 func _try_start_combat() -> void:
 	if not RunState.architecture_picked:
 		return
@@ -108,6 +118,7 @@ func _try_start_special_room() -> bool:
 				RunState.add_gold(22 - RunState.gold)
 			_spawn_special_marker(kind)
 			_spawn_special_artifacts(kind)
+			SignalBus.wave_started.emit(0, 1)
 			_finish_special_room()
 			return true
 		_:
@@ -296,32 +307,37 @@ func _dress_exit_marker() -> void:
 	else:
 		glow.scale = Vector2(3.4, 1.55)
 		glow.modulate = Color(0.35, 0.95, 0.55, 0.55)
+	spr.z_index = 2
+	glow.z_index = 1
 	var plaque := exit_node.get_node_or_null("ExitPlaque") as PanelContainer
 	if plaque == null:
 		plaque = PanelContainer.new()
 		plaque.name = "ExitPlaque"
-		plaque.position = Vector2(-108, -86)
-		plaque.custom_minimum_size = Vector2(216, 34)
 		plaque.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		plaque.add_theme_stylebox_override("panel", ArtBank.panel_style(&"card", Color(0.55, 1.0, 0.72, 0.96)))
 		var lab := Label.new()
 		lab.name = "ExitHint"
 		lab.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		lab.custom_minimum_size = Vector2(208, 26)
-		lab.add_theme_font_size_override("font_size", 15)
+		lab.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		lab.custom_minimum_size = Vector2(108, 24)
+		lab.add_theme_font_size_override("font_size", 16)
 		lab.add_theme_color_override("font_color", Color(0.08, 0.18, 0.1, 1))
-		lab.add_theme_color_override("font_outline_color", Color(1, 1, 1, 0.35))
-		lab.add_theme_constant_override("outline_size", 2)
+		lab.add_theme_color_override("font_outline_color", Color(1, 1, 1, 0.45))
+		lab.add_theme_constant_override("outline_size", 3)
 		var font := ArtBank.body_bold()
 		if font:
 			lab.add_theme_font_override("font", font)
 		lab.text = "Exit"
 		plaque.add_child(lab)
 		exit_node.add_child(plaque)
+	plaque.z_index = 12
+	plaque.position = Vector2(-58, -124)
+	plaque.custom_minimum_size = Vector2(116, 30)
+	plaque.visible = true
 	var shape_node := exit_node.get_node_or_null("ExitShape") as CollisionShape2D
 	if shape_node:
 		var rect := RectangleShape2D.new()
-		rect.size = Vector2(280, 170)
+		rect.size = Vector2(340, 210)
 		shape_node.shape = rect
 
 
@@ -772,6 +788,19 @@ func _show_exit() -> void:
 	call_deferred("_claim_exit_if_player_near")
 
 
+func _player_for_exit() -> Node2D:
+	var player := get_tree().get_first_node_in_group("player") as Node2D
+	if player == null and player_path != NodePath() and has_node(player_path):
+		player = get_node(player_path) as Node2D
+	return player
+
+
+func _force_claim_exit() -> void:
+	var player := _player_for_exit()
+	if player:
+		_on_exit_body_entered(player)
+
+
 func _claim_exit_if_player_near() -> void:
 	if not _room_cleared or _exit_latch:
 		return
@@ -782,9 +811,7 @@ func _claim_exit_if_player_near() -> void:
 	var exit_node := get_node(exit_marker_path) as Node2D
 	if exit_node == null or not exit_node.visible:
 		return
-	var player := get_tree().get_first_node_in_group("player") as Node2D
-	if player == null and player_path != NodePath() and has_node(player_path):
-		player = get_node(player_path) as Node2D
+	var player := _player_for_exit()
 	if player == null:
 		return
 	if player.global_position.distance_to(exit_node.global_position) <= EXIT_CLAIM_RADIUS:

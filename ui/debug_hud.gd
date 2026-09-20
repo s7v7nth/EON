@@ -137,8 +137,8 @@ func _wrap_location_banner() -> void:
 	plaque.set_anchors_preset(Control.PRESET_CENTER_TOP)
 	plaque.anchor_left = 0.5
 	plaque.anchor_right = 0.5
-	plaque.offset_left = -170.0
-	plaque.offset_right = 170.0
+	plaque.offset_left = -210.0
+	plaque.offset_right = 210.0
 	plaque.offset_top = 14.0
 	plaque.offset_bottom = 52.0
 	plaque.add_theme_stylebox_override("panel", ArtBank.panel_style(&"card", Color(0.86, 0.9, 1.0, 0.94)))
@@ -186,6 +186,7 @@ func _paint_label(label: Label, size: int, color: Color, title: bool = false) ->
 
 func _on_room_entered(_coord: Vector2i) -> void:
 	_hide_boss_bar()
+	_refresh_location_from_run_state()
 
 
 func _on_health_changed(current: float, max_value: float) -> void:

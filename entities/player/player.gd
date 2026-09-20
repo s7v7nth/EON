@@ -184,6 +184,19 @@ func uses_synthetic_kit() -> bool:
 	return architecture != null and architecture.architecture_id == GameplayEnums.ArchitectureId.DEFAULT
 
 
+func current_weapon() -> WeaponData:
+	if weapons.is_empty():
+		return null
+	return weapons[clampi(weapon_index, 0, weapons.size() - 1)]
+
+
+func uses_gun_kit() -> bool:
+	var weapon := current_weapon()
+	if weapon and weapon.shape_tag == &"gun":
+		return true
+	return architecture != null and architecture.architecture_id == GameplayEnums.ArchitectureId.NEURO_HACKER
+
+
 func blade_in_flight() -> bool:
 	return _blade_in_flight
 

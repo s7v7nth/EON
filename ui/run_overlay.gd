@@ -370,11 +370,11 @@ func _on_wave_cleared(index: int) -> void:
 
 func _on_room_cleared() -> void:
 	if RunState.current_room_kind() == DungeonRoom.RoomKind.SHOP:
-		_set_wave_text("Shop  ·  walk an orb, then the south door")
+		_set_wave_text("Shop  ·  walk an orb, then the south door (E)")
 	elif RunState.current_room_kind() == DungeonRoom.RoomKind.TREASURE:
-		_set_wave_text("Cache  ·  walk an orb, then the south door")
+		_set_wave_text("Cache  ·  walk an orb, then the south door (E)")
 	else:
-		_set_wave_text("South door open   ·   Rank %s" % RunState.current_room_rank())
+		_set_wave_text("South door open   ·   walk down or press E")
 
 
 func _on_run_won() -> void:
