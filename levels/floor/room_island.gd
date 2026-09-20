@@ -60,7 +60,7 @@ func set_doors_locked(locked: bool) -> void:
 	for dir in blockers.keys():
 		var body: StaticBody2D = blockers[dir]
 		if body:
-			body.set_deferred("collision_layer", 1 if locked else 0)
+			body.collision_layer = 1 if locked else 0
 			body.visible = locked
 		var spr: Sprite2D = door_sprites.get(dir)
 		if spr:

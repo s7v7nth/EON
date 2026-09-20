@@ -870,6 +870,7 @@ func _finish_reward() -> void:
 			node.queue_free()
 	_reward_extra_nodes.clear()
 	RunState.finish_room_reward()
+	get_tree().paused = false
 	_finishing_reward = false
 
 
