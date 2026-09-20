@@ -10,9 +10,9 @@ var _rim: Line2D
 
 func setup(circle_radius: float) -> void:
 	radius = maxf(circle_radius, 48.0)
-	# Sit on the night tiles, under characters but above floor sprites.
-	z_index = 2
-	z_as_relative = false
+	# Island child: above dressing tiles (z -12), under Entities (z 0).
+	z_index = -2
+	z_as_relative = true
 	_ensure_visuals()
 	modulate.a = 0.0
 	var tw := create_tween()
@@ -59,19 +59,19 @@ func _ensure_visuals() -> void:
 	_fill.name = "Fill"
 	_fill.polygon = _iso_disk(radius)
 	# Muddy stain on blue-grey night tiles — black-on-black does not read.
-	_fill.color = Color(0.16, 0.1, 0.04, 0.82)
+	_fill.color = Color(0.12, 0.07, 0.03, 0.9)
 	add_child(_fill)
 	_rim = Line2D.new()
 	_rim.name = "Rim"
-	_rim.width = 6.5
-	_rim.default_color = Color(0.92, 0.38, 0.12, 1.0)
+	_rim.width = 8.0
+	_rim.default_color = Color(1.0, 0.42, 0.12, 1.0)
 	_rim.closed = true
 	_rim.points = _iso_disk(radius)
 	add_child(_rim)
 	var inner := Line2D.new()
 	inner.name = "OliveRim"
-	inner.width = 3.0
-	inner.default_color = Color(0.58, 0.78, 0.18, 0.98)
+	inner.width = 4.0
+	inner.default_color = Color(0.62, 0.84, 0.16, 1.0)
 	inner.closed = true
 	inner.points = _iso_disk(radius * 0.78)
 	add_child(inner)

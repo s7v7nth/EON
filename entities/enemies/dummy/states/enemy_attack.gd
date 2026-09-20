@@ -207,10 +207,8 @@ func _begin_hive_slam() -> void:
 		_vis_scale = vis.scale
 		vis.position = _vis_rest + Vector2(0, -22)
 		vis.scale = _vis_scale * Vector2(1.04, 1.12)
-	# Draw with the player, not under island floor tiles / behind the hero sprite.
-	var host: Node = enemy.get_parent()
-	if enemy.target and enemy.target.get_parent():
-		host = enemy.target.get_parent()
+	# Draw on the island floor: above night tiles, under the butcher / hero.
+	var host: Node = _island_host(enemy)
 	if host == null:
 		return
 	_slam = _SlamCircle.new()
@@ -266,6 +264,18 @@ func _clear_hive_slam() -> void:
 	_slam = null
 	if enemy.hitbox:
 		enemy.hitbox.position = Vector2(22, 0)
+
+
+func _island_host(from: Node) -> Node:
+	var n := from
+	while n:
+		if n is RoomIsland:
+			return n
+		n = n.get_parent()
+	var parent := from.get_parent() if from else null
+	if parent and parent.name == "Entities" and parent.get_parent():
+		return parent.get_parent()
+	return parent
 
 
 func _variant_for_pattern(atk: AttackData) -> int:

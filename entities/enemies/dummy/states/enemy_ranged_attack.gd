@@ -38,13 +38,15 @@ func enter(msg: Dictionary = {}) -> void:
 	_aim_angle = _aim.angle()
 	var speed := enemy.get_action_speed_multiplier()
 	if enemy.combat_visual:
-		enemy.combat_visual.play_hostile_pattern_windup(
-			_attack.pattern_kind, _aim_angle, _attack.windup / speed, 0, 0.0
-		)
-		if _is_hive_bile() and enemy.combat_visual.telegraph:
-			enemy.combat_visual.telegraph.color = Color(0.48, 0.68, 0.14, enemy.combat_visual.telegraph.color.a)
-		if _is_hive_bile() and enemy.combat_visual.swing_arc:
-			enemy.combat_visual.swing_arc.color = Color(0.42, 0.58, 0.12, 0.7)
+		if _is_hive_bile():
+			if enemy.combat_visual.telegraph:
+				enemy.combat_visual.telegraph.color.a = 0.0
+			if enemy.combat_visual.swing_arc:
+				enemy.combat_visual.swing_arc.modulate.a = 0.0
+		else:
+			enemy.combat_visual.play_hostile_pattern_windup(
+				_attack.pattern_kind, _aim_angle, _attack.windup / speed, 0, 0.0
+			)
 	_begin_hive_cough()
 
 
@@ -65,7 +67,7 @@ func physics_update(delta: float) -> void:
 			elif not _locked_aim and enemy.target != null:
 				_aim = enemy.global_position.direction_to(enemy.target.global_position)
 				_aim_angle = _aim.angle()
-				if enemy.combat_visual:
+				if enemy.combat_visual and not _is_hive_bile():
 					enemy.combat_visual.aim_hostile_pattern_telegraph(
 						_attack.pattern_kind, _aim_angle, 0.0
 					)
@@ -148,8 +150,8 @@ func _ensure_spit() -> void:
 	if _spit == null:
 		_spit = Line2D.new()
 		_spit.name = "BileSpit"
-		_spit.width = 9.0
-		_spit.default_color = Color(0.46, 0.62, 0.12, 0.0)
+		_spit.width = 14.0
+		_spit.default_color = Color(0.5, 0.68, 0.1, 0.0)
 		_spit.z_index = 9
 		enemy.add_child(_spit)
 
@@ -159,8 +161,8 @@ func _update_spit(reach: float, alpha: float) -> void:
 		return
 	var tip := _aim * reach
 	_spit.points = PackedVector2Array([Vector2(0, -18), tip])
-	_spit.default_color = Color(0.48, 0.66, 0.12, alpha)
-	_spit.width = 10.0 if _phase == Phase.VOLLEY else 7.0
+	_spit.default_color = Color(0.5, 0.7, 0.1, alpha)
+	_spit.width = 16.0 if _phase == Phase.VOLLEY else 11.0
 
 
 func _clear_spit() -> void:

@@ -15,8 +15,8 @@ func setup(damage: float, duration: float, radius: float = 46.0) -> void:
 
 
 func _ready() -> void:
-	z_index = 1
-	z_as_relative = false
+	z_index = -2
+	z_as_relative = true
 	monitoring = true
 	monitorable = false
 	collision_layer = 0
@@ -76,12 +76,12 @@ func _build_look() -> void:
 	var fill := Polygon2D.new()
 	fill.name = "Slurry"
 	fill.polygon = _iso_disk(_radius)
-	fill.color = Color(0.28, 0.32, 0.08, 0.88)
+	fill.color = Color(0.34, 0.38, 0.08, 0.94)
 	add_child(fill)
 	var rim := Line2D.new()
 	rim.name = "RustRim"
-	rim.width = 4.0
-	rim.default_color = Color(0.62, 0.28, 0.1, 0.95)
+	rim.width = 5.5
+	rim.default_color = Color(0.72, 0.3, 0.08, 1.0)
 	rim.closed = true
 	rim.points = _iso_disk(_radius)
 	add_child(rim)

@@ -49,7 +49,7 @@ var _lunge_time: float = 0.0
 var facing_direction: Vector2 = Vector2.RIGHT
 var bonus_max_health: float = 0.0
 var hive_thickness: int = 0
-var _hive_shed_cd: float = 1.55
+var _hive_shed_cd: float = 0.7
 
 
 func _ready() -> void:
@@ -223,8 +223,14 @@ func apply_definition(def: EnemyDefinition) -> void:
 	if is_hive_chunk():
 		var vis_chunk := get_node_or_null("Visual") as Node2D
 		if vis_chunk:
-			vis_chunk.scale = Vector2(0.92, 0.92)
-			vis_chunk.modulate = Color(0.72, 0.78, 0.38, 1)
+			vis_chunk.scale = Vector2(0.78, 0.78)
+			vis_chunk.modulate = Color(0.82, 0.9, 0.32, 1)
+		var chunk_bar := get_node_or_null("HealthBar") as HealthBarComponent
+		if chunk_bar:
+			chunk_bar.set_label("Hive chunk")
+			chunk_bar.hide_when_full = false
+			chunk_bar.bar_size = Vector2(46, 7)
+			chunk_bar.fill_color = Color(0.55, 0.72, 0.18, 0.95)
 	var vis := get_node_or_null("Visual") as Node2D
 	if vis and def:
 		var swarm := false

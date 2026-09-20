@@ -55,6 +55,7 @@ func _run() -> void:
 
 	assert(SLAM.pattern_kind == AttackData.PatternKind.OVERHEAD_SLAM)
 	assert(SLAM.circular)
+	assert(SLAM.max_range >= 160.0)
 	assert(BILE.leaves_puddle)
 	assert(BILE.pattern_kind == AttackData.PatternKind.CHARGE_SHOT)
 	assert(HOOK.hook_pull)
@@ -79,7 +80,7 @@ func _run() -> void:
 	assert(slam.modulate.a > 0.0 or slam.get_child_count() > 0)
 	assert(slam.get_node_or_null("Rim") != null)
 	assert(slam.get_node_or_null("OliveRim") != null)
-	assert(slam.z_index >= 0)
+	assert(slam.z_index > -12)
 	slam.queue_free()
 
 	var bile: Area2D = _Bile.new()
