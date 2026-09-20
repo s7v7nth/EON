@@ -89,6 +89,7 @@
 - [ ] Tutorial / Campaign / Procedural: **один физический этаж** — острова + коридоры, смещённые двери, заход с обратной стороны, walk-back, острова не перекрываются
 - [ ] Мини-карта на всех маршрутах с графом: current / visited / fog; boss / shop / cache / remnant маркеры; тонкая dying-city рамка (не chrome клона рефа)
 - [ ] Overlay после clear **не телепортирует** — выходишь пешком в коридор
+- [ ] Quiet rooms (remnant / shop / cache): двери сразу проходимы из коридора — не нужно «войти в occupancy чтобы открыть»
 - [ ] Campaign: F9 на старте → юг Remnant (E talk) → восток **The Hive**
 - [ ] Улей-босс в графе (campaign/procedural); kill пишет meta unlock
 - [ ] Комнаты — illustrated ruin (неон vs toxic, rim-lit hostiles, contrasty night) **без** Kenney-вокселей / Roblox-dim / клона улицы с clone-pod

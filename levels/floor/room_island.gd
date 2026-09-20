@@ -154,7 +154,8 @@ func _add_door_prop(dir: Vector2i) -> void:
 	spr.position = door_local(dir)
 	spr.texture = _IllustratedSet.wall_tex(_facing_name(dir))
 	ArtBank.fit_height(spr, 96.0, true)
-	spr.modulate = Color(0.32, 0.2, 0.18, 1)
+	## Spawn open; combat occupancy tints these shut.
+	spr.modulate = Color(0.45, 0.9, 1.0, 1)
 	add_child(spr)
 	door_sprites[dir] = spr
 
@@ -162,8 +163,11 @@ func _add_door_prop(dir: Vector2i) -> void:
 func _add_blocker(dir: Vector2i) -> void:
 	var body := StaticBody2D.new()
 	body.name = "Blocker_%d_%d" % [dir.x, dir.y]
-	body.collision_layer = 1
+	## Quiet rooms never start a fight, so doors stay walkable from the hallway
+	## until occupancy locks a combat room.
+	body.collision_layer = 0
 	body.collision_mask = 0
+	body.visible = false
 	var shape := CollisionShape2D.new()
 	var rect := RectangleShape2D.new()
 	if dir.x == 0:
