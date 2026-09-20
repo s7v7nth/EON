@@ -166,5 +166,18 @@ func _ensure_visual() -> void:
 	spr.texture = ArtBank.space("satelliteDish_SE")
 	if spr.texture == null:
 		spr.texture = ArtBank.rts_unit(8)
-	ArtBank.fit_height(spr, 48.0, true)
-	spr.modulate = Color(0.78, 0.62, 1.0, 1)
+	ArtBank.fit_height(spr, 76.0, true)
+	spr.modulate = Color(0.82, 0.58, 1.0, 1)
+	var ring := get_node_or_null("Halo") as Sprite2D
+	if ring == null:
+		ring = Sprite2D.new()
+		ring.name = "Halo"
+		ring.centered = true
+		ring.z_index = -1
+		ring.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+		add_child(ring)
+		move_child(ring, 0)
+	ring.texture = ArtBank.particle("circle_05")
+	if ring.texture:
+		ArtBank.fit_height(ring, 54.0, false)
+	ring.modulate = Color(0.72, 0.42, 1.0, 0.55)

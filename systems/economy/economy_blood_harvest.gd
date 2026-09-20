@@ -2,7 +2,7 @@ class_name EconomyBloodHarvest
 extends "res://systems/economy/resource_economy.gd"
 ## Hive: no energy. Passive HP drain fuels the swarm; hits/kills restore HP.
 
-@export var hp_drain_percent_per_sec: float = 0.04
+@export var hp_drain_percent_per_sec: float = 0.03
 @export var life_steal: float = 0.14
 @export var heal_on_kill: float = 8.0
 @export var dash_hp_cost_percent: float = 0.04

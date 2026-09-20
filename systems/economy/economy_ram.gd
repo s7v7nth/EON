@@ -7,11 +7,12 @@ const DRONE_SCENE := preload("res://entities/allies/drone/ally_drone.tscn")
 @export var max_slots: int = 2
 @export var special_slot_cost: int = 1
 @export var drone_lifetime: float = 18.0
+@export var starter_drone: bool = true
 
 var used_slots: int = 0
 var drone_damage_mult: float = 1.0
 var drone_speed_mult: float = 1.0
-var drone_glitch_buildup: float = 0.0
+var drone_glitch_buildup: float = 12.0
 var _drones: Array[Node] = []
 
 
@@ -20,15 +21,17 @@ func _init() -> void:
 
 
 func on_equip(host: Node) -> void:
+	_despawn_all()
 	used_slots = 0
 	drone_damage_mult = 1.0
 	drone_speed_mult = 1.0
-	drone_glitch_buildup = 0.0
-	_drones.clear()
+	drone_glitch_buildup = 12.0
 	_emit_slots()
 	var energy: EnergyComponent = host.get("energy") as EnergyComponent
 	if energy:
 		energy.unlock_regen(0.65)
+	if starter_drone and host:
+		host.call_deferred("try_special")
 
 
 func on_unequip(host: Node) -> void:
@@ -63,6 +66,19 @@ func spend(host: Node, action: StringName, cost: float = 0.0) -> bool:
 	return true
 
 
+func on_hit(_host: Node, target: Node) -> void:
+	if target == null:
+		return
+	var body := target.get_parent() if target is HurtboxComponent else target
+	if body == null:
+		return
+	var status: StatusComponent = body.get("status") as StatusComponent
+	if status == null:
+		status = body.get_node_or_null("StatusComponent") as StatusComponent
+	if status:
+		status.add_buildup(StatusComponent.STATUS_GLITCH, 10.0, 1.5)
+
+
 func try_special(host: Node) -> bool:
 	if not spend(host, &"special"):
 		return false
@@ -71,6 +87,14 @@ func try_special(host: Node) -> bool:
 		used_slots = maxi(used_slots - special_slot_cost, 0)
 		_emit_slots()
 		return false
+	if host is Node2D:
+		HitVFX.spawn_optic_burst(
+			(host as Node2D).get_parent(),
+			(host as Node2D).global_position,
+			Color(0.72, 0.4, 1.0, 1),
+			Vector2.UP,
+			1.05
+		)
 	SignalBus.special_triggered.emit(host)
 	return true
 
