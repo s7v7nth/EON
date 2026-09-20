@@ -92,11 +92,12 @@
 - [ ] Overlay после clear **не телепортирует** — выходишь пешком в коридор
 - [ ] Quiet rooms (remnant / shop / cache): двери сразу проходимы из коридора — не нужно «войти в occupancy чтобы открыть»
 - [ ] Standing on an island enters that room even if occupancy missed after a reward overlay
+- [ ] Hive island keeps **Data Center · Boss** while you stand on those tiles — neighbor remnant / hallway does not steal occupancy, quiet-heal, or respawn a second butcher
 - [ ] Campaign: F9 на старте → pick reward if it pops → юг Remnant (**stall just inside the door**, **E = one scrap** on a bottom banner) → восток **The Hive**
 - [ ] Clerk: **E listen** only when in range; first visit — 12 sequential Hades scraps as a **bottom line** (stall stays visible, не speech dump, не auto-talk от overlap); потом node line «Fine. Drawer node…» → Нейро unlock; repeat visit — 3 scraps
 - [ ] Clerk **не** выдаёт Улей; kit снимаешь с The Hive
 - [ ] Улей-босс в графе (campaign/procedural); kill пишет meta unlock
-- [ ] Hive tells: slam = dark floor circle then mass (выйти из круга); nano-bile = olive spit line then lasting **olive-rust slurry** (не комнатный neon drain stain); flesh-hook = meat-nano cable with a barb, kiss = pull (sidestep the line); swarm chunks fall off — kill or they crawl back and the butcher gets thicker
+- [ ] Hive tells: slam = dark floor circle then mass (выйти из круга); nano-bile = olive spit line then lasting **olive-rust slurry** (не комнатный neon drain stain); flesh-hook = **meat-nano cable with a barb** (not a clean orange laser), kiss = pull (sidestep the line); swarm chunks fall off — kill or they crawl back and the butcher gets thicker
 - [ ] The Hive stands in the room, not stuffed in the door; slam circle has a rust/olive rim you can actually see on the night floor
 - [ ] Комнаты — illustrated ruin (неон vs toxic, rim-lit hostiles, contrasty night) **без** Kenney-вокселей / Roblox-dim / клона улицы с clone-pod
 - [ ] Переход через дверь: короткий fade (без резкого чёрного кадра / hard cut)
