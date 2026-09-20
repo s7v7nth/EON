@@ -4,6 +4,9 @@ extends State
 const GHOST_INTERVAL: float = 0.035
 const GHOST_FADE_TIME: float = 0.25
 const GHOST_TINT := Color(0.6, 0.8, 1.0, 0.65)
+const GHOST_HIVE := Color(0.35, 1.0, 0.48, 0.7)
+const GHOST_TRAIN := Color(1.0, 0.55, 0.22, 0.7)
+const GHOST_NEURO := Color(0.78, 0.42, 1.0, 0.72)
 
 @onready var player: Player = owner as Player
 
@@ -94,7 +97,7 @@ func _spawn_ghost() -> void:
 	if spr and spr.texture:
 		var ghost := ArtBank.clone_sprite_look(spr)
 		ghost.scale = visual.scale * spr.scale
-		ghost.modulate = GHOST_TINT
+		ghost.modulate = _ghost_tint()
 		ghost.z_index = -1
 		player.get_parent().add_child(ghost)
 		ghost.global_position = player.global_position + spr.position
@@ -127,13 +130,25 @@ func _spawn_ghost() -> void:
 		ghost_poly.color = visual.color
 	else:
 		ghost_poly.color = Color(0.55, 0.58, 0.62, 1)
-	ghost_poly.modulate = GHOST_TINT
+	ghost_poly.modulate = _ghost_tint()
 	ghost_poly.z_index = -1
 	player.get_parent().add_child(ghost_poly)
 	ghost_poly.global_position = player.global_position
 	var tween_poly := ghost_poly.create_tween()
 	tween_poly.tween_property(ghost_poly, "modulate:a", 0.0, GHOST_FADE_TIME)
 	tween_poly.tween_callback(ghost_poly.queue_free)
+
+
+func _ghost_tint() -> Color:
+	if player.architecture:
+		match player.architecture.architecture_id:
+			GameplayEnums.ArchitectureId.NANOMACHINES:
+				return GHOST_HIVE
+			GameplayEnums.ArchitectureId.ELECTRO_TRAIN:
+				return GHOST_TRAIN
+			GameplayEnums.ArchitectureId.NEURO_HACKER:
+				return GHOST_NEURO
+	return GHOST_TINT
 
 
 func _return_to_locomotion() -> void:

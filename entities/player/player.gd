@@ -777,6 +777,8 @@ func _projectile_color(damage_type: GameplayEnums.DamageType) -> Color:
 			return Color(1.0, 0.5, 0.2, 1)
 		GameplayEnums.DamageType.BLEED:
 			return Color(0.95, 0.25, 0.3, 1)
+		GameplayEnums.DamageType.GLITCH:
+			return Color(0.78, 0.42, 1.0, 1)
 		_:
 			return Color(0.85, 0.9, 1.0, 1)
 

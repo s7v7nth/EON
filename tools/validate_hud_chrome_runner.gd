@@ -62,7 +62,8 @@ func _run() -> void:
 	assert(overlay.find_child("WavePlaque", true, false) != null, "wave counter should sit in a Kenney plaque")
 	var toast := overlay.find_child("ComboToast", true, false) as Control
 	assert(toast != null, "combo toast should exist")
-	assert(toast.anchor_top > 0.4, "named combo toast should sit mid-screen, not under the location plaque")
+	assert(toast.anchor_top < 0.15, "named combo toast should sit under the location plaque, not on the reward cards")
+	assert(toast.offset_top <= 70.0, "named combo toast should sit under the location plaque")
 	var banner := overlay.find_child("BossBanner", true, false) as Control
 	assert(banner != null, "boss flash banner should exist")
 	assert(banner.offset_top >= 120.0, "boss flash should sit under the HP chrome, not on top of it")
@@ -71,6 +72,8 @@ func _run() -> void:
 	var overlay_title := overlay.get_node("Center/Panel/Margin/VBox/Title") as Label
 	assert(overlay_title != null)
 	assert(overlay_title.get_theme_font("font") != ArtBank.title_font(), "overlay titles should be Inter, not Kenney Future")
+	var body_path := str(ArtBank.body_font().resource_path)
+	assert(body_path.find("Inter") >= 0, "body type must load Inter, not a Kenney fallback")
 	assert(hud.find_child("GoldLabel", true, false) != null)
 	var gold_lab := hud.find_child("GoldLabel", true, false) as Label
 	assert(gold_lab != null)

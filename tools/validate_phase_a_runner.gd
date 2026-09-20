@@ -36,6 +36,7 @@ func _run() -> void:
 	RunState.apply_to_player(player)
 	assert(player.active_economy.policy == GameplayEnums.EconomyPolicy.BLOOD_HARVEST)
 	assert(player.get_node_or_null("SwarmCloud") != null, "Hive should wear a nano swarm")
+	assert(player.get_node_or_null("SwarmSiphon") != null, "Hive should siphon nearby prey")
 	var dummy: EnemyDummy = (load("res://entities/enemies/dummy/enemy_dummy.tscn") as PackedScene).instantiate() as EnemyDummy
 	player.get_parent().add_child(dummy)
 	dummy.global_position = player.global_position + Vector2(48, 0)
@@ -47,6 +48,7 @@ func _run() -> void:
 	RunState.choose_architecture(GameplayEnums.ArchitectureId.ELECTRO_TRAIN)
 	RunState.apply_to_player(player)
 	assert(player.active_economy.policy == GameplayEnums.EconomyPolicy.OVERHEAT)
+	assert(player.get_node_or_null("HeatStack") != null, "Parovoz should wear a heat stack")
 	assert(player.try_spend_attack_energy(player.hitbox.attack_data))
 	assert(float(player.active_economy.get("heat")) > 0.0)
 	player.active_economy.set("heat", float(player.active_economy.get("heat_max")))

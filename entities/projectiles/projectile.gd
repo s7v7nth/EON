@@ -197,13 +197,19 @@ func _ensure_visuals() -> void:
 	var laser := ArtBank.shooter("laserBlue01")
 	if attack_data and attack_data.returning:
 		laser = ArtBank.shooter("laserGreen01")
+	elif attack_data and attack_data.damage_type == GameplayEnums.DamageType.GLITCH:
+		laser = ArtBank.shooter("laserRed01")
+	elif attack_data and attack_data.damage_type == GameplayEnums.DamageType.FIRE:
+		laser = ArtBank.shooter("laserRed07")
 	if laser == null:
 		laser = ArtBank.particle("slash_01")
 	bolt.texture = laser
 	ArtBank.apply_opaque_region(bolt)
 	bolt.rotation = 0.0
-	ArtBank.fit_height(bolt, 42.0, false)
+	ArtBank.fit_height(bolt, 54.0, false)
 	bolt.rotation = PI * 0.5
+	if attack_data and attack_data.damage_type == GameplayEnums.DamageType.GLITCH:
+		bolt.modulate = Color(0.78, 0.42, 1.0, 1)
 	if _visual:
 		_visual.modulate.a = 0.35
 	if _core:

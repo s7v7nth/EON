@@ -201,7 +201,7 @@ func _spawn_special_artifacts(kind: int) -> void:
 	if offers.is_empty():
 		return
 	var orbs: Array[ArtifactOrb] = []
-	var spacing := 168.0
+	var spacing := 236.0
 	var start_x := -spacing * float(offers.size() - 1) * 0.5
 	for i in offers.size():
 		var pos := Vector2(start_x + spacing * float(i), 48.0)
@@ -748,7 +748,7 @@ func _stabilize_player_after_clear() -> void:
 	if player.status:
 		player.status.clear_all()
 	if player.health:
-		player.health.heal(player.health.get_max_health() * 0.28)
+		player.health.heal(player.health.get_max_health() * 0.12)
 	for trap in get_tree().get_nodes_in_group("biome_traps"):
 		if trap is Area2D:
 			(trap as Area2D).monitoring = false

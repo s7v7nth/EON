@@ -26,6 +26,10 @@ func on_death(host: Node) -> void:
 		if origin.distance_to(body.global_position) > radius:
 			continue
 		var health: HealthComponent = child.get("health") as HealthComponent
+		if child is Player:
+			if health:
+				health.take_damage(damage * 0.35)
+			continue
 		if health:
 			health.take_damage(damage)
 		var status: StatusComponent = child.get("status") as StatusComponent

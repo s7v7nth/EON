@@ -121,9 +121,13 @@ func boost_drones(damage_mult: float, speed_mult: float, glitch_buildup: float) 
 
 
 func get_hud_values(_host: Node) -> Dictionary:
-	var free := maxi(max_slots - used_slots, 0)
 	return {
-		"primary": _bar(float(free), float(max_slots), "RAM", Color(0.55, 0.35, 0.95, 1)),
+		"primary": _bar(
+			float(used_slots),
+			float(max_slots),
+			"RAM  %d / %d" % [used_slots, max_slots],
+			Color(0.62, 0.38, 0.98, 1)
+		),
 		"secondary": _bar(float(used_slots), float(max_slots), "Drones", Color(0.75, 0.55, 1.0, 1)),
 	}
 

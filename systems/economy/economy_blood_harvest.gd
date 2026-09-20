@@ -13,6 +13,8 @@ extends "res://systems/economy/resource_economy.gd"
 
 var _swarm: Node2D
 var _swarm_spin: float = 0.0
+var _siphon: Line2D
+var _last_vamp_ms: int = 0
 
 
 func _init() -> void:
@@ -81,7 +83,18 @@ func on_hit(host: Node, _target: Node) -> void:
 	var health: HealthComponent = host.get("health") as HealthComponent
 	if health == null or life_steal <= 0.0:
 		return
-	health.heal(life_steal * 10.0)
+	var healed := life_steal * 10.0
+	health.heal(healed)
+	var now := Time.get_ticks_msec()
+	if host is Node2D and now - _last_vamp_ms > 380:
+		_last_vamp_ms = now
+		DamagePop.spawn_label(
+			(host as Node2D).get_parent(),
+			(host as Node2D).global_position + Vector2(0, -42),
+			"+HP",
+			Color(0.35, 1.0, 0.48, 1),
+			15
+		)
 
 
 func on_kill(host: Node, _enemy: Node) -> void:
@@ -145,7 +158,7 @@ func get_hud_values(host: Node) -> Dictionary:
 	if hp_m > 0.0:
 		pressure = (1.0 - hp_v / hp_m) * 100.0
 	return {
-		"primary": _bar(pressure, 100.0, "Swarm Hunger", Color(0.35, 0.85, 0.45, 1)),
+		"primary": _bar(pressure, 100.0, "Swarm Hunger  %d" % roundi(pressure), Color(0.35, 0.85, 0.45, 1)),
 		"secondary": {},
 	}
 
@@ -180,21 +193,37 @@ func _ensure_swarm(host: Node) -> void:
 	if host is not Node2D:
 		return
 	_swarm = (host as Node2D).get_node_or_null("SwarmCloud") as Node2D
-	if _swarm:
+	if _swarm == null:
+		_swarm = Node2D.new()
+		_swarm.name = "SwarmCloud"
+		_swarm.z_index = 6
+		(host as Node2D).add_child(_swarm)
+		var tex := ArtBank.particle("circle_05")
+		if tex == null:
+			tex = ArtBank.particle("magic_05")
+		for i in 10:
+			var mote := Sprite2D.new()
+			mote.name = "Mote%d" % i
+			mote.texture = tex
+			mote.centered = true
+			mote.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+			mote.modulate = Color(0.32, 1.0, 0.48, 0.95)
+			mote.z_index = 6
+			if tex:
+				ArtBank.fit_height(mote, 18.0, false)
+			_swarm.add_child(mote)
+	_siphon = (host as Node2D).get_node_or_null("SwarmSiphon") as Line2D
+	if _siphon:
 		return
-	_swarm = Node2D.new()
-	_swarm.name = "SwarmCloud"
-	_swarm.z_index = 6
-	(host as Node2D).add_child(_swarm)
-	for i in 8:
-		var mote := Polygon2D.new()
-		mote.name = "Mote%d" % i
-		mote.polygon = PackedVector2Array([
-			Vector2(0, -5), Vector2(4, 0), Vector2(0, 5), Vector2(-4, 0)
-		])
-		mote.color = Color(0.28, 1.0, 0.42, 0.92)
-		mote.z_index = 6
-		_swarm.add_child(mote)
+	_siphon = Line2D.new()
+	_siphon.name = "SwarmSiphon"
+	_siphon.width = 3.5
+	_siphon.default_color = Color(0.28, 1.0, 0.42, 0.0)
+	_siphon.z_index = 5
+	_siphon.joint_mode = Line2D.LINE_JOINT_ROUND
+	_siphon.begin_cap_mode = Line2D.LINE_CAP_ROUND
+	_siphon.end_cap_mode = Line2D.LINE_CAP_ROUND
+	(host as Node2D).add_child(_siphon)
 
 
 func _spin_swarm(host: Node, delta: float) -> void:
@@ -202,33 +231,73 @@ func _spin_swarm(host: Node, delta: float) -> void:
 		_ensure_swarm(host)
 	if _swarm == null:
 		return
-	var hungry := _enemy_in_range(host, 240.0)
-	_swarm_spin += delta * (3.4 if hungry else 1.6)
-	var radius := 34.0 if hungry else 26.0
+	var prey := _nearest_enemy(host, 240.0)
+	var hungry := prey != null
+	_swarm_spin += delta * (4.2 if hungry else 1.6)
+	var radius := 40.0 if hungry else 26.0
 	var kids := _swarm.get_children()
 	for i in kids.size():
 		var mote := kids[i] as Node2D
 		if mote == null:
 			continue
 		var ang := _swarm_spin + TAU * float(i) / float(maxi(kids.size(), 1))
-		mote.position = Vector2(cos(ang) * radius, sin(ang) * radius * 0.55 - 18.0)
-		mote.modulate = Color(1, 1, 1, 1.0 if hungry else 0.55)
+		mote.position = Vector2(cos(ang) * radius, sin(ang) * radius * 0.55 - 20.0)
+		mote.modulate = Color(0.38, 1.0, 0.5, 1.0 if hungry else 0.55)
+		mote.scale = Vector2.ONE * (1.15 if hungry else 0.85)
+	if _siphon and is_instance_valid(_siphon) and host is Node2D:
+		if hungry and prey is Node2D:
+			_siphon.points = PackedVector2Array([
+				Vector2(0, -18),
+				(prey as Node2D).global_position - (host as Node2D).global_position + Vector2(0, -16)
+			])
+			_siphon.default_color = Color(0.3, 1.0, 0.42, 0.72)
+		else:
+			_siphon.points = PackedVector2Array()
+			_siphon.default_color = Color(0.3, 1.0, 0.42, 0.0)
 	var cv: CombatVisualComponent = host.get("combat_visual") as CombatVisualComponent
-	if cv and cv.aura:
-		cv.aura.visible = true
-		cv.aura.color = Color(0.28, 0.95, 0.38, 0.42 if hungry else 0.22)
-		cv.aura.scale = Vector2(1.55, 1.55) if hungry else Vector2(1.15, 1.15)
+	if cv:
+		cv.set_kit_aura(
+			Color(0.28, 0.95, 0.38, 0.5 if hungry else 0.24),
+			Vector2(1.7, 1.7) if hungry else Vector2(1.2, 1.2),
+			true
+		)
+
+
+func _nearest_enemy(host: Node, radius: float) -> Node2D:
+	if host is not Node2D:
+		return null
+	var parent := (host as Node2D).get_parent()
+	if parent == null:
+		return null
+	var origin := (host as Node2D).global_position
+	var best: Node2D = null
+	var best_d := radius
+	for child in parent.get_children():
+		if child == host or child is not Node2D:
+			continue
+		if not child.has_method("apply_chase_movement"):
+			continue
+		var d := origin.distance_to((child as Node2D).global_position)
+		if d <= best_d:
+			best_d = d
+			best = child as Node2D
+	return best
 
 
 func _free_swarm(host: Node) -> void:
 	if _swarm and is_instance_valid(_swarm):
 		_swarm.queue_free()
 	_swarm = null
+	if _siphon and is_instance_valid(_siphon):
+		_siphon.queue_free()
+	_siphon = null
 	if host:
 		var existing := host.get_node_or_null("SwarmCloud")
 		if existing:
 			existing.queue_free()
+		var siphon := host.get_node_or_null("SwarmSiphon")
+		if siphon:
+			siphon.queue_free()
 	var cv: CombatVisualComponent = host.get("combat_visual") as CombatVisualComponent if host else null
-	if cv and cv.aura:
-		cv.aura.visible = false
-		cv.aura.scale = Vector2.ONE
+	if cv:
+		cv.set_kit_aura(Color.WHITE, Vector2.ONE, false)

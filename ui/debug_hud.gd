@@ -249,7 +249,7 @@ func _apply_bar(bar: ProgressBar, label: Label, data: Dictionary) -> void:
 
 func _on_style_changed(score: int, multiplier: float, rank: String) -> void:
 	if style_label:
-		style_label.text = "Style  %s   ×%.1f   %d" % [rank, multiplier, score]
+		style_label.text = "Style  %s   ×%.1f" % [rank, multiplier]
 		if rank != _last_style_rank and _last_style_rank != "":
 			style_label.modulate = Color(1.4, 1.2, 0.6)
 			var tw := create_tween()

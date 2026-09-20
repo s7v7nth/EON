@@ -163,9 +163,23 @@ func apply_architecture_look(arch: ArchitectureData) -> void:
 	if _aura_tween and _aura_tween.is_valid():
 		_aura_tween.kill()
 	aura.scale = Vector2.ONE
+	aura.modulate = Color.WHITE
+	# Pulse alpha only — kit economies own aura scale (swarm / heat / drones).
 	_aura_tween = create_tween().set_loops()
-	_aura_tween.tween_property(aura, "scale", Vector2(1.08, 1.08), 0.55).set_trans(Tween.TRANS_SINE)
-	_aura_tween.tween_property(aura, "scale", Vector2(0.94, 0.94), 0.55).set_trans(Tween.TRANS_SINE)
+	_aura_tween.tween_property(aura, "modulate:a", 0.78, 0.55).set_trans(Tween.TRANS_SINE)
+	_aura_tween.tween_property(aura, "modulate:a", 1.0, 0.55).set_trans(Tween.TRANS_SINE)
+
+
+func set_kit_aura(color: Color, aura_scale: Vector2, enabled: bool) -> void:
+	_ensure_nodes()
+	if aura == null:
+		return
+	aura.visible = enabled
+	if not enabled:
+		aura.scale = Vector2.ONE
+		return
+	aura.color = color
+	aura.scale = aura_scale
 
 
 func apply_weapon_look(weapon_data: WeaponData, arch: ArchitectureData = null) -> void:

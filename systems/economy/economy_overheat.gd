@@ -4,8 +4,8 @@ extends "res://systems/economy/resource_economy.gd"
 ## Special (Vent) dumps heat into an AoE and locks weapons briefly.
 
 @export var heat_max: float = 100.0
-@export var heat_gain_per_action: float = 18.0
-@export var heat_decay_per_sec: float = 7.0
+@export var heat_gain_per_action: float = 22.0
+@export var heat_decay_per_sec: float = 4.5
 @export var yellow_threshold: float = 50.0
 @export var yellow_damage_mult: float = 1.5
 @export var red_damage_mult: float = 2.0
@@ -17,6 +17,9 @@ extends "res://systems/economy/resource_economy.gd"
 
 var heat: float = 0.0
 var _weapon_lock: float = 0.0
+var _stack: Node2D
+var _vent_fx: float = 0.0
+var _stack_t: float = 0.0
 
 
 func _init() -> void:
@@ -26,25 +29,34 @@ func _init() -> void:
 func on_equip(host: Node) -> void:
 	heat = 0.0
 	_weapon_lock = 0.0
+	_vent_fx = 0.0
 	var energy: EnergyComponent = host.get("energy") as EnergyComponent
 	if energy:
 		energy.unlock_regen(0.8)
+	_ensure_stack(host)
 
 
-func on_unequip(_host: Node) -> void:
+func on_unequip(host: Node) -> void:
 	heat = 0.0
 	_weapon_lock = 0.0
+	_free_stack(host)
 
 
 func tick(host: Node, delta: float) -> void:
 	if _weapon_lock > 0.0:
 		_weapon_lock = maxf(0.0, _weapon_lock - delta)
+	if _vent_fx > 0.0:
+		_vent_fx = maxf(0.0, _vent_fx - delta)
 	var health: HealthComponent = host.get("health") as HealthComponent
 	if heat >= heat_max and health:
 		health.take_damage(red_self_dps * delta)
 	elif heat > 0.0:
-		heat = maxf(heat - heat_decay_per_sec * delta, 0.0)
+		var decay := heat_decay_per_sec
+		if heat >= yellow_threshold:
+			decay *= 0.45
+		heat = maxf(heat - decay * delta, 0.0)
 	_paint_heat_aura(host)
+	_spin_stack(host, delta)
 
 
 func is_action_locked(_host: Node) -> bool:
@@ -103,6 +115,7 @@ func try_special(host: Node) -> bool:
 	var ratio := dumped / heat_max if heat_max > 0.0 else 0.0
 	_vent_blast(host, dumped, ratio)
 	heat = 0.0
+	_vent_fx = 0.7
 	_weapon_lock = vent_cooldown_base + dumped * vent_cooldown_per_heat
 	if host.has_method("grant_iframes"):
 		host.call("grant_iframes", 0.55)
@@ -131,12 +144,13 @@ func get_hud_values(_host: Node) -> Dictionary:
 		color = Color(1.0, 0.25, 0.15, 1)
 	elif heat >= yellow_threshold:
 		color = Color(1.0, 0.75, 0.15, 1)
+	var vent_label := "Vent CD  %.1fs" % _weapon_lock if _weapon_lock > 0.0 else "Vent ready"
 	return {
-		"primary": _bar(heat, heat_max, "Heat", color),
+		"primary": _bar(heat, heat_max, "Heat  %d" % roundi(heat), color),
 		"secondary": _bar(
 			_weapon_lock,
 			maxf(vent_cooldown_base + heat_max * vent_cooldown_per_heat, 0.01),
-			"Vent CD" if _weapon_lock > 0.0 else "Vent ready",
+			vent_label,
 			Color(0.7, 0.85, 1.0, 1)
 		),
 	}
@@ -148,23 +162,16 @@ func _gain_heat() -> void:
 
 func _paint_heat_aura(host: Node) -> void:
 	var cv: CombatVisualComponent = host.get("combat_visual") as CombatVisualComponent
-	if cv == null or cv.aura == null:
+	if cv == null:
 		return
 	if heat >= heat_max:
-		cv.aura.color = Color(1.0, 0.22, 0.12, 0.72)
-		cv.aura.visible = true
-		cv.aura.scale = Vector2(2.15, 2.15)
+		cv.set_kit_aura(Color(1.0, 0.22, 0.12, 0.78), Vector2(2.25, 2.25), true)
 	elif heat >= yellow_threshold:
-		cv.aura.color = Color(1.0, 0.72, 0.12, 0.58)
-		cv.aura.visible = true
-		cv.aura.scale = Vector2(1.7, 1.7)
-	elif heat > 8.0:
-		cv.aura.color = Color(0.45, 0.75, 1.0, 0.36)
-		cv.aura.visible = true
-		cv.aura.scale = Vector2(1.25, 1.25)
+		cv.set_kit_aura(Color(1.0, 0.72, 0.12, 0.64), Vector2(1.85, 1.85), true)
+	elif heat > 8.0 or _vent_fx > 0.0:
+		cv.set_kit_aura(Color(0.45, 0.75, 1.0, 0.4), Vector2(1.35, 1.35), true)
 	else:
-		cv.aura.visible = false
-		cv.aura.scale = Vector2.ONE
+		cv.set_kit_aura(Color(0.45, 0.75, 1.0, 0.2), Vector2.ONE, false)
 
 
 func _vent_blast(host: Node, dumped: float, ratio: float) -> void:
@@ -205,3 +212,76 @@ func _vent_blast(host: Node, dumped: float, ratio: float) -> void:
 			Color(1.0, 0.55, 0.15, 0.9),
 			1.1 + ratio
 		)
+		DamagePop.spawn_label(
+			(host as Node2D).get_parent(),
+			origin + Vector2(0, -48),
+			"Vent",
+			Color(1.0, 0.72, 0.28, 1),
+			18
+		)
+
+
+func _ensure_stack(host: Node) -> void:
+	if host is not Node2D:
+		return
+	_stack = (host as Node2D).get_node_or_null("HeatStack") as Node2D
+	if _stack:
+		return
+	_stack = Node2D.new()
+	_stack.name = "HeatStack"
+	_stack.z_index = 7
+	(host as Node2D).add_child(_stack)
+	var flame_tex := ArtBank.particle("flame_04")
+	if flame_tex == null:
+		flame_tex = ArtBank.particle("fire_01")
+	for i in 4:
+		var puff := Sprite2D.new()
+		puff.name = "Puff%d" % i
+		puff.texture = flame_tex
+		puff.centered = true
+		puff.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+		puff.modulate = Color(1.0, 0.55, 0.18, 0.0)
+		puff.z_index = 7
+		if flame_tex:
+			ArtBank.fit_height(puff, 22.0, false)
+		_stack.add_child(puff)
+
+
+func _spin_stack(host: Node, delta: float) -> void:
+	if _stack == null or not is_instance_valid(_stack):
+		_ensure_stack(host)
+	if _stack == null:
+		return
+	var ratio := clampf(heat / maxf(heat_max, 1.0), 0.0, 1.0)
+	if _vent_fx > 0.0:
+		ratio = maxf(ratio, 0.85)
+	_stack_t += delta
+	var kids := _stack.get_children()
+	for i in kids.size():
+		var puff := kids[i] as Sprite2D
+		if puff == null:
+			continue
+		var t := _stack_t + float(i) * 0.7
+		puff.position = Vector2(sin(t * 2.2) * 6.0, -28.0 - float(i) * 10.0 - sin(t * 3.1) * 4.0)
+		var a := ratio * (0.85 if heat >= yellow_threshold else 0.45)
+		if heat >= heat_max:
+			puff.modulate = Color(1.0, 0.28, 0.12, a)
+		elif heat >= yellow_threshold or _vent_fx > 0.0:
+			puff.modulate = Color(1.0, 0.72, 0.18, a)
+		else:
+			puff.modulate = Color(0.55, 0.8, 1.0, a * 0.6)
+		puff.scale = Vector2.ONE * (0.7 + ratio * 0.7)
+		puff.visible = ratio > 0.04
+
+
+func _free_stack(host: Node) -> void:
+	if _stack and is_instance_valid(_stack):
+		_stack.queue_free()
+	_stack = null
+	if host:
+		var existing := host.get_node_or_null("HeatStack")
+		if existing:
+			existing.queue_free()
+	var cv: CombatVisualComponent = host.get("combat_visual") as CombatVisualComponent if host else null
+	if cv:
+		cv.set_kit_aura(Color.WHITE, Vector2.ONE, false)

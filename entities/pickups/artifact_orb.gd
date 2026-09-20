@@ -66,18 +66,29 @@ func _ready() -> void:
 	add_child(coin)
 	_label = Label.new()
 	_label.text = "Artifact"
-	_label.position = Vector2(-64, -72)
 	_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_label.custom_minimum_size = Vector2(128, 36)
 	_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_label.add_theme_font_size_override("font_size", 13)
+	_label.add_theme_font_size_override("font_size", 12)
 	_label.add_theme_color_override("font_color", Color(1, 0.9, 0.45))
 	_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
-	_label.add_theme_constant_override("outline_size", 4)
+	_label.add_theme_constant_override("outline_size", 3)
 	var font := ArtBank.body_bold()
 	if font:
 		_label.add_theme_font_override("font", font)
-	add_child(_label)
+	var name_plaque := PanelContainer.new()
+	name_plaque.name = "NamePlaque"
+	name_plaque.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	name_plaque.position = Vector2(-62, -86)
+	name_plaque.custom_minimum_size = Vector2(124, 40)
+	name_plaque.add_theme_stylebox_override("panel", ArtBank.panel_style(&"card", Color(0.12, 0.14, 0.18, 0.92)))
+	var name_pad := MarginContainer.new()
+	name_pad.add_theme_constant_override("margin_left", 6)
+	name_pad.add_theme_constant_override("margin_right", 6)
+	name_pad.add_theme_constant_override("margin_top", 4)
+	name_pad.add_theme_constant_override("margin_bottom", 4)
+	name_pad.add_child(_label)
+	name_plaque.add_child(name_pad)
+	add_child(name_plaque)
 	var plaque := PanelContainer.new()
 	plaque.name = "PricePlaque"
 	plaque.visible = false

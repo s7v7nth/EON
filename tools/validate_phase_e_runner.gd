@@ -90,6 +90,7 @@ func _run() -> void:
 	await get_tree().process_frame
 	assert(player.active_economy.policy == GameplayEnums.EconomyPolicy.BLOOD_HARVEST)
 	assert(player.get_node_or_null("SwarmCloud") != null, "Hive should wear a nano swarm")
+	assert(player.get_node_or_null("SwarmSiphon") != null, "Hive should siphon nearby prey")
 
 	room.queue_free()
 	RunState.reset()

@@ -77,7 +77,10 @@ func _ready() -> void:
 	SignalBus.boss_phase.connect(_on_boss_phase)
 	var body := ArtBank.body_font()
 	var heavy := ArtBank.body_heavy()
-	if heavy:
+	var bold := ArtBank.body_bold()
+	if bold:
+		_title.add_theme_font_override("font", bold)
+	elif heavy:
 		_title.add_theme_font_override("font", heavy)
 	elif body:
 		_title.add_theme_font_override("font", body)
@@ -85,10 +88,10 @@ func _ready() -> void:
 		_subtitle.add_theme_font_override("font", body)
 		_wave_label.add_theme_font_override("font", body)
 		if _style_banner:
-			_style_banner.add_theme_font_override("font", heavy if heavy else body)
-	_title.add_theme_font_size_override("font_size", 28)
-	_title.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
-	_title.add_theme_constant_override("outline_size", 6)
+			_style_banner.add_theme_font_override("font", bold if bold else (heavy if heavy else body))
+	_title.add_theme_font_size_override("font_size", 24)
+	_title.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.72))
+	_title.add_theme_constant_override("outline_size", 3)
 	_subtitle.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_wrap_wave_plaque()
@@ -208,15 +211,15 @@ func _ensure_combo_toast() -> void:
 	_combo_toast = PanelContainer.new()
 	_combo_toast.name = "ComboToast"
 	_combo_toast.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_combo_toast.set_anchors_preset(Control.PRESET_CENTER)
+	_combo_toast.set_anchors_preset(Control.PRESET_CENTER_TOP)
 	_combo_toast.anchor_left = 0.5
 	_combo_toast.anchor_right = 0.5
-	_combo_toast.anchor_top = 0.5
-	_combo_toast.anchor_bottom = 0.5
-	_combo_toast.offset_left = -320.0
-	_combo_toast.offset_right = 320.0
-	_combo_toast.offset_top = -94.0
-	_combo_toast.offset_bottom = 94.0
+	_combo_toast.anchor_top = 0.0
+	_combo_toast.anchor_bottom = 0.0
+	_combo_toast.offset_left = -280.0
+	_combo_toast.offset_right = 280.0
+	_combo_toast.offset_top = 56.0
+	_combo_toast.offset_bottom = 138.0
 	_combo_toast.z_index = 120
 	_combo_toast.process_mode = Node.PROCESS_MODE_ALWAYS
 	_combo_toast.add_theme_stylebox_override("panel", ArtBank.panel_style(&"card", Color(1.0, 0.92, 0.55, 0.97)))
@@ -290,10 +293,10 @@ func _ensure_boss_banner() -> void:
 	_boss_banner = Label.new()
 	_boss_banner.name = "BossBanner"
 	_boss_banner.set_anchors_preset(Control.PRESET_TOP_WIDE)
-	_boss_banner.offset_top = 128.0
-	_boss_banner.offset_bottom = 196.0
+	_boss_banner.offset_top = 168.0
+	_boss_banner.offset_bottom = 226.0
 	_boss_banner.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_boss_banner.add_theme_font_size_override("font_size", 42)
+	_boss_banner.add_theme_font_size_override("font_size", 28)
 	_boss_banner.add_theme_color_override("font_color", Color(1.0, 0.32, 0.28))
 	_boss_banner.add_theme_color_override("font_outline_color", Color(0.05, 0, 0, 0.95))
 	_boss_banner.add_theme_constant_override("outline_size", 10)
@@ -428,7 +431,7 @@ func _on_style_changed(score: int, multiplier: float, rank: String) -> void:
 	_last_style_rank = rank
 	if first:
 		return
-	_style_banner.text = "Style  %s    ×%.1f    %d" % [rank, multiplier, score]
+	_style_banner.text = "Style  %s    ×%.1f" % [rank, multiplier]
 	_style_banner.modulate = Color.WHITE
 	if _style_tween and _style_tween.is_valid():
 		_style_tween.kill()
