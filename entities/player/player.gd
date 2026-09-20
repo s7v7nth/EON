@@ -520,12 +520,14 @@ func nearest_hostile(max_dist: float = 210.0) -> Node2D:
 func get_aim_direction() -> Vector2:
 	if aim_override != Vector2.ZERO:
 		return aim_override.normalized()
-	# Hades-style magnet: swings and shots snap to the nearest live foe.
-	var foe := nearest_hostile(210.0)
-	if foe:
-		var to_foe := foe.global_position - global_position
-		if to_foe.length() > 6.0:
-			return to_foe.normalized()
+	# Melee magnet: Hive / Parovoz swings snap to the nearest live foe.
+	# Gun kits keep the cursor so Neuro can kite instead of walking into bosses.
+	if not uses_gun_kit():
+		var foe := nearest_hostile(210.0)
+		if foe:
+			var to_foe := foe.global_position - global_position
+			if to_foe.length() > 6.0:
+				return to_foe.normalized()
 	var aim := get_global_mouse_position() - global_position
 	if aim == Vector2.ZERO:
 		return facing_direction

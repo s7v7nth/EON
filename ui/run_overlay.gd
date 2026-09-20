@@ -276,15 +276,15 @@ func _ensure_combo_chip() -> void:
 	_combo_chip = PanelContainer.new()
 	_combo_chip.name = "ComboChip"
 	_combo_chip.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_combo_chip.set_anchors_preset(Control.PRESET_CENTER_TOP)
+	_combo_chip.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
 	_combo_chip.anchor_left = 0.5
 	_combo_chip.anchor_right = 0.5
-	_combo_chip.anchor_top = 0.0
-	_combo_chip.anchor_bottom = 0.0
-	_combo_chip.offset_left = -240.0
-	_combo_chip.offset_right = 240.0
-	_combo_chip.offset_top = 72.0
-	_combo_chip.offset_bottom = 118.0
+	_combo_chip.anchor_top = 1.0
+	_combo_chip.anchor_bottom = 1.0
+	_combo_chip.offset_left = -260.0
+	_combo_chip.offset_right = 260.0
+	_combo_chip.offset_top = -118.0
+	_combo_chip.offset_bottom = -72.0
 	_combo_chip.z_index = 70
 	_combo_chip.process_mode = Node.PROCESS_MODE_ALWAYS
 	_combo_chip.add_theme_stylebox_override("panel", ArtBank.panel_style(&"card", Color(1.0, 0.9, 0.48, 0.95)))
