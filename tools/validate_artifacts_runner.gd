@@ -33,6 +33,7 @@ func _run() -> void:
 	assert(offers[0].upgrade_id != offers[1].upgrade_id)
 	assert(offers[1].upgrade_id != offers[2].upgrade_id)
 	assert(offers[0].upgrade_id == &"static_dash", "first card should complete Storm Step")
+	assert(ArtifactCombos.combo_name_if_granted(RunState.owned_upgrade_ids(), &"static_dash") == "Storm Step")
 
 	var first := offers[0]
 	assert(RunState.grant_upgrade(first))

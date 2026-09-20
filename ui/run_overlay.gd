@@ -211,16 +211,16 @@ func _ensure_combo_toast() -> void:
 	_combo_toast = PanelContainer.new()
 	_combo_toast.name = "ComboToast"
 	_combo_toast.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_combo_toast.set_anchors_preset(Control.PRESET_CENTER_TOP)
+	_combo_toast.set_anchors_preset(Control.PRESET_CENTER)
 	_combo_toast.anchor_left = 0.5
 	_combo_toast.anchor_right = 0.5
-	_combo_toast.anchor_top = 0.0
-	_combo_toast.anchor_bottom = 0.0
-	_combo_toast.offset_left = -280.0
-	_combo_toast.offset_right = 280.0
-	_combo_toast.offset_top = 56.0
-	_combo_toast.offset_bottom = 138.0
-	_combo_toast.z_index = 120
+	_combo_toast.anchor_top = 0.5
+	_combo_toast.anchor_bottom = 0.5
+	_combo_toast.offset_left = -310.0
+	_combo_toast.offset_right = 310.0
+	_combo_toast.offset_top = -78.0
+	_combo_toast.offset_bottom = 86.0
+	_combo_toast.z_index = 80
 	_combo_toast.process_mode = Node.PROCESS_MODE_ALWAYS
 	_combo_toast.add_theme_stylebox_override("panel", ArtBank.panel_style(&"card", Color(1.0, 0.92, 0.55, 0.97)))
 	_combo_toast.modulate.a = 0.0
@@ -244,7 +244,7 @@ func _ensure_combo_toast() -> void:
 	col.add_child(kicker)
 	_combo_title = Label.new()
 	_combo_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_combo_title.add_theme_font_size_override("font_size", 26)
+	_combo_title.add_theme_font_size_override("font_size", 32)
 	_combo_title.add_theme_color_override("font_color", Color(0.12, 0.08, 0.04, 1))
 	_combo_title.add_theme_color_override("font_outline_color", Color(1.0, 0.95, 0.7, 0.55))
 	_combo_title.add_theme_constant_override("outline_size", 4)
@@ -280,8 +280,8 @@ func _show_combo_toast(combo_name: String, description: String) -> void:
 	_combo_tween = create_tween()
 	_combo_tween.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
 	_combo_tween.tween_property(_combo_toast, "scale", Vector2.ONE, 0.18).set_trans(Tween.TRANS_BACK)
-	_combo_tween.tween_interval(3.8)
-	_combo_tween.tween_property(_combo_toast, "modulate:a", 0.0, 0.5)
+	_combo_tween.tween_interval(4.2)
+	_combo_tween.tween_property(_combo_toast, "modulate:a", 0.0, 0.45)
 	if FeelAudio:
 		FeelAudio.play_ui()
 
@@ -597,8 +597,14 @@ func _make_boon_card(upgrade: UpgradeData, hotkey: int = 0, on_pick: Callable = 
 	btn.clip_text = false
 	var tint := UpgradeData.rarity_color(upgrade.rarity)
 	var house_c := UpgradeData.house_color(upgrade.house)
-	btn.add_theme_stylebox_override("normal", _card_style(tint, Color(0.92, 0.94, 1.0, 1)))
-	btn.add_theme_stylebox_override("hover", _card_style(tint.lightened(0.18), Color(1.05, 1.05, 1.08, 1)))
+	var combo_name := ArtifactCombos.combo_name_if_granted(RunState.owned_upgrade_ids(), upgrade.upgrade_id)
+	if combo_name != "":
+		tint = Color(0.95, 0.78, 0.22, 1)
+		btn.add_theme_stylebox_override("normal", _card_style(tint, Color(1.0, 0.94, 0.7, 1)))
+		btn.add_theme_stylebox_override("hover", _card_style(tint.lightened(0.12), Color(1.05, 0.98, 0.78, 1)))
+	else:
+		btn.add_theme_stylebox_override("normal", _card_style(tint, Color(0.92, 0.94, 1.0, 1)))
+		btn.add_theme_stylebox_override("hover", _card_style(tint.lightened(0.18), Color(1.05, 1.05, 1.08, 1)))
 	btn.add_theme_stylebox_override("pressed", _card_style(house_c, Color(0.9, 0.9, 1.0, 1)))
 	if on_pick.is_valid():
 		btn.pressed.connect(on_pick)
@@ -621,7 +627,7 @@ func _make_boon_card(upgrade: UpgradeData, hotkey: int = 0, on_pick: Callable = 
 	key.text = "[ %d ]" % hotkey if hotkey > 0 else ""
 	key.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	key.add_theme_font_size_override("font_size", 12)
-	key.add_theme_color_override("font_color", Color(0.78, 0.82, 0.9))
+	key.add_theme_color_override("font_color", Color(0.35, 0.24, 0.08, 1) if combo_name != "" else Color(0.78, 0.82, 0.9))
 	var key_font := ArtBank.body_bold()
 	if key_font:
 		key.add_theme_font_override("font", key_font)
@@ -642,11 +648,24 @@ func _make_boon_card(upgrade: UpgradeData, hotkey: int = 0, on_pick: Callable = 
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	title.add_theme_font_size_override("font_size", 18)
-	title.add_theme_color_override("font_color", Color(0.96, 0.97, 1.0))
+	title.add_theme_color_override("font_color", Color(0.18, 0.12, 0.04, 1) if combo_name != "" else Color(0.96, 0.97, 1.0))
 	var title_font := ArtBank.body_heavy()
 	if title_font:
 		title.add_theme_font_override("font", title_font)
 	col.add_child(title)
+	if combo_name != "":
+		var badge := Label.new()
+		badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		badge.text = "Completes  %s" % combo_name
+		badge.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		badge.add_theme_font_size_override("font_size", 13)
+		badge.add_theme_color_override("font_color", Color(0.42, 0.28, 0.06, 1))
+		badge.add_theme_color_override("font_outline_color", Color(1.0, 0.92, 0.55, 0.85))
+		badge.add_theme_constant_override("outline_size", 3)
+		var badge_font := ArtBank.body_bold()
+		if badge_font:
+			badge.add_theme_font_override("font", badge_font)
+		col.add_child(badge)
 	var desc := Label.new()
 	desc.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	desc.text = upgrade.description
@@ -766,14 +785,17 @@ func _finish_reward() -> void:
 	_finishing_reward = true
 	_mode = Mode.HIDDEN
 	var hold_toast := _combo_toast != null and _combo_toast.visible and _combo_toast.modulate.a > 0.35
-	if hold_toast:
-		get_tree().paused = true
-		await get_tree().create_timer(3.1, true, false, true).timeout
 	_panel.visible = false
-	if _dimmer:
-		_dimmer.visible = false
 	_rewards.visible = false
 	_craft.visible = false
+	if hold_toast:
+		get_tree().paused = true
+		if _dimmer:
+			_dimmer.visible = true
+			_dimmer.color = Color(0.04, 0.05, 0.08, 0.42)
+		await get_tree().create_timer(3.6, true, false, true).timeout
+	if _dimmer:
+		_dimmer.visible = false
 	for node in _reward_extra_nodes:
 		if is_instance_valid(node):
 			node.queue_free()

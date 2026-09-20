@@ -394,7 +394,10 @@ func roll_boon_offers(count: int = 3) -> Array[UpgradeData]:
 	var picked: Array[UpgradeData] = []
 	var used_houses: Dictionary = {}
 	var used_ids: Dictionary = {}
-	var partner_id := ArtifactCombos.completing_partner(owned_upgrade_ids())
+	var prefer := ArtifactCombos.signature_combo_id(
+		int(architecture.architecture_id) if architecture else 0
+	)
+	var partner_id := ArtifactCombos.completing_partner(owned_upgrade_ids(), prefer)
 	if partner_id != &"":
 		for upgrade in pool:
 			if upgrade and upgrade.upgrade_id == partner_id:

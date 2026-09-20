@@ -62,8 +62,8 @@ func _run() -> void:
 	assert(overlay.find_child("WavePlaque", true, false) != null, "wave counter should sit in a Kenney plaque")
 	var toast := overlay.find_child("ComboToast", true, false) as Control
 	assert(toast != null, "combo toast should exist")
-	assert(toast.anchor_top < 0.15, "named combo toast should sit under the location plaque, not on the reward cards")
-	assert(toast.offset_top <= 70.0, "named combo toast should sit under the location plaque")
+	assert(is_equal_approx(toast.anchor_top, 0.5), "named combo toast should land center-screen after a pick")
+	assert(toast.offset_top <= -60.0, "named combo toast should be tall enough to read over the arena")
 	var banner := overlay.find_child("BossBanner", true, false) as Control
 	assert(banner != null, "boss flash banner should exist")
 	assert(banner.offset_top >= 120.0, "boss flash should sit under the HP chrome, not on top of it")

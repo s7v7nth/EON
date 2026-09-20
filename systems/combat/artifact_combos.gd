@@ -128,20 +128,53 @@ static func recipe_named(combo_id: StringName) -> Dictionary:
 	return {}
 
 
-static func completing_partner(owned_ids: Array[StringName]) -> StringName:
-	## First missing half of a recipe the player already owns a piece of.
+static func completing_partner(owned_ids: Array[StringName], prefer_combo: StringName = &"") -> StringName:
+	## Missing half of a recipe the player already owns a piece of.
 	var have := {}
 	for id in owned_ids:
 		have[id] = true
+	var fallback := &""
 	for recipe in RECIPES:
 		var missing: Array[StringName] = []
 		for need in recipe["need"]:
 			var nid := StringName(str(need))
 			if not have.has(nid):
 				missing.append(nid)
-		if missing.size() == 1:
+		if missing.size() != 1:
+			continue
+		var cid := StringName(str(recipe.get("id", &"")))
+		if prefer_combo != &"" and cid == prefer_combo:
 			return missing[0]
-	return &""
+		if fallback == &"":
+			fallback = missing[0]
+	return fallback
+
+
+static func combo_name_if_granted(owned_ids: Array[StringName], new_id: StringName) -> String:
+	if new_id == &"":
+		return ""
+	var before := {}
+	for recipe in unlocked_for(owned_ids):
+		before[StringName(str(recipe.get("id", &"")))] = true
+	var next: Array[StringName] = owned_ids.duplicate()
+	next.append(new_id)
+	for recipe in unlocked_for(next):
+		var cid := StringName(str(recipe.get("id", &"")))
+		if not before.has(cid):
+			return str(recipe.get("name", "Combo"))
+	return ""
+
+
+static func signature_combo_id(arch_id: int) -> StringName:
+	match arch_id:
+		GameplayEnums.ArchitectureId.NANOMACHINES:
+			return &"mercy_kill"
+		GameplayEnums.ArchitectureId.ELECTRO_TRAIN:
+			return &"sun_forge"
+		GameplayEnums.ArchitectureId.NEURO_HACKER:
+			return &"ion_phase"
+		_:
+			return &"storm_step"
 
 
 static func signature_seed_id(arch_id: int) -> StringName:
