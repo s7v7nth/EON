@@ -376,10 +376,11 @@ func _stall_spot() -> Vector2:
 	## Park the stall just inside a door so the plaza does not hide the clerk.
 	var candidates: Array[Vector2] = []
 	if room and room.footprint:
-		for dir in [Vector2i(0, -1), Vector2i(0, 1), Vector2i(-1, 0), Vector2i(1, 0)]:
+		var dirs: Array[Vector2i] = [Vector2i(0, -1), Vector2i(0, 1), Vector2i(-1, 0), Vector2i(1, 0)]
+		for dir in dirs:
 			if not bool(room.doors.get(dir, false)):
 				continue
-			var door := room.footprint.door_local(dir, room.door_offset(dir))
+			var door: Vector2 = room.footprint.door_local(dir, room.door_offset(dir))
 			var inward := -Vector2(dir) * 96.0
 			candidates.append(door + inward)
 			candidates.append(door + inward + Vector2(48, 24))
