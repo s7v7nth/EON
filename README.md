@@ -1,6 +1,6 @@
 # EON
 
-Isometric Hades-like action roguelike (Godot 4.7). Four architectures, dash/attack/special/cast, statuses, and **56 shared artifacts** plus Geometry crafts.
+Isometric Hades-like action roguelike (Godot 4.7). Four architectures, dash/attack/special/cast, statuses, and **57 shared artifacts** plus Geometry crafts.
 
 ## Run
 

@@ -30,6 +30,7 @@ script = ExtResource("3_group")
 count = 2
 enemy_scene = ExtResource("4_enemy")
 enemy_definition = ExtResource("7_swarm")
+is_elite = true
 
 [sub_resource type="Resource" id="wave_boss"]
 script = ExtResource("2_def")
