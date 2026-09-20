@@ -65,6 +65,9 @@ func _try_clerk_talk() -> bool:
 		return false
 	npc.call("speak")
 	return true
+
+
+func _build_floor() -> void:
 	var graph := RunState.dungeon
 	if graph == null:
 		push_error("FloorController: no dungeon graph")
