@@ -252,17 +252,47 @@ func _physics_process(_delta: float) -> void:
 	_rescan_occupancy()
 
 
+func _island_contains(island: Node2D, world: Vector2) -> bool:
+	return island != null and island.has_method("contains_point") and bool(island.call("contains_point", world))
+
+
+func _living_enemies_on(island: Node2D) -> int:
+	if island == null:
+		return 0
+	var ents: Node2D = island.get("entities") as Node2D
+	if ents == null:
+		return 0
+	var n := 0
+	for child in ents.get_children():
+		if child is not EnemyDummy:
+			continue
+		var dummy := child as EnemyDummy
+		if dummy.health and dummy.health.current_health > 0.0:
+			n += 1
+	return n
+
+
 func _rescan_occupancy() -> void:
-	## Occupancy Area2D can miss after overlay pause. If you're on an island, you're in it.
+	## Occupancy Area2D can miss after overlay pause. Stay on the island underfoot;
+	## do not steal a live fight because a neighbor poly also overlaps the player.
 	if _player == null:
 		return
+	if _island_contains(_current, _player.global_position):
+		return
+	var best: Node2D = null
+	var best_d := INF
 	for coord in _islands.keys():
 		var island: Node2D = _islands[coord]
-		if island == _current or island == null:
+		if island == null or island == _current:
 			continue
-		if island.has_method("contains_point") and bool(island.call("contains_point", _player.global_position)):
-			_switch_room(island)
-			return
+		if not _island_contains(island, _player.global_position):
+			continue
+		var d := _player.global_position.distance_squared_to(island.position)
+		if d < best_d:
+			best_d = d
+			best = island
+	if best:
+		_switch_room(best)
 
 
 func _on_occupancy(body: Node2D, island: Node2D) -> void:
@@ -270,31 +300,60 @@ func _on_occupancy(body: Node2D, island: Node2D) -> void:
 		return
 	if island == _current:
 		return
+	if _island_contains(_current, body.global_position):
+		return
 	_switch_room(island)
 
 
 func _switch_room(island: Node2D) -> void:
-	_current = island
+	if island == null:
+		return
 	var room: DungeonRoom = island.get("room") as DungeonRoom
 	if room == null:
 		return
+	var resume := _living_enemies_on(island) > 0
+	_current = island
 	RunState.current_coord = room.coord
 	if RunState.dungeon:
 		RunState.room_index = RunState.dungeon.index_of(room.coord)
+	_exit_latch = false
+	_room_cleared = room.cleared
+	_revisit_cleared = room.cleared
+	_apply_biome(room)
+	if room.cleared:
+		RunState.begin_room()
+		_wave_index = -1
+		_alive_enemies = 0
+		_spawning = false
+		island.set_doors_locked(false)
+		return
+	if resume:
+		_resume_island_combat(island)
+		return
 	RunState.begin_room()
 	_wave_index = -1
 	_alive_enemies = 0
 	_spawning = false
 	_elite_presented = false
 	_spawn_cursor = 0
-	_exit_latch = false
-	_room_cleared = room.cleared
-	_revisit_cleared = room.cleared
-	_apply_biome(room)
-	if room.cleared:
-		island.set_doors_locked(false)
-		return
 	_try_start_combat()
+
+
+func _resume_island_combat(island: Node2D) -> void:
+	## Re-entering a live island must not respawn the wave or quiet-heal.
+	_room_cleared = false
+	_spawning = false
+	island.set_doors_locked(true)
+	_alive_enemies = _living_enemies_on(island)
+	if _wave_index < 0:
+		_wave_index = 0
+	_alert_player()
+	var ents: Node2D = island.get("entities") as Node2D
+	if ents == null:
+		return
+	for child in ents.get_children():
+		if child is EnemyDummy and (child as EnemyDummy).definition and (child as EnemyDummy).definition.is_boss:
+			_present_boss(child as EnemyDummy)
 
 
 func _enter_current_room() -> void:
@@ -448,7 +507,7 @@ func _spawn_wave(wave: WaveDefinition) -> void:
 				(enemy as EnemyDummy).apply_route_pressure(RunState.combat_pressure())
 				if (enemy as EnemyDummy).definition and (enemy as EnemyDummy).definition.is_boss:
 					_present_boss(enemy as EnemyDummy)
-			_alive_enemies += 1
+	_alive_enemies = _living_enemies_on(_current)
 	_alert_player()
 
 
@@ -494,11 +553,11 @@ func _alert_player() -> void:
 func _on_enemy_spawned(_enemy: Node) -> void:
 	if _room_cleared:
 		return
-	_alive_enemies += 1
+	_alive_enemies = _living_enemies_on(_current)
 
 
 func _on_enemy_died(_enemy: Node) -> void:
-	_alive_enemies = maxi(_alive_enemies - 1, 0)
+	_alive_enemies = _living_enemies_on(_current)
 	if _spawning:
 		return
 	if _alive_enemies <= 0 and _wave_index >= 0 and not _room_cleared:

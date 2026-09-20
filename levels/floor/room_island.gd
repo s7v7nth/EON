@@ -197,9 +197,9 @@ func _add_blocker(dir: Vector2i) -> void:
 	var shape := CollisionShape2D.new()
 	var rect := RectangleShape2D.new()
 	if dir.x == 0:
-		rect.size = Vector2(DOOR_GAP, 28.0)
+		rect.size = Vector2(DOOR_GAP, 64.0)
 	else:
-		rect.size = Vector2(28.0, DOOR_GAP)
+		rect.size = Vector2(64.0, DOOR_GAP)
 	shape.shape = rect
 	body.position = door_local(dir)
 	body.add_child(shape)

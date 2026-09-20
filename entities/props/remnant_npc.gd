@@ -213,7 +213,7 @@ func _player_in_range() -> bool:
 	if _near:
 		return true
 	var player := get_tree().get_first_node_in_group("player") as Node2D
-	return player != null and player.global_position.distance_to(global_position) <= 150.0
+	return player != null and player.global_position.distance_to(global_position) <= 200.0
 
 
 func _on_body_entered(body: Node2D) -> void:
