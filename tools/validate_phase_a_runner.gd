@@ -35,8 +35,13 @@ func _run() -> void:
 	RunState.choose_architecture(GameplayEnums.ArchitectureId.NANOMACHINES)
 	RunState.apply_to_player(player)
 	assert(player.active_economy.policy == GameplayEnums.EconomyPolicy.BLOOD_HARVEST)
+	assert(player.get_node_or_null("SwarmCloud") != null, "Hive should wear a nano swarm")
+	var dummy: EnemyDummy = (load("res://entities/enemies/dummy/enemy_dummy.tscn") as PackedScene).instantiate() as EnemyDummy
+	player.get_parent().add_child(dummy)
+	dummy.global_position = player.global_position + Vector2(48, 0)
+	await get_tree().process_frame
 	var hp_before := player.health.current_health
-	await get_tree().create_timer(0.25).timeout
+	await get_tree().create_timer(0.35, true, false, true).timeout
 	assert(player.health.current_health < hp_before, "blood harvest should drain HP")
 
 	RunState.choose_architecture(GameplayEnums.ArchitectureId.ELECTRO_TRAIN)
