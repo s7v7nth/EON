@@ -316,6 +316,10 @@ func _open_quiet_room() -> void:
 		if droom:
 			droom.cleared = true
 			droom.explored = true
+	if _player and _player.status:
+		_player.status.clear_all()
+	if _player and _player.health:
+		_player.health.heal(_player.health.get_max_health() * 0.35)
 	SignalBus.room_cleared.emit()
 
 

@@ -56,7 +56,7 @@ static func place_dressing(
 	_lamps(parent, rng, biome, keep_center_clear)
 	_pylons(parent, rng, biome, keep_center_clear)
 	_ruin_growth(parent, rng, biome, keep_center_clear)
-	_toxic_pools(parent, rng, biome)
+	_toxic_pools(parent, rng, biome, keep_center_clear)
 
 
 static func wall_tex(facing: String) -> Texture2D:
@@ -163,7 +163,7 @@ static func _ruin_growth(parent: Node2D, rng: RandomNumberGenerator, biome: Biom
 		ArtBank.add_fitted(parent, tex, p, rng.randf_range(140.0, 190.0), 3, true)
 
 
-static func _toxic_pools(parent: Node2D, rng: RandomNumberGenerator, biome: BiomeDefinition) -> void:
+static func _toxic_pools(parent: Node2D, rng: RandomNumberGenerator, biome: BiomeDefinition, keep_center_clear: bool = false) -> void:
 	if biome and not _is_organic(biome) and biome.biome_id != GameplayEnums.BiomeId.ALLEY:
 		return
 	var tex := ArtBank.illustrated("floor_toxic")
@@ -171,6 +171,8 @@ static func _toxic_pools(parent: Node2D, rng: RandomNumberGenerator, biome: Biom
 		Vector2(-140, 80), Vector2(180, 40), Vector2(60, 160), Vector2(-280, -40)
 	]
 	for p in spots:
+		if keep_center_clear and p.length() < 240.0:
+			continue
 		if rng.randf() < 0.32:
 			continue
 		_floor_sprite(parent, tex, p, 0.72, 1)

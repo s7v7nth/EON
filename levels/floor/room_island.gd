@@ -294,6 +294,8 @@ func _dress() -> void:
 		room.biome,
 		seed_value + 17,
 		room.kind == DungeonRoom.RoomKind.BOSS
+		or room.kind == DungeonRoom.RoomKind.REMNANT
+		or room.remnant
 	)
 	if room.kind == DungeonRoom.RoomKind.BOSS:
 		_add_boss_stain(root)
