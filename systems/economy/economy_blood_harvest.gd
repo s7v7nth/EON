@@ -194,24 +194,24 @@ func _ensure_swarm(host: Node) -> void:
 		return
 	_swarm = (host as Node2D).get_node_or_null("SwarmCloud") as Node2D
 	if _swarm == null:
-		_swarm = Node2D.new()
-		_swarm.name = "SwarmCloud"
-		_swarm.z_index = 6
-		(host as Node2D).add_child(_swarm)
-		var tex := ArtBank.particle("circle_05")
-		if tex == null:
-			tex = ArtBank.particle("magic_05")
-		for i in 10:
-			var mote := Sprite2D.new()
-			mote.name = "Mote%d" % i
-			mote.texture = tex
-			mote.centered = true
-			mote.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
-			mote.modulate = Color(0.32, 1.0, 0.48, 0.95)
-			mote.z_index = 6
-			if tex:
-				ArtBank.fit_height(mote, 18.0, false)
-			_swarm.add_child(mote)
+	_swarm = Node2D.new()
+	_swarm.name = "SwarmCloud"
+	_swarm.z_index = 6
+	(host as Node2D).add_child(_swarm)
+	var tex := ArtBank.particle("magic_05")
+	if tex == null:
+		tex = ArtBank.particle("flare_01")
+	for i in 10:
+		var mote := Sprite2D.new()
+		mote.name = "Mote%d" % i
+		mote.texture = tex
+		mote.centered = true
+		mote.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+		mote.modulate = Color(0.32, 1.0, 0.48, 0.95)
+		mote.z_index = 6
+		# Soft particle sheets have empty opaque rects; never use fit_height here.
+		mote.scale = Vector2(0.085, 0.085)
+		_swarm.add_child(mote)
 	_siphon = (host as Node2D).get_node_or_null("SwarmSiphon") as Line2D
 	if _siphon:
 		return
@@ -243,7 +243,7 @@ func _spin_swarm(host: Node, delta: float) -> void:
 		var ang := _swarm_spin + TAU * float(i) / float(maxi(kids.size(), 1))
 		mote.position = Vector2(cos(ang) * radius, sin(ang) * radius * 0.55 - 20.0)
 		mote.modulate = Color(0.38, 1.0, 0.5, 1.0 if hungry else 0.55)
-		mote.scale = Vector2.ONE * (1.15 if hungry else 0.85)
+		mote.scale = Vector2(0.1, 0.1) if hungry else Vector2(0.072, 0.072)
 	if _siphon and is_instance_valid(_siphon) and host is Node2D:
 		if hungry and prey is Node2D:
 			_siphon.points = PackedVector2Array([
@@ -257,8 +257,8 @@ func _spin_swarm(host: Node, delta: float) -> void:
 	var cv: CombatVisualComponent = host.get("combat_visual") as CombatVisualComponent
 	if cv:
 		cv.set_kit_aura(
-			Color(0.28, 0.95, 0.38, 0.5 if hungry else 0.24),
-			Vector2(1.7, 1.7) if hungry else Vector2(1.2, 1.2),
+			Color(0.28, 0.95, 0.38, 0.28 if hungry else 0.14),
+			Vector2(1.18, 1.18) if hungry else Vector2(1.05, 1.05),
 			true
 		)
 

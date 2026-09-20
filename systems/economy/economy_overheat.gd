@@ -165,13 +165,13 @@ func _paint_heat_aura(host: Node) -> void:
 	if cv == null:
 		return
 	if heat >= heat_max:
-		cv.set_kit_aura(Color(1.0, 0.22, 0.12, 0.78), Vector2(2.25, 2.25), true)
+		cv.set_kit_aura(Color(1.0, 0.22, 0.12, 0.42), Vector2(1.35, 1.35), true)
 	elif heat >= yellow_threshold:
-		cv.set_kit_aura(Color(1.0, 0.72, 0.12, 0.64), Vector2(1.85, 1.85), true)
+		cv.set_kit_aura(Color(1.0, 0.72, 0.12, 0.34), Vector2(1.22, 1.22), true)
 	elif heat > 8.0 or _vent_fx > 0.0:
-		cv.set_kit_aura(Color(0.45, 0.75, 1.0, 0.4), Vector2(1.35, 1.35), true)
+		cv.set_kit_aura(Color(0.45, 0.75, 1.0, 0.22), Vector2(1.1, 1.1), true)
 	else:
-		cv.set_kit_aura(Color(0.45, 0.75, 1.0, 0.2), Vector2.ONE, false)
+		cv.set_kit_aura(Color(0.45, 0.75, 1.0, 0.12), Vector2.ONE, false)
 
 
 func _vent_blast(host: Node, dumped: float, ratio: float) -> void:
@@ -242,8 +242,7 @@ func _ensure_stack(host: Node) -> void:
 		puff.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 		puff.modulate = Color(1.0, 0.55, 0.18, 0.0)
 		puff.z_index = 7
-		if flame_tex:
-			ArtBank.fit_height(puff, 22.0, false)
+		puff.scale = Vector2(0.11, 0.11)
 		_stack.add_child(puff)
 
 
@@ -270,7 +269,7 @@ func _spin_stack(host: Node, delta: float) -> void:
 			puff.modulate = Color(1.0, 0.72, 0.18, a)
 		else:
 			puff.modulate = Color(0.55, 0.8, 1.0, a * 0.6)
-		puff.scale = Vector2.ONE * (0.7 + ratio * 0.7)
+		puff.scale = Vector2(0.1, 0.1) * (0.8 + ratio * 0.9)
 		puff.visible = ratio > 0.04
 
 
