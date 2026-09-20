@@ -147,9 +147,16 @@ func _build() -> void:
 	var start_font := ArtBank.title_font()
 	if start_font:
 		_start.add_theme_font_override("font", start_font)
-	var start_style := _button_style("res://assets/kenney/ui-scifi/button_rectangle.png")
-	if start_style:
-		_start.add_theme_stylebox_override("normal", start_style)
+	_start.add_theme_color_override("font_color", Color(0.08, 0.1, 0.14, 1))
+	var start_style := StyleBoxFlat.new()
+	start_style.bg_color = Color(0.95, 0.82, 0.28, 1)
+	start_style.set_corner_radius_all(8)
+	start_style.set_border_width_all(2)
+	start_style.border_color = Color(1.0, 0.95, 0.7, 1)
+	_start.add_theme_stylebox_override("normal", start_style)
+	var start_hover := start_style.duplicate() as StyleBoxFlat
+	start_hover.bg_color = Color(1.0, 0.9, 0.4, 1)
+	_start.add_theme_stylebox_override("hover", start_hover)
 	_start.pressed.connect(_begin_run)
 	col.add_child(_start)
 

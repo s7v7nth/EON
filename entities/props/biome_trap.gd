@@ -88,12 +88,28 @@ func _ensure_visual() -> void:
 
 	var puddle := _puddle_poly()
 	_fill.polygon = puddle
-	_fill.color = Color(trap_color.r, trap_color.g, trap_color.b, clampf(trap_color.a, 0.35, 0.65))
+	_fill.color = Color(trap_color.r, trap_color.g, trap_color.b, 0.28)
 	_fill.z_index = 0
 
 	_rim.polygon = _ring_poly(puddle, 4.0)
-	_rim.color = Color(trap_color.r, trap_color.g, trap_color.b, 0.9).lightened(0.25)
+	_rim.color = Color(trap_color.r, trap_color.g, trap_color.b, 0.55).lightened(0.25)
 	_rim.z_index = 1
+
+	var splat := get_node_or_null("Splat") as Sprite2D
+	if splat == null:
+		splat = Sprite2D.new()
+		splat.name = "Splat"
+		splat.centered = true
+		splat.z_index = 2
+		splat.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+		add_child(splat)
+	splat.texture = ArtBank.tex("res://assets/kenney/splat/splat03.png")
+	if splat.texture == null:
+		splat.texture = ArtBank.particle("smoke_06")
+	if splat.texture:
+		ArtBank.fit_height(splat, 62.0, false)
+		splat.modulate = Color(trap_color.r, trap_color.g, trap_color.b, 0.78)
+		splat.rotation = 0.4
 
 	var shape_node := get_node_or_null("CollisionShape2D") as CollisionShape2D
 	if shape_node == null:
