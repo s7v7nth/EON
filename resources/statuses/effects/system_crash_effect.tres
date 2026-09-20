@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="EffectSystemCrash" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://systems/status/effects/effect_system_crash.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+radius = 150.0
+damage = 12.0
+glitch_buildup = 70.0
+stagger_buildup = 40.0
+robot_damage_mult = 1.75

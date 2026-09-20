@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="AttackData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/attacks/attack_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+damage = 14.0
+cooldown = 0.4
+windup = 0.0
+active_duration = 0.1
+knockback_force = 120.0
+damage_type = 0
+status_chance = 0.2
+status_power = 5.0
+status_duration = 0.4
+combo_scale = 1.0
+projectile_speed = 720.0
+projectile_lifetime = 1.15
+returning = true
+energy_cost = 10.0

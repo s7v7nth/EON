@@ -1,0 +1,49 @@
+[gd_resource type="Resource" script_class="EnemyDefinition" load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://resources/enemies/enemy_definition.gd" id="1"]
+[ext_resource type="Resource" path="res://resources/stats/enemy_boss_hive_stats.tres" id="2_stats"]
+[ext_resource type="Resource" path="res://resources/attacks/enemy_hive_slam.tres" id="3_slam"]
+[ext_resource type="Resource" path="res://resources/attacks/enemy_hive_vomit.tres" id="4_vomit"]
+[ext_resource type="Resource" path="res://resources/attacks/enemy_hive_hook.tres" id="5_hook"]
+[ext_resource type="Resource" path="res://resources/enemies/hive_chunk.tres" id="6_summon"]
+[ext_resource type="Resource" path="res://resources/enemies/behaviors/aggro_swarm.tres" id="7_beh"]
+
+[resource]
+script = ExtResource("1")
+display_name = "The Hive"
+faction = 4
+stats = ExtResource("2_stats")
+melee_attack = ExtResource("3_slam")
+ranged_attack = ExtResource("4_vomit")
+moveset = Array[Resource]([ExtResource("3_slam"), ExtResource("4_vomit"), ExtResource("5_hook")])
+attack_range = 118.0
+ranged_range = 320.0
+detection_radius = 520.0
+visual_color = Color(0.46, 0.44, 0.18, 1)
+prefers_kite = false
+behavior_modules = Array[Resource]([ExtResource("7_beh")])
+tags = PackedStringArray("boss", "hive_boss", "bio")
+visual_stem = "hive_boss"
+visual_height = 176.0
+status_vulnerabilities = {
+"burn": 1.25,
+"glitch": 1.15,
+"stagger": 0.7
+}
+is_boss = true
+unlock_flag = &"hive_killed"
+boss_id = &"hive"
+boss_phase2_hp_ratio = 0.5
+boss_phase2_action_speed = 1.32
+boss_phase2_summon = ExtResource("6_summon")
+boss_phase2_summon_count = 3
+use_resist_overrides = true
+resist_physical = 0.15
+resist_electricity = 0.05
+resist_corrosion = 0.35
+resist_fire = -0.2
+resist_bleed = 0.2
+resist_glitch = -0.1
+max_poise = 110.0
+poise_regen = 8.0
+gold_reward = 120

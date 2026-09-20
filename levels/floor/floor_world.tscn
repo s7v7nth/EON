@@ -1,0 +1,16 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://levels/floor/floor_controller.gd" id="1_ctrl"]
+[ext_resource type="PackedScene" path="res://ui/debug_hud.tscn" id="2_hud"]
+[ext_resource type="PackedScene" path="res://ui/run_overlay.tscn" id="3_overlay"]
+
+[node name="FloorWorld" type="Node2D"]
+y_sort_enabled = true
+script = ExtResource("1_ctrl")
+
+[node name="DebugHUD" parent="." instance=ExtResource("2_hud")]
+
+[node name="RunOverlay" parent="." instance=ExtResource("3_overlay")]
+
+[node name="Entities" type="Node2D" parent="."]
+y_sort_enabled = true

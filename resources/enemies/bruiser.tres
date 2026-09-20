@@ -1,16 +1,38 @@
-[gd_resource type="Resource" script_class="EnemyDefinition" load_steps=4 format=3]
+[gd_resource type="Resource" script_class="EnemyDefinition" load_steps=7 format=3]
 
 [ext_resource type="Script" path="res://resources/enemies/enemy_definition.gd" id="1"]
 [ext_resource type="Resource" path="res://resources/stats/enemy_bruiser_stats.tres" id="2_stats"]
 [ext_resource type="Resource" path="res://resources/attacks/enemy_bruiser_attack.tres" id="3_atk"]
+[ext_resource type="Resource" path="res://resources/attacks/enemy_bruiser_slam.tres" id="4_slam"]
+[ext_resource type="Resource" path="res://resources/attacks/enemy_bruiser_swipe.tres" id="5_swipe"]
+[ext_resource type="Resource" path="res://resources/enemies/behaviors/aggro_swarm.tres" id="6_beh"]
 
 [resource]
 script = ExtResource("1")
 display_name = "Bruiser"
+faction = 0
 stats = ExtResource("2_stats")
 melee_attack = ExtResource("3_atk")
-attack_range = 40.0
+moveset = Array[Resource]([ExtResource("4_slam"), ExtResource("5_swipe")])
+attack_range = 48.0
 ranged_range = 0.0
 detection_radius = 300.0
 visual_color = Color(0.45, 0.18, 0.22, 1)
 prefers_kite = false
+behavior_modules = Array[Resource]([ExtResource("6_beh")])
+tags = PackedStringArray("savage", "melee")
+visual_stem = "craft_cargoA"
+visual_height = 108.0
+status_vulnerabilities = {
+"burn": 1.55,
+"bleed": 1.25
+}
+use_resist_overrides = true
+resist_physical = 0.15
+resist_electricity = -0.1
+resist_corrosion = -0.15
+resist_fire = -0.25
+resist_bleed = -0.35
+resist_glitch = 0.2
+max_poise = 55.0
+poise_regen = 12.0

@@ -1,0 +1,7 @@
+[gd_resource type="Resource" script_class="EffectRamSlotPlus" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://systems/upgrades/effects/effect_ram_slot_plus.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+bonus_slots = 1

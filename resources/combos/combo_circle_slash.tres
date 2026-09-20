@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="ComboRecipe" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://systems/combat/combo_recipe.gd" id="1"]
+[ext_resource type="Resource" path="res://resources/attacks/player_circle_slash.tres" id="2_atk"]
+
+[resource]
+script = ExtResource("1")
+sequence = PackedStringArray("attack", "ranged_attack", "attack")
+result_id = &"circle_slash"
+attack_data = ExtResource("2_atk")

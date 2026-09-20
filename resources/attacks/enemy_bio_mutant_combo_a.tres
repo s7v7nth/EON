@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="AttackData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://resources/attacks/attack_data.gd" id="1"]
+[ext_resource type="Resource" path="res://resources/attacks/enemy_bio_mutant_combo_b.tres" id="2_next"]
+
+[resource]
+script = ExtResource("1")
+damage = 6.5
+cooldown = 1.1
+windup = 0.42
+active_duration = 0.12
+knockback_force = 90.0
+damage_type = 2
+status_chance = 0.5
+status_power = 6.0
+status_duration = 2.2
+combo_next = ExtResource("2_next")
+pattern_kind = 3
+commit_lock_early = 0.65
+select_weight = 1.1
+min_range = 0.0
+max_range = 50.0
+poise_damage = 10.0
+camera_trauma = 0.08
+impact_scale = 1.0

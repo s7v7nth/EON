@@ -41,7 +41,8 @@ func transition_to(state_name: StringName, msg: Dictionary = {}) -> void:
 		push_warning("StateMachine: unknown state '%s'" % state_name)
 		return
 	var next: State = _states[state_name]
-	if next == current_state:
+	# Allow re-entering the same state when a message is provided (combo chains).
+	if next == current_state and msg.is_empty():
 		return
 	if current_state:
 		current_state.exit()

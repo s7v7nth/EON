@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="EffectBleedMotion" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://systems/status/effects/effect_bleed_motion.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+idle_dot_scale = 0.2
+moving_dot_scale = 0.35
+move_speed_threshold = 40.0

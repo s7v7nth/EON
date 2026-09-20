@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="EconomyBloodHarvest" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://systems/economy/economy_blood_harvest.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+policy = 1
+hp_drain_percent_per_sec = 0.03
+life_steal = 0.18
+heal_on_kill = 12.0
+dissipate_hp_percent_per_sec = 0.12
+dissipate_heal_ratio = 0.55
+dissipate_puddle_damage = 5.0
+special_hp_cost_percent = 0.06
+special_radius = 100.0
+special_damage = 14.0
+min_hp_from_drain = 8.0

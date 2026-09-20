@@ -3,21 +3,38 @@ extends CharacterBody2D
 ## Greybox player root. Owns stats/component refs; states drive behaviour.
 
 const PROJECTILE_SCENE := preload("res://entities/projectiles/projectile.tscn")
+const DEFAULT_ARCH := preload("res://resources/architectures/default.tres")
+const BLADE_THROW_ATTACK := preload("res://resources/attacks/player_blade_throw.tres")
+const CIRCLE_SLASH_ATTACK := preload("res://resources/attacks/player_circle_slash.tres")
+const COMBO_MELEE := preload("res://resources/combos/combo_melee_string.tres")
+const COMBO_CIRCLE := preload("res://resources/combos/combo_circle_slash.tres")
+const _Autopilot := preload("res://components/combat_autopilot.gd")
+
+## Hold LMB this long (from press) before ChargeThrow starts. Keep snappy.
+const HOLD_THRESHOLD := 0.14
 
 @export var stats: CharacterStats
 @export var ranged_attack_data: AttackData
 @export var weapons: Array[WeaponData] = []
+@export var architecture: ArchitectureData
 
 @onready var state_machine: StateMachine = $StateMachine
 @onready var health: HealthComponent = $HealthComponent
 @onready var energy: EnergyComponent = $EnergyComponent
 @onready var adrenaline: AdrenalineComponent = $AdrenalineComponent
+@onready var status: StatusComponent = $StatusComponent
 @onready var hurtbox: HurtboxComponent = $HurtboxComponent
 @onready var hitbox: HitboxComponent = $HitboxPivot/HitboxComponent
 @onready var hitbox_pivot: Node2D = $HitboxPivot
+@onready var combat_visual: CombatVisualComponent = $CombatVisual
+@onready var engagement: CombatEngagementComponent = $CombatEngagement
+@onready var combo: ComboRecognizer = $ComboRecognizer
 @onready var dash_cooldown: Timer = $DashCooldownTimer
 @onready var attack_cooldown: Timer = $AttackCooldownTimer
 @onready var ranged_cooldown: Timer = $RangedCooldownTimer
+@onready var parry_cooldown: Timer = $ParryCooldownTimer
+
+var input_buffer: InputBuffer = InputBuffer.new()
 
 ## Last non-zero move intent — used by Dash when no input held.
 var facing_direction: Vector2 = Vector2.RIGHT
@@ -26,41 +43,185 @@ var damage_multiplier: float = 1.0
 var move_speed_multiplier: float = 1.0
 var dash_cost_multiplier: float = 1.0
 
+## Combo
+var combo_root: AttackData
+var pending_combo: AttackData
+var blade_throw_attack: AttackData = BLADE_THROW_ATTACK
+
+## Architecture runtime
+var active_economy: ResourceEconomy
+var counter_window: float = 0.0
+var counter_damage_bonus: float = 1.0
+
+## Upgrade plugins (duplicated UpgradeEffect instances)
+var active_effects: Array = []
+var _life_steal_bonus: float = 0.0
+var _hp_regen_bonus: float = 0.0
+var incoming_damage_mult: float = 1.0
+var attack_speed_bonus: float = 0.0
+var crit_chance: float = 0.0
+var crit_damage: float = 1.5
+var execute_threshold: float = 0.0
+var execute_bonus: float = 1.0
+var adrenaline_gain_mult: float = 1.0
+var dash_iframe_bonus: float = 0.0
+var dash_cooldown_mult: float = 1.0
+var projectile_pierce: int = 0
+var extra_projectiles: int = 0
+var second_wind_charges: int = 0
+var last_hit_was_crit: bool = false
+var bonus_max_health: float = 0.0
+var ranged_cooldown_mult: float = 1.0
+var knockback_bonus: float = 0.0
+var frenzy_until: float = 0.0
+var frenzy_speed: float = 1.0
+var temp_crit_until: float = 0.0
+var temp_crit_bonus: float = 0.0
+var _iframe_bonus_left: float = 0.0
+
 const KNOCKBACK_DURATION := 0.15
 var _kb_dir: Vector2 = Vector2.ZERO
 var _kb_force: float = 0.0
 var _kb_time: float = 0.0
+var _kb_duration: float = KNOCKBACK_DURATION
+
+var _blade_in_flight: bool = false
+var _blade_flight_time: float = 0.0
+var _active_blade: Projectile = null
+var _last_dash_cost: float = 0.0
+var _attack_hold_time: float = -1.0
+var aim_override: Vector2 = Vector2.ZERO
 
 
 func _ready() -> void:
 	motion_mode = MOTION_MODE_FLOATING
+	physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_ON
 	y_sort_enabled = true
+	if input_buffer.get_parent() == null:
+		input_buffer.name = "InputBuffer"
+		add_child(input_buffer)
 	_configure_from_stats()
+	_setup_combo_recipes()
 	_relay_component_signals()
-	_ensure_default_weapons()
-	equip_weapon(0)
+	if architecture == null:
+		architecture = DEFAULT_ARCH
+	equip_architecture(architecture)
 	call_deferred("_emit_initial_bus_values")
+	call_deferred("_fit_hurtbox_to_body")
+	_attach_body_light()
 	RunState.apply_to_player(self)
+	RunState.begin_room()
+	if not is_in_group("player"):
+		add_to_group("player")
+	if not SignalBus.enemy_died.is_connected(_on_enemy_died_for_economy):
+		SignalBus.enemy_died.connect(_on_enemy_died_for_economy)
+	if _Autopilot.is_requested():
+		var ap := _Autopilot.new()
+		ap.name = "CombatAutopilot"
+		add_child(ap)
+
+
+func _fit_hurtbox_to_body() -> void:
+	if hurtbox == null:
+		return
+	var shape_node := hurtbox.get_node_or_null("CollisionShape2D") as CollisionShape2D
+	if shape_node == null:
+		return
+	shape_node.position = Vector2(0, -22)
+	var circle := CircleShape2D.new()
+	circle.radius = 28.0
+	shape_node.shape = circle
+
+
+func _attach_body_light() -> void:
+	## Compatibility PointLight2D grains the floor on Mac. Clone stays unlit.
+	var existing := get_node_or_null("BodyLight")
+	if existing:
+		existing.queue_free()
 
 
 func _physics_process(delta: float) -> void:
 	if _kb_time > 0.0:
 		_kb_time = maxf(0.0, _kb_time - delta)
+	if counter_window > 0.0:
+		counter_window = maxf(0.0, counter_window - delta)
+		if counter_window <= 0.0:
+			counter_damage_bonus = 1.0
+	if _iframe_bonus_left > 0.0:
+		_iframe_bonus_left = maxf(0.0, _iframe_bonus_left - delta)
+		if _iframe_bonus_left <= 0.0 and hurtbox and hurtbox.is_invincible():
+			hurtbox.set_invincible(false, false)
+	if frenzy_until > 0.0:
+		frenzy_until = maxf(0.0, frenzy_until - delta)
+	if temp_crit_until > 0.0:
+		temp_crit_until = maxf(0.0, temp_crit_until - delta)
+	if _blade_in_flight:
+		_blade_flight_time += delta
+		# Failsafe: never soft-lock throws if a blade dies without returned_to_source.
+		if _blade_flight_time > 3.0:
+			_blade_in_flight = false
+			_blade_flight_time = 0.0
+	_process_architecture_economy(delta)
+	_tick_upgrade_effects(delta)
+	_tick_attack_hold(delta)
+	capture_bufferable_inputs()
+	_sync_aim_facing()
 
 
-func apply_knockback(direction: Vector2, force: float) -> void:
+func uses_synthetic_kit() -> bool:
+	return architecture != null and architecture.architecture_id == GameplayEnums.ArchitectureId.DEFAULT
+
+
+func uses_hive_kit() -> bool:
+	return architecture != null and architecture.architecture_id == GameplayEnums.ArchitectureId.NANOMACHINES
+
+
+func current_weapon() -> WeaponData:
+	if weapons.is_empty():
+		return null
+	return weapons[clampi(weapon_index, 0, weapons.size() - 1)]
+
+
+func uses_gun_kit() -> bool:
+	var weapon := current_weapon()
+	if weapon and weapon.shape_tag == &"gun":
+		return true
+	return architecture != null and architecture.architecture_id == GameplayEnums.ArchitectureId.NEURO_HACKER
+
+
+func _sync_aim_facing() -> void:
+	## Body, muzzle, and swing share one aim. Walk does not twist the weapon.
+	var aim := get_aim_direction()
+	if aim != Vector2.ZERO:
+		facing_direction = aim
+
+
+func blade_in_flight() -> bool:
+	return _blade_in_flight
+
+
+func apply_knockback(direction: Vector2, force: float, duration: float = KNOCKBACK_DURATION) -> void:
 	if direction == Vector2.ZERO or force <= 0.0:
 		return
 	_kb_dir = direction.normalized()
 	_kb_force = force
-	_kb_time = KNOCKBACK_DURATION
+	_kb_duration = maxf(duration, 0.01)
+	_kb_time = _kb_duration
 
 
 func _knockback_vector() -> Vector2:
 	if _kb_time <= 0.0 or _kb_force <= 0.0:
 		return Vector2.ZERO
-	var strength := _kb_force * (_kb_time / KNOCKBACK_DURATION)
+	var strength := _kb_force * (_kb_time / _kb_duration)
 	return Iso.apply_velocity(_kb_dir, strength)
+
+
+func _setup_combo_recipes() -> void:
+	if combo == null:
+		return
+	combo.recipes = [COMBO_MELEE, COMBO_CIRCLE] as Array[ComboRecipe]
+	if not combo.combo_resolved.is_connected(_on_combo_resolved):
+		combo.combo_resolved.connect(_on_combo_resolved)
 
 
 func _emit_initial_bus_values() -> void:
@@ -72,6 +233,8 @@ func _emit_initial_bus_values() -> void:
 		SignalBus.player_adrenaline_changed.emit(
 			adrenaline.current_adrenaline, adrenaline.get_max_adrenaline()
 		)
+	if status:
+		SignalBus.player_statuses_changed.emit(status.get_active_ids())
 
 
 func _configure_from_stats() -> void:
@@ -82,16 +245,24 @@ func _configure_from_stats() -> void:
 	energy.stats = stats
 	adrenaline.stats = stats
 	adrenaline.energy_component = energy
+	adrenaline.engagement = engagement
 	hurtbox.health_component = health
+	hurtbox.status_component = status
+	hurtbox.energy_component = energy
+	status.health_component = health
 	if dash_cooldown:
 		dash_cooldown.wait_time = stats.dash_cooldown
 		dash_cooldown.one_shot = true
+	if parry_cooldown:
+		parry_cooldown.one_shot = true
 
 
 func _relay_component_signals() -> void:
 	health.health_changed.connect(
 		func(current: float, max_value: float) -> void:
 			SignalBus.player_health_changed.emit(current, max_value)
+			if health.last_reason != StringName():
+				SignalBus.player_hp_feedback.emit(health.last_reason, current, max_value)
 	)
 	health.died.connect(func() -> void: SignalBus.player_died.emit())
 	energy.energy_changed.connect(
@@ -103,28 +274,308 @@ func _relay_component_signals() -> void:
 			SignalBus.player_adrenaline_changed.emit(current, max_value)
 	)
 	hurtbox.hit_received.connect(_on_hurtbox_hit_received)
+	hurtbox.perfect_dodged.connect(_on_perfect_dodged)
+	hurtbox.parried.connect(_on_parried)
+	if status:
+		status.statuses_changed.connect(
+			func(active: PackedStringArray) -> void:
+				SignalBus.player_statuses_changed.emit(active)
+		)
 
 
-func _on_hurtbox_hit_received(_attack_data: AttackData, _source: Node) -> void:
+func _on_hurtbox_hit_received(_attack_data: AttackData, _source: Node, hp_damage: float) -> void:
+	if engagement:
+		engagement.notify_exchange()
 	if stats:
 		adrenaline.add(stats.adrenaline_gain_on_hurt)
+	if hp_damage > 0.0:
+		RunState.register_took_damage()
+	if combat_visual:
+		combat_visual.play_hit_flash()
+
+
+func _on_perfect_dodged(_attack_data: AttackData, source: Node) -> void:
+	if stats:
+		adrenaline.add(stats.adrenaline_gain_on_hit * 2.0)
+	# Ideal dash is free — refund energy spent on this dash.
+	if _last_dash_cost > 0.0 and energy:
+		energy.restore(_last_dash_cost)
+		_last_dash_cost = 0.0
+	HitStop.punch(0.1, 0.1)
+	CameraFx.add_trauma(0.28)
+	for effect in active_effects:
+		var fx := effect as UpgradeEffect
+		if fx:
+			fx.on_perfect_dodge(self, source)
+	SignalBus.perfect_dodge.emit(source)
+	SignalBus.style_action.emit(GameplayEnums.StyleAction.PERFECT_DODGE, 150)
+
+
+func _on_parried(attack_data: AttackData, source: Node) -> void:
+	if stats:
+		adrenaline.add(stats.adrenaline_gain_on_hit * 1.5)
+	# Block already spent energy to raise the shield. Adrenaline is the payoff.
+	# God-of-War style "BAM": deep freeze, flash, heavy knock + hard stun.
+	HitStop.punch(0.04, 0.18)
+	CameraFx.add_trauma(0.72)
+	CameraFx.flash(Color(1.0, 0.95, 0.55, 0.65), 0.1)
+	if combat_visual:
+		combat_visual.play_parry_impact()
+	if source is EnemyDummy:
+		var enemy := source as EnemyDummy
+		if enemy.status:
+			enemy.status.apply_status(StatusComponent.STATUS_STAGGER, 10.0, 1.0)
+		enemy.apply_hard_stun(1.15)
+		enemy.apply_knockback(
+			(enemy.global_position - global_position).normalized(),
+			460.0,
+			0.38
+		)
+		if enemy.health and attack_data:
+			enemy.health.take_damage(attack_data.damage * 0.45)
+	for effect in active_effects:
+		var fx := effect as UpgradeEffect
+		if fx:
+			fx.on_parry(self, source)
+	SignalBus.parry_success.emit(source)
+	SignalBus.style_action.emit(GameplayEnums.StyleAction.PARRY, 200)
+
+
+func get_resist(damage_type: GameplayEnums.DamageType) -> float:
+	var base := 0.0
+	if stats:
+		base = stats.get_resist(damage_type)
+	if architecture:
+		base += architecture.get_resist(damage_type)
+	return clampf(base, -1.0, 0.9)
+
+
+func equip_architecture(arch: ArchitectureData) -> void:
+	if arch == null:
+		return
+	if active_economy:
+		active_economy.on_unequip(self)
+	architecture = arch
+	active_economy = arch.economy.duplicate(true) as ResourceEconomy if arch.economy else null
+	weapons.clear()
+	if not arch.primitives.is_empty() and arch.primitives[0]:
+		weapons.append(arch.primitives[0])
+	if active_economy:
+		active_economy.on_equip(self)
+	elif energy:
+		energy.unlock_regen(1.0)
+	if combat_visual:
+		combat_visual.apply_architecture_look(arch)
+	equip_weapon(0)
+	SignalBus.architecture_changed.emit(arch.architecture_id)
+	_emit_economy_hud()
+
+
+func apply_run_upgrades(upgrades: Array[UpgradeData]) -> void:
+	for effect in active_effects:
+		var fx := effect as UpgradeEffect
+		if fx:
+			fx.remove(self)
+	active_effects.clear()
+	_life_steal_bonus = 0.0
+	_hp_regen_bonus = 0.0
+	incoming_damage_mult = 1.0
+	attack_speed_bonus = 0.0
+	crit_chance = 0.0
+	crit_damage = 1.5
+	execute_threshold = 0.0
+	execute_bonus = 1.0
+	adrenaline_gain_mult = 1.0
+	dash_iframe_bonus = 0.0
+	dash_cooldown_mult = 1.0
+	projectile_pierce = 0
+	extra_projectiles = 0
+	second_wind_charges = 0
+	bonus_max_health = architecture.bonus_max_health if architecture else 0.0
+	ranged_cooldown_mult = 1.0
+	knockback_bonus = 0.0
+	if hurtbox:
+		hurtbox.block_damage_mult = 0.5
+	for upgrade in upgrades:
+		if upgrade == null:
+			continue
+		for item in upgrade.effects:
+			var template := item as UpgradeEffect
+			if template == null:
+				continue
+			var instance := template.duplicate(true) as UpgradeEffect
+			if instance == null:
+				continue
+			active_effects.append(instance)
+			instance.apply(self)
+	_sync_health_bonus()
+	if not SignalBus.enemy_died.is_connected(_on_enemy_died_for_upgrades):
+		SignalBus.enemy_died.connect(_on_enemy_died_for_upgrades)
+
+
+func add_max_health(amount: float) -> void:
+	bonus_max_health += maxf(amount, 0.0)
+	_sync_health_bonus()
+
+
+func _sync_health_bonus() -> void:
+	if health == null:
+		return
+	health.set_bonus_max(bonus_max_health)
+
+
+func notify_dash_started(direction: Vector2) -> void:
+	for effect in active_effects:
+		var fx := effect as UpgradeEffect
+		if fx:
+			fx.on_dash(self, direction)
+
+
+func grant_frenzy(speed_mult: float, duration: float) -> void:
+	frenzy_speed = maxf(speed_mult, 1.0)
+	frenzy_until = maxf(duration, 0.1)
+
+
+func grant_temp_crit(amount: float, duration: float) -> void:
+	temp_crit_bonus = amount
+	temp_crit_until = duration
+
+
+func grant_second_wind_iframes() -> void:
+	grant_iframes(0.8)
+	CameraFx.add_trauma(0.45)
+
+
+func grant_iframes(duration: float) -> void:
+	if hurtbox:
+		hurtbox.set_invincible(true, false)
+	_iframe_bonus_left = maxf(_iframe_bonus_left, duration)
+
+
+func restore_resource(amount: float) -> void:
+	if amount <= 0.0:
+		return
+	if active_economy and active_economy.has_method("restore"):
+		active_economy.call("restore", self, amount)
+		return
+	if energy:
+		energy.current_energy = minf(energy.current_energy + amount, energy.get_max_energy())
+		energy.energy_changed.emit(energy.current_energy, energy.get_max_energy())
+
+
+func refund_ranged_cooldown(fraction: float) -> void:
+	if ranged_cooldown == null or ranged_cooldown.is_stopped():
+		return
+	var left := ranged_cooldown.time_left * (1.0 - clampf(fraction, 0.0, 0.9))
+	ranged_cooldown.start(maxf(left, 0.05))
+
+
+func roll_crit() -> bool:
+	var chance := crit_chance
+	if temp_crit_until > 0.0:
+		chance += temp_crit_bonus
+	for effect in active_effects:
+		if effect is EffectBoonProc:
+			chance += (effect as EffectBoonProc).extra_crit_chance(self)
+	last_hit_was_crit = randf() < clampf(chance, 0.0, 0.85)
+	return last_hit_was_crit
+
+
+func execute_multiplier_against(hurtbox: HurtboxComponent) -> float:
+	if execute_threshold <= 0.0 or hurtbox == null or hurtbox.health_component == null:
+		return 1.0
+	var hp := hurtbox.health_component
+	var mx := hp.get_max_health()
+	if mx <= 0.0:
+		return 1.0
+	if hp.current_health / mx <= execute_threshold:
+		return maxf(execute_bonus, 1.0)
+	return 1.0
 
 
 func get_input_direction() -> Vector2:
 	return Input.get_vector("move_left", "move_right", "move_up", "move_down")
 
 
+func nearest_hostile(max_dist: float = 210.0) -> Node2D:
+	if not is_inside_tree():
+		return null
+	var best: Node2D = null
+	var best_d := max_dist
+	for node in get_tree().get_nodes_in_group("enemies"):
+		if node == self or node is not Node2D:
+			continue
+		var hp := node.get("health") as HealthComponent
+		if hp and hp.current_health <= 0.0:
+			continue
+		var d := global_position.distance_to((node as Node2D).global_position)
+		if d <= best_d:
+			best_d = d
+			best = node as Node2D
+	return best
+
+
 func get_aim_direction() -> Vector2:
-	var aim := get_global_mouse_position() - global_position
-	if aim == Vector2.ZERO:
-		return facing_direction
-	return aim.normalized()
+	if aim_override != Vector2.ZERO:
+		return aim_override.normalized()
+	var origin := global_position
+	if uses_gun_kit():
+		origin += Vector2(0, -22)
+	var cursor := get_global_mouse_position() - origin
+	if cursor == Vector2.ZERO:
+		cursor = facing_direction
+	else:
+		cursor = cursor.normalized()
+	# Melee magnet: ~70° cone toward the cursor, not omnidirectional.
+	if not uses_gun_kit():
+		var foe := nearest_hostile_in_cone(210.0, cursor, deg_to_rad(35.0))
+		if foe:
+			var to_foe := foe.global_position - global_position
+			if to_foe.length() > 6.0:
+				return to_foe.normalized()
+	return cursor
+
+
+func nearest_hostile_in_cone(max_dist: float, cursor_dir: Vector2, half_angle: float) -> Node2D:
+	if cursor_dir == Vector2.ZERO or not is_inside_tree():
+		return null
+	var aim := cursor_dir.normalized()
+	var best: Node2D = null
+	var best_d := max_dist
+	for node in get_tree().get_nodes_in_group("enemies"):
+		if node == self or node is not Node2D:
+			continue
+		var hp := node.get("health") as HealthComponent
+		if hp and hp.current_health <= 0.0:
+			continue
+		var to_foe: Vector2 = (node as Node2D).global_position - global_position
+		var d := to_foe.length()
+		if d > best_d or d <= 6.0:
+			continue
+		if absf(aim.angle_to(to_foe)) > half_angle:
+			continue
+		best_d = d
+		best = node as Node2D
+	return best
+
+
+func lock_aim(dir: Vector2) -> void:
+	if dir == Vector2.ZERO:
+		dir = facing_direction
+	aim_override = dir.normalized()
+	if aim_override != Vector2.ZERO:
+		facing_direction = aim_override
+
+
+func unlock_aim() -> void:
+	aim_override = Vector2.ZERO
 
 
 func apply_movement(direction: Vector2) -> void:
-	if direction != Vector2.ZERO:
-		facing_direction = direction.normalized()
-	velocity = Iso.apply_velocity(direction, (stats.move_speed if stats else 0.0) * move_speed_multiplier)
+	var speed := (stats.move_speed if stats else 0.0) * move_speed_multiplier
+	if frenzy_until > 0.0:
+		speed *= frenzy_speed
+	velocity = Iso.apply_velocity(direction, speed)
 	velocity += _knockback_vector()
 	move_and_slide()
 
@@ -135,39 +586,135 @@ func stop_movement() -> void:
 
 
 func dash_ready() -> bool:
+	if uses_hive_kit():
+		return false
 	if stats == null:
+		return false
+	if active_economy and active_economy.is_action_locked(self):
 		return false
 	if dash_cooldown and not dash_cooldown.is_stopped():
 		return false
+	if active_economy:
+		return active_economy.can_afford(self, &"dash", stats.dash_cost * dash_cost_multiplier)
 	return energy.current_energy >= stats.dash_cost * dash_cost_multiplier
+
+
+func dissipate_ready() -> bool:
+	if not uses_hive_kit():
+		return false
+	if active_economy and active_economy.is_action_locked(self):
+		return false
+	if active_economy:
+		return active_economy.can_afford(self, &"dissipate", 0.0)
+	return true
+
+
+func mobility_ready() -> bool:
+	if uses_hive_kit():
+		return dissipate_ready()
+	return dash_ready()
+
+
+func mobility_state_name() -> StringName:
+	if uses_hive_kit():
+		return &"Dissipate"
+	return &"Dash"
+
+
+func try_spend_block() -> bool:
+	if not uses_synthetic_kit():
+		return true
+	if active_economy:
+		return active_economy.spend(self, &"block", 0.0)
+	if energy:
+		return energy.try_spend(4.0)
+	return true
 
 
 func try_spend_dash() -> bool:
 	if stats == null:
 		return false
-	return energy.try_spend(stats.dash_cost * dash_cost_multiplier)
+	var cost := stats.dash_cost * dash_cost_multiplier
+	var ok := false
+	if active_economy:
+		ok = active_economy.spend(self, &"dash", cost)
+	else:
+		ok = energy.try_spend(cost)
+	if ok:
+		_last_dash_cost = cost
+	return ok
+
+
+func parry_ready() -> bool:
+	if uses_synthetic_kit():
+		return false
+	if active_economy and active_economy.is_action_locked(self):
+		return false
+	if parry_cooldown and not parry_cooldown.is_stopped():
+		return false
+	if active_economy:
+		return active_economy.can_afford(self, &"parry", 0.0)
+	return true
+
+
+func try_spend_parry() -> bool:
+	if uses_synthetic_kit():
+		return false
+	if active_economy:
+		return active_economy.spend(self, &"parry", 0.0)
+	return true
 
 
 func attack_ready() -> bool:
+	if active_economy and active_economy.is_action_locked(self):
+		return false
+	if _blade_in_flight and uses_synthetic_kit():
+		return false
 	if hitbox == null or hitbox.attack_data == null:
 		return false
+	# Allow combo follow-ups (LMB×3 / LMB→RMB→LMB) through attack cooldown.
+	if combo and combo.has_open_prefix():
+		return true
 	return attack_cooldown == null or attack_cooldown.is_stopped()
 
 
 func ranged_ready() -> bool:
+	if active_economy and active_economy.is_action_locked(self):
+		return false
 	if ranged_attack_data == null:
 		return false
 	return ranged_cooldown == null or ranged_cooldown.is_stopped()
 
 
-func _ensure_default_weapons() -> void:
-	if not weapons.is_empty():
-		return
-	weapons = [
-		load("res://resources/weapons/blade.tres") as WeaponData,
-		load("res://resources/weapons/hammer.tres") as WeaponData,
-		load("res://resources/weapons/bow.tres") as WeaponData,
-	]
+func try_spend_attack_energy(attack: AttackData) -> bool:
+	if attack == null:
+		return false
+	var action := &"attack"
+	if attack == ranged_attack_data or attack == blade_throw_attack:
+		action = &"ranged"
+	var cost := attack.energy_cost
+	if active_economy:
+		return active_economy.spend(self, action, cost)
+	if cost <= 0.0:
+		return true
+	return energy.try_spend(cost)
+
+
+func try_special() -> bool:
+	if active_economy == null:
+		return false
+	if active_economy.is_action_locked(self):
+		return false
+	return active_economy.try_special(self)
+
+
+func get_attack_speed_multiplier() -> float:
+	var m := 1.0 + attack_speed_bonus
+	if status:
+		m *= status.get_action_speed_multiplier()
+	if active_economy:
+		m *= active_economy.attack_speed_multiplier(self)
+	return maxf(m, 0.2)
 
 
 func equip_weapon(index: int) -> void:
@@ -179,47 +726,377 @@ func equip_weapon(index: int) -> void:
 		return
 	if hitbox:
 		hitbox.attack_data = weapon.primary
-		hitbox.position = Vector2(weapon.hitbox_reach, 0.0)
+		hitbox.position = Vector2(maxf(weapon.hitbox_reach, 62.0) * 0.58, 0.0)
+		_resize_melee_hitbox(maxf(weapon.hitbox_reach, 62.0))
+	combo_root = weapon.primary
+	pending_combo = null
 	ranged_attack_data = weapon.secondary
-	var visual := get_node_or_null("Visual") as Polygon2D
-	if visual:
-		visual.color = weapon.visual_tint
+	if uses_synthetic_kit():
+		blade_throw_attack = BLADE_THROW_ATTACK
+	if combat_visual:
+		combat_visual.apply_weapon_look(weapon, architecture)
 	SignalBus.weapon_changed.emit(weapon.display_name)
 
 
-func current_weapon_name() -> String:
-	if weapons.is_empty() or weapon_index < 0 or weapon_index >= weapons.size():
-		return ""
-	var weapon := weapons[weapon_index]
-	return weapon.display_name if weapon else ""
+func _resize_melee_hitbox(reach: float) -> void:
+	if hitbox == null:
+		return
+	var shape_node := hitbox.get_node_or_null("CollisionShape2D") as CollisionShape2D
+	if shape_node == null:
+		return
+	hitbox.position = Vector2(maxf(reach, 62.0) * 0.58, 0.0)
+	var circle := CircleShape2D.new()
+	circle.radius = maxf(reach * 0.62, 38.0)
+	shape_node.shape = circle
+	shape_node.position = Vector2.ZERO
 
 
-func handle_weapon_hotkeys() -> bool:
-	if Input.is_action_just_pressed("weapon_1"):
-		equip_weapon(0)
-		return true
-	if Input.is_action_just_pressed("weapon_2"):
-		equip_weapon(1)
-		return true
-	if Input.is_action_just_pressed("weapon_3"):
-		equip_weapon(2)
+func configure_hitbox_for_attack(attack: AttackData) -> void:
+	if hitbox == null or attack == null:
+		return
+	hitbox.attack_data = attack
+	var shape_node := hitbox.get_node_or_null("CollisionShape2D") as CollisionShape2D
+	if shape_node == null:
+		return
+	if attack.circular:
+		hitbox.position = Vector2(0, -18)
+		var circle := CircleShape2D.new()
+		circle.radius = maxf(attack.circular_radius, 78.0)
+		shape_node.shape = circle
+		shape_node.position = Vector2.ZERO
+	else:
+		var reach := 64.0
+		if not weapons.is_empty() and weapons[weapon_index]:
+			reach = maxf(weapons[weapon_index].hitbox_reach, 62.0)
+		# Forward circle covering the blade arc (not a thin rotated rect that misses).
+		hitbox.position = Vector2(reach * 0.58, 0.0)
+		var circle := CircleShape2D.new()
+		circle.radius = maxf(reach * 0.62, 38.0)
+		shape_node.shape = circle
+		shape_node.position = Vector2.ZERO
+
+
+func spawn_projectile(direction: Vector2) -> void:
+	var shots := 1 + extra_projectiles
+	var base := direction.normalized()
+	if base == Vector2.ZERO:
+		base = facing_direction
+	var spread := 12.0 if shots > 1 else 0.0
+	for i in shots:
+		var dir := base
+		if shots > 1:
+			var t := (float(i) / float(shots - 1)) - 0.5
+			dir = base.rotated(deg_to_rad(spread * t * 2.0))
+		var proj := PROJECTILE_SCENE.instantiate() as Projectile
+		proj.attack_data = ranged_attack_data
+		proj.direction = dir
+		proj.source = self
+		proj.extra_pierce = projectile_pierce
+		proj.collision_mask = (1 << 0) | (1 << 4)
+		if ranged_attack_data:
+			proj.tint = _projectile_color(ranged_attack_data.damage_type)
+		get_parent().add_child(proj)
+		var muzzle := Vector2(0, -22)
+		if combat_visual and combat_visual.has_method("muzzle_offset"):
+			muzzle = combat_visual.call("muzzle_offset", dir)
+		proj.global_position = global_position + muzzle
+		proj.hit_landed.connect(_on_projectile_hit_landed)
+
+
+func spawn_returning_blade(direction: Vector2, charge: float = 1.0) -> void:
+	if blade_throw_attack == null or _blade_in_flight:
+		return
+	var dir := direction.normalized()
+	if dir == Vector2.ZERO:
+		dir = facing_direction if facing_direction != Vector2.ZERO else Vector2.RIGHT
+	var proj := PROJECTILE_SCENE.instantiate() as Projectile
+	var atk := blade_throw_attack.duplicate(true) as AttackData
+	if atk:
+		# Charge scales damage so partial throws aren't dead on arrival.
+		atk.damage *= lerpf(0.8, 1.2, clampf(charge, 0.0, 1.0))
+		proj.attack_data = atk
+	else:
+		proj.attack_data = blade_throw_attack
+	proj.direction = dir
+	proj.source = self
+	proj.charge = clampf(charge, 0.2, 1.0)
+	# World (1) + enemy hurtbox (16) + energy mirrors (32).
+	proj.collision_mask = (1 << 0) | (1 << 4) | (1 << 5)
+	proj.tint = Color(0.62, 0.48, 0.32, 1)
+	proj.max_mirror_bounces = 1
+	proj.wall_bounce_enabled = false
+	if active_economy != null and active_economy.has_method("get_ricochet_params"):
+		var params: Dictionary = active_economy.call("get_ricochet_params")
+		proj.max_mirror_bounces = int(params.get("max_bounces", 1))
+		proj.ricochet_damage_mult = float(params.get("ricochet_damage_mult", 1.5))
+		proj.extra_bounce_mult = float(params.get("extra_bounce_mult", 1.25))
+		proj.wall_bounce_enabled = bool(params.get("wall_bounce", false))
+	_blade_in_flight = true
+	_blade_flight_time = 0.0
+	_active_blade = proj
+	get_parent().add_child(proj)
+	var muzzle := Vector2(0, -18) + dir * 34.0
+	if combat_visual and combat_visual.has_method("muzzle_offset"):
+		muzzle = combat_visual.call("muzzle_offset", dir)
+	proj.global_position = global_position + muzzle
+	proj.hit_landed.connect(_on_projectile_hit_landed)
+	proj.returned_to_source.connect(_on_blade_returned)
+	proj.tree_exiting.connect(_on_blade_tree_exiting)
+
+
+func _on_blade_returned() -> void:
+	_blade_in_flight = false
+	_blade_flight_time = 0.0
+	_active_blade = null
+
+
+func _on_blade_tree_exiting() -> void:
+	_blade_in_flight = false
+	_blade_flight_time = 0.0
+	_active_blade = null
+
+
+func get_active_blade() -> Projectile:
+	if _active_blade != null and is_instance_valid(_active_blade):
+		return _active_blade
+	return null
+
+
+func try_prevent_death(amount: float) -> bool:
+	for effect in active_effects:
+		var fx := effect as UpgradeEffect
+		if fx and fx.on_fatal_damage(self, amount):
+			return true
+	return false
+
+
+func _projectile_color(damage_type: GameplayEnums.DamageType) -> Color:
+	match damage_type:
+		GameplayEnums.DamageType.ELECTRICITY:
+			return Color(0.55, 0.52, 0.38, 1)
+		GameplayEnums.DamageType.CORROSION:
+			return Color(0.42, 0.48, 0.28, 1)
+		GameplayEnums.DamageType.FIRE:
+			return Color(0.85, 0.38, 0.14, 1)
+		GameplayEnums.DamageType.BLEED:
+			return Color(0.62, 0.16, 0.12, 1)
+		GameplayEnums.DamageType.GLITCH:
+			return Color(0.48, 0.28, 0.36, 1)
+		_:
+			return Color(0.58, 0.5, 0.4, 1)
+
+
+func _on_projectile_hit_landed(target: HurtboxComponent) -> void:
+	_on_offensive_hit(target)
+	if target and get_parent():
+		var pos: Vector2 = target.global_position
+		if target.get_parent() is Node2D:
+			pos = (target.get_parent() as Node2D).global_position + Vector2(0, -22)
+		var dtype := GameplayEnums.DamageType.PHYSICAL
+		if ranged_attack_data:
+			dtype = ranged_attack_data.damage_type
+		if blade_throw_attack and uses_synthetic_kit():
+			dtype = blade_throw_attack.damage_type
+		HitVFX.spawn_at(get_parent(), pos, dtype, pos - global_position)
+	for effect in active_effects:
+		var fx := effect as UpgradeEffect
+		if fx:
+			fx.on_ranged_hit(self, target)
+
+
+func on_melee_hit(target: HurtboxComponent) -> void:
+	_on_offensive_hit(target)
+	for effect in active_effects:
+		var fx := effect as UpgradeEffect
+		if fx:
+			fx.on_melee_hit(self, target)
+
+
+func _on_offensive_hit(target: HurtboxComponent) -> void:
+	if stats:
+		adrenaline.add(stats.adrenaline_gain_on_hit * adrenaline_gain_mult)
+	if engagement:
+		engagement.notify_exchange()
+	SignalBus.style_action.emit(GameplayEnums.StyleAction.HIT, 20)
+	if active_economy:
+		active_economy.on_hit(self, target)
+	if _life_steal_bonus > 0.0:
+		health.heal(_life_steal_bonus * 12.0)
+
+
+func effective_damage_multiplier() -> float:
+	var m := damage_multiplier
+	if counter_window > 0.0:
+		m *= counter_damage_bonus
+	if active_economy:
+		m *= active_economy.damage_multiplier(self)
+	for effect in active_effects:
+		var fx := effect as UpgradeEffect
+		if fx:
+			m *= fx.damage_multiplier(self)
+	return m
+
+
+func _tick_upgrade_effects(delta: float) -> void:
+	for effect in active_effects:
+		var fx := effect as UpgradeEffect
+		if fx:
+			fx.tick(self, delta)
+
+
+func _on_enemy_died_for_upgrades(enemy: Node) -> void:
+	for effect in active_effects:
+		var fx := effect as UpgradeEffect
+		if fx:
+			fx.on_kill(self, enemy)
+
+
+func _process_architecture_economy(delta: float) -> void:
+	if active_economy:
+		active_economy.tick(self, delta)
+		if _hp_regen_bonus > 0.0 and health:
+			health.heal(_hp_regen_bonus * delta)
+	_emit_economy_hud()
+
+
+func _emit_economy_hud() -> void:
+	if active_economy == null:
+		return
+	var vals := active_economy.get_hud_values(self)
+	SignalBus.player_economy_hud_changed.emit(
+		vals.get("primary", {}),
+		vals.get("secondary", {})
+	)
+
+
+func _on_enemy_died_for_economy(enemy: Node) -> void:
+	if active_economy:
+		active_economy.on_kill(self, enemy)
+
+
+func _tick_attack_hold(delta: float) -> void:
+	if not uses_synthetic_kit():
+		_attack_hold_time = -1.0
+		return
+	if _attack_hold_time < 0.0:
+		return
+	if not Input.is_action_pressed("attack"):
+		return
+	_attack_hold_time += delta
+
+
+func consume_melee_press() -> bool:
+	## Hits on click. Synthetic still tracks the same press for a later hold-throw.
+	if not Input.is_action_just_pressed("attack") or not attack_ready():
+		return false
+	if uses_synthetic_kit():
+		begin_attack_hold_tracking()
+	return true
+
+
+func wants_charge_throw() -> bool:
+	return (
+		uses_synthetic_kit()
+		and is_tracking_attack_hold()
+		and attack_hold_exceeded()
+		and Input.is_action_pressed("attack")
+		and not blade_in_flight()
+	)
+
+
+func begin_attack_hold_tracking() -> void:
+	_attack_hold_time = 0.0
+
+
+func clear_attack_hold_tracking() -> void:
+	_attack_hold_time = -1.0
+
+
+func is_tracking_attack_hold() -> bool:
+	return _attack_hold_time >= 0.0
+
+
+func attack_hold_exceeded() -> bool:
+	return _attack_hold_time >= HOLD_THRESHOLD
+
+
+func get_attack_hold_time() -> float:
+	return maxf(_attack_hold_time, 0.0)
+
+
+func consume_attack_hold_for_charge() -> bool:
+	if attack_hold_exceeded():
+		clear_attack_hold_tracking()
 		return true
 	return false
 
 
-func spawn_projectile(direction: Vector2) -> void:
-	var proj := PROJECTILE_SCENE.instantiate() as Projectile
-	proj.attack_data = ranged_attack_data
-	proj.direction = direction.normalized()
-	proj.source = self
-	# world + enemy_hurtbox
-	proj.collision_mask = (1 << 0) | (1 << 4)
-	proj.modulate = Color(0.5, 0.8, 1.0)
-	get_parent().add_child(proj)
-	proj.global_position = global_position + direction.normalized() * 20.0
-	proj.hit_landed.connect(_on_projectile_hit_landed)
+func push_combo_input(action: StringName) -> StringName:
+	if combo == null:
+		return StringName()
+	return combo.push(action)
 
 
-func _on_projectile_hit_landed(_target: HurtboxComponent) -> void:
-	if stats:
-		adrenaline.add(stats.adrenaline_gain_on_hit)
+func combo_expects(action: StringName) -> bool:
+	return combo != null and combo.expects(action)
+
+
+func buffer_combat_input(action: StringName) -> void:
+	if input_buffer:
+		input_buffer.buffer(action)
+
+
+func consume_buffered(action: StringName) -> bool:
+	return input_buffer != null and input_buffer.consume(action)
+
+
+func capture_bufferable_inputs() -> void:
+	if input_buffer == null:
+		return
+	var actions: Array[StringName] = [&"attack", &"ranged_attack", &"dash", &"special", &"parry"]
+	input_buffer.capture_just_pressed(actions)
+
+
+func peek_buffered(action: StringName) -> bool:
+	return input_buffer != null and input_buffer.peek(action)
+
+
+func locomotion_combat_intent() -> Dictionary:
+	## Shared Idle/Move combat routing. Synthetic keep hold-throw in the state.
+	capture_bufferable_inputs()
+	if pressed_or_buffered(&"special"):
+		try_special()
+		return {"handled": true}
+	if pressed_or_buffered(&"dash") and mobility_ready():
+		return {"state": mobility_state_name()}
+	if pressed_or_buffered(&"parry") and parry_ready():
+		return {"state": &"Parry"}
+	if uses_synthetic_kit():
+		return {}
+	if consume_buffered(&"attack"):
+		if uses_gun_kit() and ranged_ready():
+			return {"state": &"RangedAttack"}
+		if attack_ready():
+			return {"state": &"Attack", "msg": {"combo_index": 0}}
+		buffer_combat_input(&"attack")
+	if consume_buffered(&"ranged_attack"):
+		if ranged_ready():
+			return {"state": &"RangedAttack"}
+		buffer_combat_input(&"ranged_attack")
+	return {}
+
+
+func pressed_or_buffered(action: StringName) -> bool:
+	if Input.is_action_just_pressed(action):
+		if input_buffer:
+			input_buffer.clear(action)
+		return true
+	return consume_buffered(action)
+
+
+func _on_combo_resolved(result_id: StringName, attack_data: AttackData) -> void:
+	# Handled by the state that pushed the completing input when possible.
+	# Keep as fallback for deferred resolutions.
+	if result_id == &"circle_slash" and attack_data:
+		if state_machine and state_machine.get("current_state"):
+			pass

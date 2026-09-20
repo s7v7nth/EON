@@ -1,0 +1,24 @@
+---
+description: Keep docs/manual_qa_checklist.md in sync with gameplay changes
+alwaysApply: true
+---
+
+# Manual QA checklist maintenance
+
+When you change player-facing gameplay, content, or run flow in this project, update [`docs/manual_qa_checklist.md`](docs/manual_qa_checklist.md) in the same change set.
+
+## Update when you
+- Add/change architecture, economy, special (Q), HUD resource bars
+- Add/change statuses, synergies, craft recipes, loot parts
+- Change ActRoute / biomes / room flow / win-reward timing
+- Add/change enemies, behaviors, traps, drones, or spawn rules
+- Change restart/death/overlay pause behavior
+
+## How to update
+- Add new checklist items for new verifiable behavior
+- Edit or remove items that no longer match the game
+- Keep items actionable and manual-test oriented (no implementation details)
+- Do not invent unchecked marketing fluff — only what a playtester can verify
+
+## Do not skip
+Shipping a feature/content PR without touching the checklist when behavior changed is a miss — amend the checklist before finishing.

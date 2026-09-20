@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="EffectHoloSub" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://systems/upgrades/effects/effect_holo_sub.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+cooldown = 18.0
+heal_amount = 18.0
+invuln_time = 0.65

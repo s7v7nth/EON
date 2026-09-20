@@ -1,0 +1,105 @@
+extends State
+## Hold RMB energy shield. Short parry window, then damage reduction block.
+## Block cancels attacks immediately. LMB can finish an open combo (circle / melee).
+
+const PARRY_WINDOW := 0.18
+const BLOCK_MOVE_MULT := 0.45
+
+@onready var player: Player = owner as Player
+
+var _elapsed: float = 0.0
+var _active: bool = false
+
+
+func enter(_msg: Dictionary = {}) -> void:
+	_elapsed = 0.0
+	_active = true
+	if not player.try_spend_block():
+		_active = false
+		_return_to_locomotion()
+		return
+	player.hurtbox.set_blocking(true)
+	player.hurtbox.set_parrying(true)
+	if player.combat_visual:
+		player.combat_visual.play_block_start(true)
+
+
+func physics_update(delta: float) -> void:
+	if not _active:
+		return
+
+	# Allow finishing LMB→RMB→LMB / open melee string without waiting for shield drop.
+	if _try_combo_finish_attack():
+		return
+
+	if not Input.is_action_pressed("ranged_attack"):
+		_return_to_locomotion()
+		return
+
+	_elapsed += delta
+	if _elapsed >= PARRY_WINDOW and player.hurtbox.is_parrying():
+		player.hurtbox.set_parrying(false)
+		if player.combat_visual:
+			player.combat_visual.play_block_hold()
+
+	var move_dir := player.get_input_direction()
+	if move_dir != Vector2.ZERO:
+		var saved := player.move_speed_multiplier
+		player.move_speed_multiplier = saved * BLOCK_MOVE_MULT
+		player.apply_movement(move_dir)
+		player.move_speed_multiplier = saved
+	else:
+		player.stop_movement()
+
+	if player.pressed_or_buffered(&"dash") and player.mobility_ready():
+		transition_to(player.mobility_state_name())
+		return
+
+
+func _try_combo_finish_attack() -> bool:
+	if not player.uses_synthetic_kit():
+		return false
+	# Only steal LMB while the next combo step is an attack (circle finish, etc.).
+	if not player.combo_expects(&"attack"):
+		return false
+
+	if not player.consume_melee_press() and not player.consume_buffered(&"attack"):
+		return false
+	if not player.attack_ready():
+		return false
+	var result := player.push_combo_input(&"attack")
+	if result == &"circle_slash":
+		SignalBus.style_action.emit(GameplayEnums.StyleAction.COMBO, 60)
+		transition_to(&"Attack", {"attack": Player.CIRCLE_SLASH_ATTACK, "circular": true})
+		return true
+	if result == &"melee_string":
+		SignalBus.style_action.emit(GameplayEnums.StyleAction.COMBO, 40)
+		transition_to(&"Attack", {"combo_index": 2})
+		return true
+	var index := 0
+	if player.combo:
+		var steps := player.combo.get_sequence()
+		var n := 0
+		for step in steps:
+			if StringName(step) == &"attack":
+				n += 1
+			else:
+				n = 0
+		index = maxi(n - 1, 0)
+	transition_to(&"Attack", {"combo_index": index})
+	return true
+
+
+func exit() -> void:
+	player.hurtbox.set_parrying(false)
+	player.hurtbox.set_blocking(false)
+	if player.combat_visual:
+		player.combat_visual.play_block_end()
+	_active = false
+
+
+func _return_to_locomotion() -> void:
+	if player.get_input_direction() != Vector2.ZERO:
+		transition_to(&"Move")
+	else:
+		transition_to(&"Idle")

@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="SynergyRecipe" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://systems/status/synergy_recipe.gd" id="1"]
+[ext_resource type="Resource" path="res://resources/statuses/effects/system_crash_effect.tres" id="2"]
+
+[resource]
+script = ExtResource("1")
+recipe_id = &"system_crash"
+display_name = "System Crash"
+required_statuses = PackedStringArray("glitch", "shock")
+consume_on_trigger = true
+style_points = 140
+cooldown = 1.6
+effect = ExtResource("2")

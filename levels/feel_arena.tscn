@@ -1,0 +1,84 @@
+[gd_scene load_steps=7 format=3]
+
+[ext_resource type="PackedScene" path="res://entities/player/player.tscn" id="1_player"]
+[ext_resource type="PackedScene" path="res://entities/enemies/dummy/enemy_dummy.tscn" id="2_enemy"]
+[ext_resource type="Resource" path="res://resources/enemies/swarm.tres" id="3_glass"]
+[ext_resource type="Resource" path="res://resources/enemies/android.tres" id="4_mid"]
+[ext_resource type="Resource" path="res://resources/enemies/bruiser.tres" id="5_tank"]
+[ext_resource type="PackedScene" path="res://ui/debug_hud.tscn" id="6_hud"]
+
+[node name="FeelArena" type="Node2D"]
+
+[node name="DebugHUD" parent="." instance=ExtResource("6_hud")]
+
+[node name="Floor" type="Polygon2D" parent="."]
+z_index = -20
+color = Color(0.18, 0.19, 0.22, 1)
+polygon = PackedVector2Array(-640, -360, 640, -360, 640, 360, -640, 360)
+
+[node name="Hints" type="CanvasLayer" parent="."]
+
+[node name="Hint" type="Label" parent="Hints"]
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -320.0
+offset_top = 12.0
+offset_right = 320.0
+offset_bottom = 52.0
+theme_override_colors/font_color = Color(0.75, 0.78, 0.85, 1)
+theme_override_font_sizes/font_size = 16
+text = "Feel Arena — glass (left) / mid / tank (right). R restart. Tune AttackData .tres"
+horizontal_alignment = 1
+
+[node name="LabelGlass" type="Label" parent="."]
+z_index = 5
+offset_left = 40.0
+offset_top = -40.0
+offset_right = 160.0
+offset_bottom = -10.0
+theme_override_colors/font_color = Color(0.95, 0.7, 0.35, 1)
+text = "GLASS poise"
+
+[node name="LabelMid" type="Label" parent="."]
+z_index = 5
+offset_left = 200.0
+offset_top = -120.0
+offset_right = 320.0
+offset_bottom = -90.0
+theme_override_colors/font_color = Color(0.4, 0.85, 0.95, 1)
+text = "MID poise"
+
+[node name="LabelTank" type="Label" parent="."]
+z_index = 5
+offset_left = 360.0
+offset_top = -40.0
+offset_right = 500.0
+offset_bottom = -10.0
+theme_override_colors/font_color = Color(0.85, 0.4, 0.45, 1)
+text = "TANK poise"
+
+[node name="Entities" type="Node2D" parent="."]
+y_sort_enabled = true
+
+[node name="Player" parent="Entities" instance=ExtResource("1_player")]
+position = Vector2(-180, 40)
+
+[node name="Camera2D" type="Camera2D" parent="Entities/Player"]
+limit_left = -640
+limit_top = -360
+limit_right = 640
+limit_bottom = 360
+limit_enabled = true
+
+[node name="GlassDummy" parent="Entities" instance=ExtResource("2_enemy")]
+position = Vector2(100, 40)
+definition = ExtResource("3_glass")
+
+[node name="MidDummy" parent="Entities" instance=ExtResource("2_enemy")]
+position = Vector2(250, -80)
+definition = ExtResource("4_mid")
+
+[node name="TankDummy" parent="Entities" instance=ExtResource("2_enemy")]
+position = Vector2(420, 40)
+definition = ExtResource("5_tank")

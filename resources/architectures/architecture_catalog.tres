@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="ArchitectureCatalog" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://resources/architectures/architecture_catalog.gd" id="1"]
+[ext_resource type="Resource" path="res://resources/architectures/default.tres" id="2"]
+[ext_resource type="Resource" path="res://resources/architectures/nanomachines.tres" id="3"]
+[ext_resource type="Resource" path="res://resources/architectures/electro_train.tres" id="4"]
+[ext_resource type="Resource" path="res://resources/architectures/neuro_hacker.tres" id="5"]
+
+[resource]
+script = ExtResource("1")
+architectures = Array[Resource]([ExtResource("2"), ExtResource("3"), ExtResource("4"), ExtResource("5")])

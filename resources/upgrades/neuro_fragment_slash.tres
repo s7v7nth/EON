@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="UpgradeData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://resources/upgrades/upgrade_data.gd" id="1"]
+[ext_resource type="Resource" path="res://resources/upgrades/effects/fragment_slash.tres" id="2"]
+
+[resource]
+script = ExtResource("1")
+upgrade_id = &"neuro_fragment_slash"
+display_name = "Fragment Slash"
+description = "Melee hits spray short-range holo shards at nearby foes."
+architecture_id = 3
+required_tags = PackedStringArray("neuro", "glitch", "code")
+grant_tags = PackedStringArray("fragment")
+effects = [ExtResource("2")]
+damage_mult = 1.0

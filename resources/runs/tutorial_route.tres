@@ -1,0 +1,28 @@
+[gd_resource type="Resource" script_class="ActRoute" load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://resources/runs/act_route.gd" id="1"]
+[ext_resource type="Script" path="res://resources/runs/act_definition.gd" id="2"]
+[ext_resource type="Resource" path="res://resources/biomes/landfill.tres" id="3_landfill"]
+[ext_resource type="Resource" path="res://resources/biomes/wasteland.tres" id="4_wasteland"]
+[ext_resource type="Resource" path="res://resources/biomes/data_center.tres" id="5_data"]
+
+[sub_resource type="Resource" id="act_1"]
+script = ExtResource("2")
+act_index = 1
+display_name = "Outskirts"
+biomes = Array[Resource]([ExtResource("3_landfill"), ExtResource("4_wasteland")])
+rooms_in_act = 2
+
+[sub_resource type="Resource" id="act_4"]
+script = ExtResource("2")
+act_index = 4
+display_name = "Data Core"
+biomes = Array[Resource]([ExtResource("5_data")])
+rooms_in_act = 1
+
+[resource]
+script = ExtResource("1")
+route_id = &"tutorial"
+display_name = "Tutorial Slice"
+acts = Array[Resource]([SubResource("act_1"), SubResource("act_4")])
+layout_scenes = PackedStringArray("res://levels/rooms/room_01.tscn", "res://levels/rooms/room_02.tscn", "res://levels/rooms/room_03.tscn")

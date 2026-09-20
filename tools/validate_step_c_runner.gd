@@ -23,7 +23,8 @@ func _run() -> void:
 	assert(bruiser.health.get_max_health() == bruiser_def.stats.max_health)
 	assert(bruiser.hitbox.attack_data == bruiser_def.melee_attack)
 	assert(bruiser.ranged_attack_data == null)
-	var bvis := bruiser.get_node("Visual") as Polygon2D
+	var bvis := bruiser.get_node("Visual") as Node2D
+	assert("color" in bvis)
 	assert(bvis.color.is_equal_approx(bruiser_def.visual_color))
 
 	var sniper: EnemyDummy = enemy_scene.instantiate() as EnemyDummy

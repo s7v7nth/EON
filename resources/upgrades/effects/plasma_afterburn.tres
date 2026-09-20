@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="EffectPlasmaAfterburn" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://systems/upgrades/effects/effect_plasma_afterburn.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+window_sec = 4.0
+damage_bonus = 1.25
+heat_gain_mult = 0.35

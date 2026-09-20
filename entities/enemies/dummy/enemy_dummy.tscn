@@ -1,4 +1,4 @@
-[gd_scene load_steps=17 format=3]
+[gd_scene load_steps=23 format=3]
 
 [ext_resource type="Script" path="res://entities/enemies/dummy/enemy_dummy.gd" id="1_enemy"]
 [ext_resource type="Resource" path="res://resources/stats/enemy_dummy_stats.tres" id="2_stats"]
@@ -7,14 +7,20 @@
 [ext_resource type="Script" path="res://entities/enemies/dummy/states/enemy_chase.gd" id="5_chase"]
 [ext_resource type="Script" path="res://entities/enemies/dummy/states/enemy_attack.gd" id="6_attack"]
 [ext_resource type="Script" path="res://entities/enemies/dummy/states/enemy_ranged_attack.gd" id="7_ranged"]
+[ext_resource type="Script" path="res://entities/enemies/dummy/states/enemy_leap_attack.gd" id="7b_leap"]
+[ext_resource type="Script" path="res://entities/enemies/dummy/states/enemy_hook_attack.gd" id="7c_hook"]
 [ext_resource type="Script" path="res://components/health_component.gd" id="8_health"]
 [ext_resource type="Script" path="res://components/hurtbox_component.gd" id="9_hurt"]
 [ext_resource type="Script" path="res://components/hitbox_component.gd" id="10_hit"]
 [ext_resource type="Resource" path="res://resources/attacks/enemy_dummy_attack.tres" id="11_atk"]
 [ext_resource type="Resource" path="res://resources/attacks/enemy_dummy_ranged_attack.tres" id="12_ranged_atk"]
+[ext_resource type="Script" path="res://components/status_component.gd" id="13_status"]
+[ext_resource type="Script" path="res://components/combat_visual_component.gd" id="14_cv"]
+[ext_resource type="Script" path="res://components/health_bar_component.gd" id="15_hpbar"]
+[ext_resource type="Script" path="res://components/stylized_body_visual.gd" id="16_body"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_body"]
-radius = 12.0
+radius = 16.0
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_hurt"]
 radius = 14.0
@@ -27,16 +33,18 @@ radius = 340.0
 
 [node name="EnemyDummy" type="CharacterBody2D"]
 collision_layer = 4
-collision_mask = 1
+collision_mask = 7
 motion_mode = 1
 y_sort_enabled = true
 script = ExtResource("1_enemy")
 stats = ExtResource("2_stats")
 ranged_attack_data = ExtResource("12_ranged_atk")
 
-[node name="Visual" type="Polygon2D" parent="."]
-color = Color(0.72, 0.28, 0.28, 1)
-polygon = PackedVector2Array(-14, 0, 14, 0, 14, -48, -14, -48)
+[node name="Visual" type="Node2D" parent="."]
+script = ExtResource("16_body")
+
+[node name="CombatVisual" type="Node2D" parent="."]
+script = ExtResource("14_cv")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 shape = SubResource("CircleShape2D_body")
@@ -57,9 +65,21 @@ script = ExtResource("6_attack")
 [node name="RangedAttack" type="Node" parent="StateMachine"]
 script = ExtResource("7_ranged")
 
+[node name="LeapAttack" type="Node" parent="StateMachine"]
+script = ExtResource("7b_leap")
+
+[node name="HookAttack" type="Node" parent="StateMachine"]
+script = ExtResource("7c_hook")
+
 [node name="HealthComponent" type="Node" parent="."]
 script = ExtResource("8_health")
 stats = ExtResource("2_stats")
+
+[node name="HealthBar" type="Node2D" parent="."]
+script = ExtResource("15_hpbar")
+
+[node name="StatusComponent" type="Node" parent="."]
+script = ExtResource("13_status")
 
 [node name="HurtboxComponent" type="Area2D" parent="."]
 collision_layer = 16

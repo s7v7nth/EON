@@ -1,0 +1,38 @@
+[gd_resource type="Resource" script_class="EnemyDefinition" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://resources/enemies/enemy_definition.gd" id="1"]
+[ext_resource type="Resource" path="res://resources/stats/enemy_hive_chunk_stats.tres" id="2_stats"]
+[ext_resource type="Resource" path="res://resources/attacks/enemy_swarm_attack.tres" id="3_atk"]
+[ext_resource type="Resource" path="res://resources/enemies/behaviors/return_to_hive.tres" id="4_beh"]
+[ext_resource type="Resource" path="res://resources/enemies/behaviors/aggro_swarm.tres" id="5_pack"]
+
+[resource]
+script = ExtResource("1")
+display_name = "Hive chunk"
+faction = 4
+stats = ExtResource("2_stats")
+melee_attack = ExtResource("3_atk")
+moveset = Array[Resource]([ExtResource("3_atk")])
+attack_range = 26.0
+ranged_range = 0.0
+detection_radius = 260.0
+visual_color = Color(0.46, 0.48, 0.18, 1)
+prefers_kite = false
+behavior_modules = Array[Resource]([ExtResource("4_beh"), ExtResource("5_pack")])
+tags = PackedStringArray("hive_chunk", "swarm", "bio")
+visual_stem = "hive_boss"
+visual_height = 72.0
+status_vulnerabilities = {
+"burn": 1.5,
+"bleed": 1.2
+}
+use_resist_overrides = true
+resist_physical = -0.05
+resist_electricity = 0.0
+resist_corrosion = 0.2
+resist_fire = -0.25
+resist_bleed = 0.1
+resist_glitch = 0.0
+max_poise = 8.0
+poise_regen = 22.0
+gold_reward = 4

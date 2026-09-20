@@ -21,7 +21,8 @@ func _run() -> void:
 	assert(arena.get_node("Entities").y_sort_enabled)
 
 	# HUD should have received deferred initial values.
-	var health_bar: ProgressBar = hud.get_node("Margin/VBox/HealthBar")
+	var health_bar: ProgressBar = hud.find_child("HealthBar", true, false) as ProgressBar
+	assert(health_bar != null)
 	assert(health_bar.value > 0.0)
 
 	# Player hits enemy via hurtbox API (simulates landed attack).

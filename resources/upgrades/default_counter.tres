@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="UpgradeData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://resources/upgrades/upgrade_data.gd" id="1"]
+[ext_resource type="Resource" path="res://resources/upgrades/effects/counter_charge.tres" id="2"]
+
+[resource]
+script = ExtResource("1")
+upgrade_id = &"default_counter"
+display_name = "Counter Charge"
+description = "Magnet + servo: perfect dodge opens a counter window."
+architecture_id = 0
+required_tags = PackedStringArray("default", "style", "magnet", "servo")
+grant_tags = PackedStringArray("counter")
+effects = [ExtResource("2")]
+damage_mult = 1.15

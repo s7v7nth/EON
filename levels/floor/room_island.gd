@@ -1,0 +1,410 @@
+class_name RoomIsland
+extends Node2D
+## One irregular physical room: floor, walls with offset doors, occupancy.
+
+const _IllustratedSet := preload("res://systems/worldgen/illustrated_set.gd")
+const _RoomFootprint := preload("res://systems/worldgen/room_footprint.gd")
+const _RemnantNpc := preload("res://entities/props/remnant_npc.gd")
+
+const DOOR_GAP := 196.0
+const WALL_THICK := 32.0
+
+var room: DungeonRoom
+var occupancy: Area2D
+var entities: Node2D
+var spawn_root: Node2D
+var blockers: Dictionary = {} ## Vector2i → StaticBody2D
+var door_sprites: Dictionary = {}
+signal door_crossed(island: Node2D, dir: Vector2i, body: Node2D)
+
+var _poly: PackedVector2Array = PackedVector2Array()
+
+
+func setup(src: DungeonRoom) -> void:
+	room = src
+	if room.footprint == null:
+		room.footprint = _RoomFootprint.make(room.footprint_id)
+	position = room.world_origin
+	var lp: PackedVector2Array = room.footprint.local_poly
+	_poly = lp
+	name = "Island_%d_%d" % [room.coord.x, room.coord.y]
+	y_sort_enabled = true
+	_build_floor()
+	_build_walls()
+	_build_occupancy()
+	_build_spawns()
+	entities = Node2D.new()
+	entities.name = "Entities"
+	entities.y_sort_enabled = true
+	add_child(entities)
+	if room.remnant or room.kind == DungeonRoom.RoomKind.REMNANT:
+		_spawn_remnant()
+
+
+func ensure_dressed() -> void:
+	if get_node_or_null("Dressing") != null:
+		return
+	_dress()
+
+
+func contains_point(world: Vector2) -> bool:
+	return Geometry2D.is_point_in_polygon(world - position, _poly)
+
+
+func spawn_markers() -> Array[Node2D]:
+	var out: Array[Node2D] = []
+	if spawn_root == null:
+		return out
+	for child in spawn_root.get_children():
+		if child is Node2D:
+			out.append(child as Node2D)
+	return out
+
+
+func set_doors_locked(locked: bool) -> void:
+	for dir in blockers.keys():
+		var body: StaticBody2D = blockers[dir]
+		if body:
+			body.collision_layer = 1 if locked else 0
+			body.visible = locked
+		var sprs: Variant = door_sprites.get(dir)
+		if sprs is Array:
+			for spr in sprs:
+				var sprite := spr as Sprite2D
+				if sprite == null:
+					continue
+				sprite.modulate = Color(0.72, 0.95, 1.0, 1) if not locked else Color(0.22, 0.28, 0.34, 1)
+
+
+func door_local(dir: Vector2i) -> Vector2:
+	return room.footprint.door_local(dir, room.door_offset(dir))
+
+
+func _build_floor() -> void:
+	var floor := Polygon2D.new()
+	floor.name = "Floor"
+	floor.z_index = -20
+	floor.polygon = _poly
+	floor.color = Color(0.06, 0.07, 0.08, 1)
+	add_child(floor)
+
+
+func _build_walls() -> void:
+	var walls := StaticBody2D.new()
+	walls.name = "Walls"
+	walls.collision_layer = 1
+	walls.collision_mask = 0
+	add_child(walls)
+	var n := _poly.size()
+	for i in n:
+		var a := _poly[i]
+		var b := _poly[(i + 1) % n]
+		_add_edge_with_doors(walls, a, b)
+	for dir in room.door_dirs():
+		_add_door_prop(dir)
+		_add_blocker(dir)
+		_add_door_sensor(dir)
+
+
+func _add_edge_with_doors(walls: StaticBody2D, a: Vector2, b: Vector2) -> void:
+	var gaps: Array[Vector2] = []
+	for dir in room.door_dirs():
+		var dpos := door_local(dir)
+		if _point_on_segment(dpos, a, b, 48.0):
+			gaps.append(dpos)
+	if gaps.is_empty():
+		_add_segment(walls, a, b)
+		return
+	# Split the wall around each door gap.
+	var along := (b - a)
+	var len := along.length()
+	if len < 8.0:
+		return
+	var dirv := along / len
+	var cuts: Array[float] = [0.0, 1.0]
+	for g in gaps:
+		var t := clampf((g - a).dot(dirv) / len, 0.0, 1.0)
+		var half := (DOOR_GAP * 0.5) / len
+		cuts.append(clampf(t - half, 0.0, 1.0))
+		cuts.append(clampf(t + half, 0.0, 1.0))
+	cuts.sort()
+	var i := 0
+	while i + 1 < cuts.size():
+		var t0: float = cuts[i]
+		var t1: float = cuts[i + 1]
+		if t1 - t0 > 0.02:
+			_add_segment(walls, a.lerp(b, t0), a.lerp(b, t1))
+		i += 2
+
+
+func _add_segment(walls: StaticBody2D, a: Vector2, b: Vector2) -> void:
+	var mid := (a + b) * 0.5
+	var delta := b - a
+	var length := delta.length()
+	if length < 6.0:
+		return
+	var shape := CollisionShape2D.new()
+	var rect := RectangleShape2D.new()
+	rect.size = Vector2(length, WALL_THICK)
+	shape.shape = rect
+	shape.position = mid
+	shape.rotation = delta.angle()
+	walls.add_child(shape)
+
+
+func _add_door_prop(dir: Vector2i) -> void:
+	## Posts sit beside the hole so the gap itself stays visually walkable.
+	var tangent := Vector2(float(-dir.y), float(dir.x))
+	var posts: Array[Sprite2D] = []
+	for side in [-1, 1]:
+		var spr := Sprite2D.new()
+		spr.name = "DoorPost_%d_%d_%d" % [dir.x, dir.y, side]
+		spr.centered = true
+		spr.z_index = 2
+		spr.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+		spr.position = door_local(dir) + tangent * (DOOR_GAP * 0.46) * float(side)
+		spr.texture = _IllustratedSet.wall_tex("S" if dir.y != 0 else "E")
+		if spr.texture == null:
+			spr.texture = _IllustratedSet.wall_tex(_facing_name(dir))
+		ArtBank.fit_height(spr, 132.0, true)
+		spr.modulate = Color(0.72, 0.95, 1.0, 1)
+		add_child(spr)
+		posts.append(spr)
+	door_sprites[dir] = posts
+	_add_door_sill(dir)
+
+
+func _add_door_sill(dir: Vector2i) -> void:
+	var p := door_local(dir)
+	var outward := Vector2(float(dir.x), float(dir.y))
+	var tile := Sprite2D.new()
+	tile.name = "Sill_%d_%d" % [dir.x, dir.y]
+	tile.texture = ArtBank.illustrated("floor_city")
+	if tile.texture == null:
+		tile.texture = ArtBank.illustrated("floor_street_b")
+	if tile.texture == null:
+		tile.texture = ArtBank.illustrated("floor_ruin")
+	if tile.texture == null:
+		return
+	tile.centered = true
+	tile.z_index = -15
+	tile.position = p + outward * 40.0
+	tile.modulate = Color(0.92, 1.02, 1.06, 1)
+	tile.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	add_child(tile)
+	var sz := ArtBank.apply_opaque_region(tile)
+	var sc := 210.0 / maxf(sz.x, 1.0)
+	tile.scale = Vector2(sc, sc)
+
+
+func _add_blocker(dir: Vector2i) -> void:
+	var body := StaticBody2D.new()
+	body.name = "Blocker_%d_%d" % [dir.x, dir.y]
+	## Quiet rooms never start a fight, so doors stay walkable from the hallway
+	## until occupancy locks a combat room.
+	body.collision_layer = 0
+	body.collision_mask = 0
+	body.visible = false
+	var shape := CollisionShape2D.new()
+	var rect := RectangleShape2D.new()
+	if dir.x == 0:
+		rect.size = Vector2(DOOR_GAP, 64.0)
+	else:
+		rect.size = Vector2(64.0, DOOR_GAP)
+	shape.shape = rect
+	body.position = door_local(dir)
+	body.add_child(shape)
+	add_child(body)
+	blockers[dir] = body
+
+
+func _add_door_sensor(dir: Vector2i) -> void:
+	var area := Area2D.new()
+	area.name = "DoorSense_%d_%d" % [dir.x, dir.y]
+	area.collision_layer = 0
+	area.collision_mask = 2
+	area.monitoring = true
+	area.monitorable = false
+	area.position = door_local(dir)
+	var col := CollisionShape2D.new()
+	var rect := RectangleShape2D.new()
+	if dir.x == 0:
+		rect.size = Vector2(DOOR_GAP - 8.0, 46.0)
+	else:
+		rect.size = Vector2(46.0, DOOR_GAP - 8.0)
+	col.shape = rect
+	area.add_child(col)
+	area.body_entered.connect(func(body: Node2D) -> void:
+		door_crossed.emit(self, dir, body)
+	)
+	add_child(area)
+
+
+func _build_occupancy() -> void:
+	occupancy = Area2D.new()
+	occupancy.name = "Occupancy"
+	occupancy.collision_layer = 0
+	occupancy.collision_mask = 2
+	occupancy.monitoring = true
+	occupancy.monitorable = false
+	var col := CollisionPolygon2D.new()
+	col.polygon = _poly
+	occupancy.add_child(col)
+	add_child(occupancy)
+
+
+func _build_spawns() -> void:
+	spawn_root = Node2D.new()
+	spawn_root.name = "SpawnPoints"
+	add_child(spawn_root)
+	var pts: Array[Vector2] = [
+		Vector2(160, -80), Vector2(240, 90), Vector2(-180, 120), Vector2(-80, -140),
+		Vector2(40, 160), Vector2(-240, -40)
+	]
+	var i := 0
+	for p in pts:
+		if not Geometry2D.is_point_in_polygon(p, _poly):
+			continue
+		var m := Marker2D.new()
+		m.name = "Spawn%d" % i
+		m.position = p
+		spawn_root.add_child(m)
+		i += 1
+	if spawn_root.get_child_count() == 0:
+		var m := Marker2D.new()
+		m.position = Vector2(80, 40)
+		spawn_root.add_child(m)
+
+
+func _dress() -> void:
+	var root := Node2D.new()
+	root.name = "Dressing"
+	root.z_index = -12
+	add_child(root)
+	var seed_value := int(room.coord.x * 7919 + room.coord.y * 104729 + 11)
+	_IllustratedSet.place_floor(
+		root,
+		room.biome,
+		func(p: Vector2) -> bool: return Geometry2D.is_point_in_polygon(p, _poly),
+		seed_value
+	)
+	_add_edge_walls(root)
+	_IllustratedSet.place_dressing(
+		root,
+		room.biome,
+		seed_value + 17,
+		room.kind == DungeonRoom.RoomKind.BOSS
+		or room.kind == DungeonRoom.RoomKind.REMNANT
+		or room.remnant
+	)
+	if room.kind == DungeonRoom.RoomKind.BOSS:
+		_add_boss_stain(root)
+
+
+func _add_edge_walls(_root: Node2D) -> void:
+	## Direct children so y-sort occludes against the remnant / Hive, not as one blob.
+	var centroid := Vector2.ZERO
+	for p in _poly:
+		centroid += p
+	centroid /= float(_poly.size())
+	var n := _poly.size()
+	for i in n:
+		var a := _poly[i]
+		var b := _poly[(i + 1) % n]
+		var delta := b - a
+		var length := delta.length()
+		if length < 96.0:
+			continue
+		var along := delta / length
+		var ortho := along.orthogonal().normalized()
+		var mid := (a + b) * 0.5
+		var outward := ortho if mid.distance_to(centroid + ortho * 40.0) > mid.distance_to(centroid - ortho * 40.0) else -ortho
+		if Geometry2D.is_point_in_polygon(mid + outward * 18.0, _poly):
+			outward = -outward
+		var spacing := 158.0
+		var count := maxi(1, int(round(length / spacing)))
+		for k in count:
+			var t := (float(k) + 0.5) / float(count)
+			var pos := a.lerp(b, t)
+			var near_door := false
+			for dir in room.door_dirs():
+				if pos.distance_to(door_local(dir)) < DOOR_GAP * 0.62:
+					near_door = true
+					break
+			if near_door:
+				continue
+			var spr := Sprite2D.new()
+			spr.name = "Shopfront_%d_%d" % [i, k]
+			spr.centered = true
+			spr.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+			spr.texture = _IllustratedSet.wall_tex(ArtBank.dir_diag_from(outward))
+			if spr.texture == null:
+				spr.texture = _IllustratedSet.wall_tex(ArtBank.dir4_from(outward))
+			if spr.texture == null:
+				continue
+			ArtBank.fit_height(spr, 168.0, true)
+			spr.position = pos + outward * 14.0
+			spr.modulate = Color.WHITE
+			add_child(spr)
+
+
+func _facing_name(dir: Vector2i) -> String:
+	if dir.y < 0:
+		return "N"
+	if dir.y > 0:
+		return "S"
+	if dir.x > 0:
+		return "E"
+	return "W"
+
+
+func _add_boss_stain(root: Node2D) -> void:
+	var stain := Sprite2D.new()
+	stain.texture = ArtBank.illustrated("floor_city")
+	if stain.texture == null:
+		stain.texture = ArtBank.illustrated("floor_street_b")
+	if stain.texture == null:
+		return
+	stain.centered = true
+	stain.modulate = Color(0.55, 0.22, 0.18, 0.4)
+	if room and room.boss_id == &"hive":
+		stain.modulate = Color(0.16, 0.17, 0.16, 0.42)
+	stain.scale = Vector2(1.15, 0.75)
+	stain.z_index = -3
+	root.add_child(stain)
+
+
+func _spawn_remnant() -> void:
+	var npc := _RemnantNpc.new()
+	npc.name = "Remnant"
+	npc.position = _stall_spot()
+	add_child(npc)
+
+
+func _stall_spot() -> Vector2:
+	## Park the stall just inside a door so the plaza does not hide the clerk.
+	var candidates: Array[Vector2] = []
+	if room and room.footprint:
+		var dirs: Array[Vector2i] = [Vector2i(0, -1), Vector2i(0, 1), Vector2i(-1, 0), Vector2i(1, 0)]
+		for dir in dirs:
+			if not bool(room.doors.get(dir, false)):
+				continue
+			var door: Vector2 = room.footprint.door_local(dir, room.door_offset(dir))
+			var inward := -Vector2(dir) * 96.0
+			candidates.append(door + inward)
+			candidates.append(door + inward + Vector2(48, 24))
+	candidates.append(Vector2(0, 36))
+	candidates.append(Vector2(-40, -30))
+	for pos in candidates:
+		if Geometry2D.is_point_in_polygon(pos, _poly):
+			return pos
+	return Vector2.ZERO
+
+
+func _point_on_segment(p: Vector2, a: Vector2, b: Vector2, slop: float) -> bool:
+	var ab := b - a
+	var len := ab.length()
+	if len < 1.0:
+		return p.distance_to(a) <= slop
+	var t := clampf((p - a).dot(ab) / (len * len), 0.0, 1.0)
+	return p.distance_to(a + ab * t) <= slop

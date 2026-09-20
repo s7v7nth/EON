@@ -1,0 +1,31 @@
+---
+description: Keep docs/architecture_brainstorm_prompt.md in sync with significant game changes
+alwaysApply: true
+---
+
+# Architecture brainstorm prompt maintenance
+
+When you make **significant** player-facing or design-contract changes in this project, update [`docs/architecture_brainstorm_prompt.md`](docs/architecture_brainstorm_prompt.md) in the same change set so external-AI brainstorm context stays accurate.
+
+## Update when you
+- Add/change/remove an architecture, economy policy, special (Q), primitives, starting tags, or base resists
+- Materially change combat loops (parry, shield, combos, dash economy, heat/vent, blood harvest, RAM/drones)
+- Add/change statuses, synergies, craft recipes, loot parts, or tag gates that affect build identity
+- Change campaign/tutorial/procedural route shape, acts, or biome set in a way that affects setting pitch
+- Add a new faction/behavior pillar that changes how architectures should counter content
+- Change design pillars or extensibility rules described in `docs/systems.md`
+
+## How to update
+- Keep the fenced copy-paste prompt block as the source of truth for external AIs
+- Patch only the sections that drifted (architectures, synergies, routes, crafts, constraints)
+- Preserve the response-format / brainstorm goals unless those instructions intentionally change
+- Prefer factual current behavior over aspirational wishlist; mark open gaps as design tension if useful
+- Do not invent lore or mechanics that are not in the game or design docs
+
+## Skip when
+- Pure refactors, renames, bugfixes, or UI polish with no design-facing change
+- Tiny number tweaks that do not change the fantasy or identity of a system
+- Changes already fully reflected in the prompt
+
+## Do not skip
+Shipping a significant architecture/economy/content identity change without refreshing this prompt is a miss — amend it before finishing (alongside the manual QA checklist when that also applies).

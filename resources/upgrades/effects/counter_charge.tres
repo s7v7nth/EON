@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="EffectCounterCharge" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://systems/upgrades/effects/effect_counter_charge.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+window = 0.75
+damage_bonus = 1.35
+energy_restore = 15.0

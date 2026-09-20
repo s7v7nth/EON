@@ -1,0 +1,114 @@
+[gd_scene load_steps=10 format=3]
+
+[ext_resource type="Script" path="res://levels/arena/arena_controller.gd" id="1_ctrl"]
+[ext_resource type="PackedScene" path="res://entities/player/player.tscn" id="2_player"]
+[ext_resource type="PackedScene" path="res://ui/debug_hud.tscn" id="3_hud"]
+[ext_resource type="PackedScene" path="res://ui/run_overlay.tscn" id="4_overlay"]
+[ext_resource type="Resource" path="res://resources/waves/wasteland_waves.tres" id="5_waves"]
+[ext_resource type="Resource" path="res://resources/biomes/wasteland.tres" id="6_biome"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_wall_h"]
+size = Vector2(1600, 40)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_wall_v"]
+size = Vector2(40, 900)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_exit"]
+size = Vector2(56, 32)
+
+[node name="Arena" type="Node2D"]
+script = ExtResource("1_ctrl")
+wave_set = ExtResource("5_waves")
+biome = ExtResource("6_biome")
+is_final_room = false
+
+[node name="DebugHUD" parent="." instance=ExtResource("3_hud")]
+
+[node name="RunOverlay" parent="." instance=ExtResource("4_overlay")]
+
+[node name="Floor" type="Polygon2D" parent="."]
+z_index = -20
+color = Color(0.2, 0.21, 0.23, 1)
+polygon = PackedVector2Array(-800, -450, 800, -450, 800, 450, -800, 450)
+
+[node name="Walls" type="StaticBody2D" parent="."]
+collision_layer = 1
+collision_mask = 0
+
+[node name="North" type="CollisionShape2D" parent="Walls"]
+position = Vector2(0, -475)
+shape = SubResource("RectangleShape2D_wall_h")
+
+[node name="South" type="CollisionShape2D" parent="Walls"]
+position = Vector2(0, 475)
+shape = SubResource("RectangleShape2D_wall_h")
+
+[node name="West" type="CollisionShape2D" parent="Walls"]
+position = Vector2(-825, 0)
+shape = SubResource("RectangleShape2D_wall_v")
+
+[node name="East" type="CollisionShape2D" parent="Walls"]
+position = Vector2(825, 0)
+shape = SubResource("RectangleShape2D_wall_v")
+
+[node name="WallVisuals" type="Node2D" parent="."]
+z_index = -10
+
+[node name="North" type="Polygon2D" parent="WallVisuals"]
+color = Color(0.12, 0.13, 0.14, 1)
+polygon = PackedVector2Array(-800, -450, 800, -450, 800, -425, -800, -425)
+
+[node name="South" type="Polygon2D" parent="WallVisuals"]
+color = Color(0.12, 0.13, 0.14, 1)
+polygon = PackedVector2Array(-800, 425, 800, 425, 800, 450, -800, 450)
+
+[node name="West" type="Polygon2D" parent="WallVisuals"]
+color = Color(0.12, 0.13, 0.14, 1)
+polygon = PackedVector2Array(-800, -450, -775, -450, -775, 450, -800, 450)
+
+[node name="East" type="Polygon2D" parent="WallVisuals"]
+color = Color(0.12, 0.13, 0.14, 1)
+polygon = PackedVector2Array(775, -450, 800, -450, 800, 450, 775, 450)
+
+[node name="SpawnPoints" type="Node2D" parent="."]
+
+[node name="Spawn1" type="Marker2D" parent="SpawnPoints"]
+position = Vector2(250, -100)
+
+[node name="Spawn2" type="Marker2D" parent="SpawnPoints"]
+position = Vector2(350, 75)
+
+[node name="Spawn3" type="Marker2D" parent="SpawnPoints"]
+position = Vector2(150, 175)
+
+[node name="Spawn4" type="Marker2D" parent="SpawnPoints"]
+position = Vector2(400, -50)
+
+[node name="Entities" type="Node2D" parent="."]
+y_sort_enabled = true
+
+[node name="Player" parent="Entities" instance=ExtResource("2_player")]
+position = Vector2(-150, 50)
+
+[node name="Camera2D" type="Camera2D" parent="Entities/Player"]
+limit_left = -800
+limit_top = -450
+limit_right = 800
+limit_bottom = 450
+limit_enabled = true
+
+[node name="ExitMarker" type="Area2D" parent="."]
+position = Vector2(0, 250)
+visible = false
+monitoring = false
+monitorable = false
+collision_layer = 0
+collision_mask = 2
+
+[node name="ExitVisual" type="Polygon2D" parent="ExitMarker"]
+visible = false
+color = Color(0.3, 0.75, 0.45, 0.7)
+polygon = PackedVector2Array(-28, -16, 28, -16, 28, 16, -28, 16)
+
+[node name="ExitShape" type="CollisionShape2D" parent="ExitMarker"]
+shape = SubResource("RectangleShape2D_exit")

@@ -1,4 +1,4 @@
-[gd_scene load_steps=19 format=3]
+[gd_scene load_steps=28 format=3]
 
 [ext_resource type="Script" path="res://entities/player/player.gd" id="1_player"]
 [ext_resource type="Resource" path="res://resources/stats/player_stats.tres" id="2_stats"]
@@ -7,14 +7,23 @@
 [ext_resource type="Script" path="res://entities/player/states/player_move.gd" id="5_move"]
 [ext_resource type="Script" path="res://entities/player/states/player_attack.gd" id="6_attack"]
 [ext_resource type="Script" path="res://entities/player/states/player_dash.gd" id="7_dash"]
+[ext_resource type="Script" path="res://entities/player/states/player_dissipate.gd" id="7b_dissipate"]
 [ext_resource type="Script" path="res://entities/player/states/player_ranged_attack.gd" id="8_ranged"]
+[ext_resource type="Script" path="res://entities/player/states/player_parry.gd" id="8b_parry"]
+[ext_resource type="Script" path="res://entities/player/states/player_block.gd" id="8c_block"]
+[ext_resource type="Script" path="res://entities/player/states/player_charge_throw.gd" id="8d_charge"]
 [ext_resource type="Script" path="res://components/health_component.gd" id="9_health"]
 [ext_resource type="Script" path="res://components/energy_component.gd" id="10_energy"]
 [ext_resource type="Script" path="res://components/adrenaline_component.gd" id="11_adra"]
+[ext_resource type="Script" path="res://components/status_component.gd" id="11b_status"]
+[ext_resource type="Script" path="res://components/combat_engagement_component.gd" id="11c_engage"]
+[ext_resource type="Script" path="res://systems/combat/combo_recognizer.gd" id="11d_combo"]
 [ext_resource type="Script" path="res://components/hurtbox_component.gd" id="12_hurt"]
 [ext_resource type="Script" path="res://components/hitbox_component.gd" id="13_hit"]
 [ext_resource type="Resource" path="res://resources/attacks/player_basic_attack.tres" id="14_atk"]
-[ext_resource type="Resource" path="res://resources/attacks/player_ranged_attack.tres" id="15_ranged_atk"]
+[ext_resource type="Resource" path="res://resources/architectures/default.tres" id="16_arch"]
+[ext_resource type="Script" path="res://components/combat_visual_component.gd" id="17_cv"]
+[ext_resource type="Script" path="res://components/stylized_body_visual.gd" id="18_body"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_body"]
 radius = 12.0
@@ -23,20 +32,22 @@ radius = 12.0
 radius = 14.0
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_hit"]
-size = Vector2(28, 20)
+size = Vector2(46, 28)
 
 [node name="Player" type="CharacterBody2D"]
 collision_layer = 2
-collision_mask = 1
+collision_mask = 5
 motion_mode = 1
 y_sort_enabled = true
 script = ExtResource("1_player")
 stats = ExtResource("2_stats")
-ranged_attack_data = ExtResource("15_ranged_atk")
+architecture = ExtResource("16_arch")
 
-[node name="Visual" type="Polygon2D" parent="."]
-color = Color(0.55, 0.58, 0.62, 1)
-polygon = PackedVector2Array(-14, 0, 14, 0, 14, -48, -14, -48)
+[node name="Visual" type="Node2D" parent="."]
+script = ExtResource("18_body")
+
+[node name="CombatVisual" type="Node2D" parent="."]
+script = ExtResource("17_cv")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 shape = SubResource("CircleShape2D_body")
@@ -57,8 +68,20 @@ script = ExtResource("6_attack")
 [node name="Dash" type="Node" parent="StateMachine"]
 script = ExtResource("7_dash")
 
+[node name="Dissipate" type="Node" parent="StateMachine"]
+script = ExtResource("7b_dissipate")
+
 [node name="RangedAttack" type="Node" parent="StateMachine"]
 script = ExtResource("8_ranged")
+
+[node name="Parry" type="Node" parent="StateMachine"]
+script = ExtResource("8b_parry")
+
+[node name="Block" type="Node" parent="StateMachine"]
+script = ExtResource("8c_block")
+
+[node name="ChargeThrow" type="Node" parent="StateMachine"]
+script = ExtResource("8d_charge")
 
 [node name="HealthComponent" type="Node" parent="."]
 script = ExtResource("9_health")
@@ -68,9 +91,18 @@ stats = ExtResource("2_stats")
 script = ExtResource("10_energy")
 stats = ExtResource("2_stats")
 
+[node name="CombatEngagement" type="Node" parent="."]
+script = ExtResource("11c_engage")
+
 [node name="AdrenalineComponent" type="Node" parent="."]
 script = ExtResource("11_adra")
 stats = ExtResource("2_stats")
+
+[node name="ComboRecognizer" type="Node" parent="."]
+script = ExtResource("11d_combo")
+
+[node name="StatusComponent" type="Node" parent="."]
+script = ExtResource("11b_status")
 
 [node name="HurtboxComponent" type="Area2D" parent="."]
 collision_layer = 8
@@ -85,7 +117,7 @@ shape = SubResource("CircleShape2D_hurt")
 [node name="HitboxPivot" type="Node2D" parent="."]
 
 [node name="HitboxComponent" type="Area2D" parent="HitboxPivot"]
-position = Vector2(22, 0)
+position = Vector2(40, 0)
 collision_layer = 0
 collision_mask = 16
 monitoring = false
@@ -104,4 +136,7 @@ one_shot = true
 one_shot = true
 
 [node name="RangedCooldownTimer" type="Timer" parent="."]
+one_shot = true
+
+[node name="ParryCooldownTimer" type="Timer" parent="."]
 one_shot = true

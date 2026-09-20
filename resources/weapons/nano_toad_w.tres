@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="WeaponData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://resources/weapons/weapon_data.gd" id="1"]
+[ext_resource type="Resource" path="res://resources/attacks/nano_toad.tres" id="2_sec"]
+
+[resource]
+script = ExtResource("1")
+display_name = "Venom Toad"
+primary = ExtResource("2_sec")
+secondary = ExtResource("2_sec")
+hitbox_reach = 18.0
+visual_tint = Color(0.45, 0.9, 0.3, 1)
+shape_tag = &"toad"
+element_tag = &"corrosion"

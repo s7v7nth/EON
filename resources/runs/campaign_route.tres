@@ -1,0 +1,50 @@
+[gd_resource type="Resource" script_class="ActRoute" load_steps=14 format=3]
+
+[ext_resource type="Script" path="res://resources/runs/act_route.gd" id="1"]
+[ext_resource type="Script" path="res://resources/runs/act_definition.gd" id="2"]
+[ext_resource type="Resource" path="res://resources/biomes/landfill.tres" id="3"]
+[ext_resource type="Resource" path="res://resources/biomes/wasteland.tres" id="4"]
+[ext_resource type="Resource" path="res://resources/biomes/alley.tres" id="5"]
+[ext_resource type="Resource" path="res://resources/biomes/mall.tres" id="6"]
+[ext_resource type="Resource" path="res://resources/biomes/downtown.tres" id="7"]
+[ext_resource type="Resource" path="res://resources/biomes/residential.tres" id="8"]
+[ext_resource type="Resource" path="res://resources/biomes/jungle.tres" id="9"]
+[ext_resource type="Resource" path="res://resources/biomes/taiga.tres" id="10"]
+[ext_resource type="Resource" path="res://resources/biomes/gateway.tres" id="11"]
+[ext_resource type="Resource" path="res://resources/biomes/data_center.tres" id="12"]
+
+[sub_resource type="Resource" id="act_1"]
+script = ExtResource("2")
+act_index = 1
+display_name = "Outskirts"
+biomes = Array[Resource]([ExtResource("3"), ExtResource("4"), ExtResource("5")])
+rooms_in_act = 2
+
+[sub_resource type="Resource" id="act_2"]
+script = ExtResource("2")
+act_index = 2
+display_name = "Dead Habitats"
+biomes = Array[Resource]([ExtResource("6"), ExtResource("7"), ExtResource("8")])
+rooms_in_act = 1
+
+[sub_resource type="Resource" id="act_3"]
+script = ExtResource("2")
+act_index = 3
+display_name = "Wild Growth"
+biomes = Array[Resource]([ExtResource("9"), ExtResource("10")])
+rooms_in_act = 1
+
+[sub_resource type="Resource" id="act_4"]
+script = ExtResource("2")
+act_index = 4
+display_name = "Data Core"
+biomes = Array[Resource]([ExtResource("11"), ExtResource("12"), ExtResource("12")])
+rooms_in_act = 3
+boss_biome = ExtResource("12")
+
+[resource]
+script = ExtResource("1")
+route_id = &"campaign"
+display_name = "Full Campaign"
+acts = Array[Resource]([SubResource("act_1"), SubResource("act_2"), SubResource("act_3"), SubResource("act_4")])
+layout_scenes = PackedStringArray("res://levels/rooms/room_01.tscn", "res://levels/rooms/room_02.tscn", "res://levels/rooms/room_03.tscn")

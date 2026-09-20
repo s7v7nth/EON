@@ -20,16 +20,15 @@ func _run() -> void:
 	player.state_machine.transition_to(&"Attack")
 	await get_tree().process_frame
 	assert(player.state_machine.current_state.name == "Attack")
-	assert(not player.hitbox.monitoring)
-
-	# After windup, hitbox should activate.
-	await get_tree().create_timer(attack.windup + 0.02).timeout
+	# Windup is 0 on light attacks — hitbox is live on the click.
 	await get_tree().physics_frame
 	assert(player.hitbox.monitoring)
 
-	# After active window, leave Attack and start cooldown.
-	await get_tree().create_timer(attack.active_duration + 0.05).timeout
-	await get_tree().process_frame
+	# After active + recovery, leave Attack and start cooldown.
+	var guard := 0
+	while player.state_machine.current_state.name == "Attack" and guard < 90:
+		await get_tree().physics_frame
+		guard += 1
 	assert(player.state_machine.current_state.name != "Attack")
 	assert(not player.hitbox.monitoring)
 	assert(not player.attack_cooldown.is_stopped())

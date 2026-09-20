@@ -1,0 +1,44 @@
+[gd_resource type="Resource" script_class="WaveSet" load_steps=9 format=3]
+
+[ext_resource type="Script" path="res://resources/waves/wave_set.gd" id="1_set"]
+[ext_resource type="Script" path="res://resources/waves/wave_definition.gd" id="2_def"]
+[ext_resource type="Script" path="res://resources/waves/wave_spawn_group.gd" id="3_group"]
+[ext_resource type="PackedScene" path="res://entities/enemies/dummy/enemy_dummy.tscn" id="4_enemy"]
+[ext_resource type="Resource" path="res://resources/enemies/android.tres" id="5_android"]
+[ext_resource type="Resource" path="res://resources/enemies/swarm.tres" id="6_swarm"]
+
+[sub_resource type="Resource" id="spawn_w1"]
+script = ExtResource("3_group")
+count = 3
+enemy_scene = ExtResource("4_enemy")
+enemy_definition = ExtResource("5_android")
+
+[sub_resource type="Resource" id="wave_1"]
+script = ExtResource("2_def")
+delay = 0.55
+spawns = Array[ExtResource("3_group")]([SubResource("spawn_w1")])
+
+[sub_resource type="Resource" id="spawn_w2a"]
+script = ExtResource("3_group")
+count = 2
+enemy_scene = ExtResource("4_enemy")
+enemy_definition = ExtResource("5_android")
+
+[sub_resource type="Resource" id="spawn_w2b"]
+script = ExtResource("3_group")
+count = 1
+enemy_scene = ExtResource("4_enemy")
+enemy_definition = ExtResource("6_swarm")
+is_elite = true
+elite_hp_mult = 2.1
+elite_move_mult = 1.12
+elite_action_speed = 1.16
+
+[sub_resource type="Resource" id="wave_2"]
+script = ExtResource("2_def")
+delay = 0.85
+spawns = Array[ExtResource("3_group")]([SubResource("spawn_w2a"), SubResource("spawn_w2b")])
+
+[resource]
+script = ExtResource("1_set")
+waves = Array[ExtResource("2_def")]([SubResource("wave_1"), SubResource("wave_2")])

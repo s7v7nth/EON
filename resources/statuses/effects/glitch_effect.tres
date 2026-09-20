@@ -1,0 +1,8 @@
+[gd_resource type="Resource" script_class="EffectGlitch" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://systems/status/effects/effect_glitch.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+robot_speed_mult = 0.15
+organic_speed_mult = 0.55

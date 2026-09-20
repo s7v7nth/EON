@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="BehaviorDeathBurst" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://systems/enemies/behaviors/behavior_death_burst.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+behavior_id = &"death_burst"
+radius = 78.0
+damage = 8.0
+acid_buildup = 22.0
+knockback = 160.0

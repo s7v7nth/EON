@@ -1,0 +1,28 @@
+[gd_resource type="Resource" script_class="AttackData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://resources/attacks/attack_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+damage = 20.0
+cooldown = 0.65
+windup = 0.06
+active_duration = 0.26
+knockback_force = 400.0
+damage_type = 0
+status_chance = 0.25
+status_power = 6.0
+status_duration = 0.45
+combo_scale = 1.0
+circular = true
+circular_radius = 84.0
+energy_cost = 12.0
+recovery = 0.28
+move_mult = 0.1
+lunge_force = 60.0
+hit_stop_scale = 0.05
+hit_stop_duration = 0.11
+knockback_duration = 0.26
+camera_trauma = 0.55
+poise_damage = 50.0
+impact_scale = 2.0

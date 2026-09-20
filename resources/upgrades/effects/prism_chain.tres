@@ -1,0 +1,8 @@
+[gd_resource type="Resource" script_class="EffectPrismChain" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://systems/upgrades/effects/effect_prism_chain.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+max_bounces = 3
+extra_bounce_mult = 1.25
