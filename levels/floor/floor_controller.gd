@@ -530,7 +530,7 @@ func _spawn_wave(wave: WaveDefinition) -> void:
 			if is_boss:
 				enemy.global_position = _boss_spawn_at()
 			else:
-				enemy.global_position = marker.global_position
+				enemy.global_position = _spawn_away_from_player(marker.global_position)
 			if not is_boss and cur_room and cur_room.is_elite and not _elite_presented and BLISTER:
 				def = BLISTER
 			if not is_boss and use_faction_weights and RunState.current_biome and RunState.room_index > 0:
@@ -548,6 +548,17 @@ func _spawn_wave(wave: WaveDefinition) -> void:
 					_present_boss(enemy as EnemyDummy)
 	_alive_enemies = _living_enemies_on(_current)
 	_alert_player()
+
+
+func _spawn_away_from_player(desired: Vector2) -> Vector2:
+	if _player == null:
+		return desired
+	var delta := desired - _player.global_position
+	if delta.length() >= 88.0:
+		return desired
+	if delta.length() < 1.0:
+		delta = Vector2.RIGHT.rotated(float(_spawn_cursor) * 1.047)
+	return _player.global_position + delta.normalized() * 110.0
 
 
 func _boss_spawn_at() -> Vector2:

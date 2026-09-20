@@ -626,10 +626,15 @@ func _crowd_separate() -> Vector2:
 			continue
 		var d: Vector2 = global_position - (node as Node2D).global_position
 		var dist := d.length()
-		if dist < 1.0 or dist > 38.0:
+		if dist < 1.0 or dist > 56.0:
 			continue
-		push += d.normalized() * ((38.0 - dist) / 38.0)
-	return push * 0.85
+		push += d.normalized() * ((56.0 - dist) / 56.0)
+	if target is Node2D:
+		var away: Vector2 = global_position - (target as Node2D).global_position
+		var pd := away.length()
+		if pd > 1.0 and pd < 44.0:
+			push += away.normalized() * ((44.0 - pd) / 44.0) * 1.35
+	return push * 1.45
 
 
 func spawn_projectile(direction: Vector2, attack: AttackData = null) -> void:
