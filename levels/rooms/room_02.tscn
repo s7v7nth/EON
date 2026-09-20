@@ -14,7 +14,7 @@ size = Vector2(1600, 40)
 size = Vector2(40, 900)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_exit"]
-size = Vector2(56, 32)
+size = Vector2(88, 48)
 
 [node name="Arena" type="Node2D"]
 script = ExtResource("1_ctrl")
@@ -107,7 +107,7 @@ collision_mask = 2
 
 [node name="ExitVisual" type="Polygon2D" parent="ExitMarker"]
 color = Color(0.3, 0.75, 0.45, 0.7)
-polygon = PackedVector2Array(-28, -16, 28, -16, 28, 16, -28, 16)
+polygon = PackedVector2Array(-44, -24, 44, -24, 44, 24, -44, 24)
 
 [node name="ExitShape" type="CollisionShape2D" parent="ExitMarker"]
 shape = SubResource("RectangleShape2D_exit")
