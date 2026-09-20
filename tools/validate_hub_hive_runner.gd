@@ -77,6 +77,8 @@ func _run() -> void:
 	slam.call("setup", 128.0)
 	await get_tree().process_frame
 	assert(slam.modulate.a > 0.0 or slam.get_child_count() > 0)
+	assert(slam.get_node_or_null("Rim") != null)
+	assert(slam.get_node_or_null("OliveRim") != null)
 	slam.queue_free()
 
 	var bile: Area2D = _Bile.new()
@@ -84,6 +86,8 @@ func _run() -> void:
 	bile.call("setup", 5.0, 2.0, 40.0)
 	await get_tree().process_frame
 	assert(bile.is_in_group("nano_bile"))
+	assert(bile.get_node_or_null("RustRim") != null)
+	assert(bile.get_node_or_null("Slurry") != null)
 	bile.queue_free()
 
 	var hive: EnemyDummy = _Enemy.instantiate() as EnemyDummy

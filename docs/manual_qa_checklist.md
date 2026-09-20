@@ -92,10 +92,10 @@
 - [ ] Overlay после clear **не телепортирует** — выходишь пешком в коридор
 - [ ] Quiet rooms (remnant / shop / cache): двери сразу проходимы из коридора — не нужно «войти в occupancy чтобы открыть»
 - [ ] Campaign: F9 на старте → юг Remnant (stall clerk, **E = one scrap**) → восток **The Hive**
-- [ ] Clerk: first visit — 12 sequential Hades scraps (не speech dump, не auto-talk от overlap); потом node line «Fine. Drawer node…» → Нейро unlock; repeat visit — 3 scraps
+- [ ] Clerk: first visit — 12 sequential Hades scraps as a **bottom line** (stall stays visible, не speech dump, не auto-talk от overlap); потом node line «Fine. Drawer node…» → Нейро unlock; repeat visit — 3 scraps
 - [ ] Clerk **не** выдаёт Улей; kit снимаешь с The Hive
 - [ ] Улей-босс в графе (campaign/procedural); kill пишет meta unlock
-- [ ] Hive tells: slam = dark floor circle then mass (выйти из круга); nano-bile = olive spit line then lasting puddle; flesh-hook = cable flies, kiss = pull (sidestep the line); swarm chunks fall off — kill or they crawl back and the butcher gets thicker
+- [ ] Hive tells: slam = dark floor circle then mass (выйти из круга); nano-bile = olive spit line then lasting **olive-rust slurry** (не комнатный neon drain stain); flesh-hook = meat-nano cable with a barb, kiss = pull (sidestep the line); swarm chunks fall off — kill or they crawl back and the butcher gets thicker
 - [ ] The Hive stands in the room, not stuffed in the door; slam circle has a rust/olive rim you can actually see on the night floor
 - [ ] Комнаты — illustrated ruin (неон vs toxic, rim-lit hostiles, contrasty night) **без** Kenney-вокселей / Roblox-dim / клона улицы с clone-pod
 - [ ] Переход через дверь: короткий fade (без резкого чёрного кадра / hard cut)

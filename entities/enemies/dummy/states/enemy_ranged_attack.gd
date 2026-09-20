@@ -15,6 +15,7 @@ var _shots_fired: int = 0
 var _shot_timer: float = 0.0
 var _cough_rest: Vector2 = Vector2.ZERO
 var _coughed: bool = false
+var _spit: Line2D
 
 
 func enter(msg: Dictionary = {}) -> void:
@@ -40,6 +41,10 @@ func enter(msg: Dictionary = {}) -> void:
 		enemy.combat_visual.play_hostile_pattern_windup(
 			_attack.pattern_kind, _aim_angle, _attack.windup / speed, 0, 0.0
 		)
+		if _is_hive_bile() and enemy.combat_visual.telegraph:
+			enemy.combat_visual.telegraph.color = Color(0.48, 0.68, 0.14, enemy.combat_visual.telegraph.color.a)
+		if _is_hive_bile() and enemy.combat_visual.swing_arc:
+			enemy.combat_visual.swing_arc.color = Color(0.42, 0.58, 0.12, 0.7)
 	_begin_hive_cough()
 
 
@@ -64,6 +69,7 @@ func physics_update(delta: float) -> void:
 					enemy.combat_visual.aim_hostile_pattern_telegraph(
 						_attack.pattern_kind, _aim_angle, 0.0
 					)
+			_update_spit(48.0 + _elapsed * 420.0, 0.7)
 			if _elapsed >= _attack.windup:
 				_elapsed = 0.0
 				_phase = Phase.VOLLEY
@@ -71,10 +77,12 @@ func physics_update(delta: float) -> void:
 				_restore_cough()
 				_fire_one()
 		Phase.VOLLEY:
+			_update_spit(220.0, 0.92)
 			var total := maxi(_attack.projectile_count, 1)
 			if _shots_fired >= total:
 				_phase = Phase.DONE
 				enemy.ranged_cooldown.start(_attack.cooldown / speed)
+				_clear_spit()
 				if enemy.combat_visual:
 					enemy.combat_visual.reset_pose()
 				return
@@ -91,6 +99,7 @@ func physics_update(delta: float) -> void:
 
 func exit() -> void:
 	_restore_cough()
+	_clear_spit()
 	if enemy.has_meta("is_attacking"):
 		enemy.remove_meta("is_attacking")
 	if enemy.combat_visual and _phase != Phase.DONE:
@@ -125,11 +134,39 @@ func _begin_hive_cough() -> void:
 	if not _is_hive_bile():
 		return
 	var vis := enemy.get_node_or_null("Visual") as Node2D
-	if vis == null:
+	if vis:
+		_cough_rest = vis.scale
+		_coughed = true
+		vis.scale = _cough_rest * Vector2(1.12, 0.82)
+	_ensure_spit()
+
+
+func _ensure_spit() -> void:
+	if not _is_hive_bile():
 		return
-	_cough_rest = vis.scale
-	_coughed = true
-	vis.scale = _cough_rest * Vector2(1.12, 0.82)
+	_spit = enemy.get_node_or_null("BileSpit") as Line2D
+	if _spit == null:
+		_spit = Line2D.new()
+		_spit.name = "BileSpit"
+		_spit.width = 9.0
+		_spit.default_color = Color(0.46, 0.62, 0.12, 0.0)
+		_spit.z_index = 9
+		enemy.add_child(_spit)
+
+
+func _update_spit(reach: float, alpha: float) -> void:
+	if _spit == null or not _is_hive_bile():
+		return
+	var tip := _aim * reach
+	_spit.points = PackedVector2Array([Vector2(0, -18), tip])
+	_spit.default_color = Color(0.48, 0.66, 0.12, alpha)
+	_spit.width = 10.0 if _phase == Phase.VOLLEY else 7.0
+
+
+func _clear_spit() -> void:
+	if _spit and is_instance_valid(_spit):
+		_spit.queue_free()
+	_spit = null
 
 
 func _restore_cough() -> void:

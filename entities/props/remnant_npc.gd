@@ -68,30 +68,13 @@ func _build_look() -> void:
 	circle.radius = 88.0
 	shape.shape = circle
 	add_child(shape)
-	_plaque = PanelContainer.new()
-	_plaque.position = Vector2(-210, -168)
-	_plaque.custom_minimum_size = Vector2(420, 92)
-	_plaque.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_plaque.add_theme_stylebox_override("panel", ArtBank.panel_style(&"card", Color(0.16, 0.14, 0.12, 0.94)))
-	_body = Label.new()
-	_body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_body.custom_minimum_size = Vector2(400, 72)
-	_body.add_theme_font_size_override("font_size", 14)
-	_body.add_theme_color_override("font_color", Color(0.82, 0.74, 0.58))
-	_body.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
-	_body.add_theme_constant_override("outline_size", 4)
-	var font := ArtBank.body_font()
-	if font:
-		_body.add_theme_font_override("font", font)
-	_body.text = "Municipal issue. Stall's open. E if you want a scrap."
-	_plaque.add_child(_body)
-	add_child(_plaque)
 	_prompt = Label.new()
 	_prompt.position = Vector2(-48, 34)
 	_prompt.add_theme_font_size_override("font_size", 13)
 	_prompt.add_theme_color_override("font_color", Color(0.72, 0.55, 0.32))
 	_prompt.text = "E  listen"
 	add_child(_prompt)
+	_build_scrap_banner()
 
 
 func _build_stall() -> void:
@@ -132,8 +115,63 @@ func _build_stall() -> void:
 	add_child(lamp)
 
 
+func _build_scrap_banner() -> void:
+	## Hades scrap: one line on the HUD, not a plaque covering the stall.
+	var layer := CanvasLayer.new()
+	layer.name = "ScrapLayer"
+	layer.layer = 55
+	add_child(layer)
+	var root := Control.new()
+	root.set_anchors_preset(Control.PRESET_FULL_RECT)
+	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	layer.add_child(root)
+	_plaque = PanelContainer.new()
+	_plaque.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
+	_plaque.anchor_left = 0.5
+	_plaque.anchor_right = 0.5
+	_plaque.anchor_top = 1.0
+	_plaque.anchor_bottom = 1.0
+	_plaque.offset_left = -360.0
+	_plaque.offset_right = 360.0
+	_plaque.offset_top = -138.0
+	_plaque.offset_bottom = -72.0
+	_plaque.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_plaque.add_theme_stylebox_override("panel", ArtBank.panel_style(&"card", Color(0.12, 0.1, 0.08, 0.94)))
+	_plaque.visible = false
+	root.add_child(_plaque)
+	var col := VBoxContainer.new()
+	col.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	col.add_theme_constant_override("separation", 2)
+	_plaque.add_child(col)
+	var speaker := Label.new()
+	speaker.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	speaker.text = "Municipal issue"
+	speaker.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	speaker.add_theme_font_size_override("font_size", 12)
+	speaker.add_theme_color_override("font_color", Color(0.72, 0.55, 0.32))
+	var speaker_font := ArtBank.body_bold()
+	if speaker_font:
+		speaker.add_theme_font_override("font", speaker_font)
+	col.add_child(speaker)
+	_body = Label.new()
+	_body.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_body.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_body.custom_minimum_size = Vector2(700, 44)
+	_body.add_theme_font_size_override("font_size", 16)
+	_body.add_theme_color_override("font_color", Color(0.88, 0.8, 0.62))
+	_body.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
+	_body.add_theme_constant_override("outline_size", 4)
+	var font := ArtBank.body_font()
+	if font:
+		_body.add_theme_font_override("font", font)
+	col.add_child(_body)
+
+
 func _process(delta: float) -> void:
 	_listen_cool = maxf(_listen_cool - delta, 0.0)
+	if _plaque and _plaque.visible and not _player_in_range():
+		_plaque.visible = false
 	if _listen_cool > 0.0:
 		return
 	if not _player_in_range():
@@ -188,8 +226,12 @@ func _on_body_exited(body: Node2D) -> void:
 func speak() -> String:
 	var line := _next_line()
 	last_line = line
-	_body.text = line
-	_prompt.text = "E  listen"
+	if _body:
+		_body.text = line
+	if _plaque:
+		_plaque.visible = true
+	if _prompt:
+		_prompt.text = "E  listen"
 	if FeelAudio:
 		FeelAudio.play_ui()
 	return line

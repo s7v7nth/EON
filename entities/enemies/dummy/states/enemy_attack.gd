@@ -42,11 +42,7 @@ func enter(msg: Dictionary = {}) -> void:
 	_anim_variant = _variant_for_pattern(_attack)
 	_face_target(true)
 	var speed := enemy.get_action_speed_multiplier()
-	if enemy.combat_visual and not (
-		enemy.is_hive_boss()
-		and _attack
-		and (_attack.circular or _attack.pattern_kind == AttackData.PatternKind.OVERHEAD_SLAM)
-	):
+	if enemy.combat_visual and not _is_hive_slam():
 		enemy.combat_visual.play_hostile_pattern_windup(
 			_attack.pattern_kind, _aim_angle, _attack.windup / speed, _anim_variant,
 			_attack.circular_radius if _attack.circular else 0.0
@@ -83,7 +79,7 @@ func physics_update(delta: float) -> void:
 				_apply_lunge_impulse()
 				enemy.hitbox.activate()
 				_strike_hive_slam()
-				if enemy.combat_visual:
+				if enemy.combat_visual and not _is_hive_slam():
 					if _attack.circular or _attack.pattern_kind == AttackData.PatternKind.OVERHEAD_SLAM:
 						enemy.combat_visual.play_circle_slash(
 							maxf(_attack.active_duration / speed, 0.22)
@@ -139,7 +135,7 @@ func _face_target(update_visual: bool) -> void:
 		return
 	_aim_angle = to_target.angle()
 	_configure_melee_hitbox()
-	if update_visual and enemy.combat_visual and _phase == Phase.WINDUP and _attack:
+	if update_visual and enemy.combat_visual and _phase == Phase.WINDUP and _attack and not _is_hive_slam():
 		enemy.combat_visual.aim_hostile_pattern_telegraph(
 			_attack.pattern_kind, _aim_angle,
 			_attack.circular_radius if _attack.circular else 0.0
@@ -200,6 +196,11 @@ func _is_hive_slam() -> bool:
 func _begin_hive_slam() -> void:
 	if not _is_hive_slam():
 		return
+	if enemy.combat_visual:
+		if enemy.combat_visual.telegraph:
+			enemy.combat_visual.telegraph.color.a = 0.0
+		if enemy.combat_visual.swing_arc:
+			enemy.combat_visual.swing_arc.modulate.a = 0.0
 	var vis := enemy.get_node_or_null("Visual") as Node2D
 	if vis:
 		_vis_rest = vis.position

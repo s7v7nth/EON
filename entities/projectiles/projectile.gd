@@ -214,8 +214,8 @@ func _ensure_visuals() -> void:
 		var glob := ArtBank.particle("circle_05")
 		if glob:
 			bolt.texture = glob
-			ArtBank.fit_height(bolt, 22.0, false)
-		bolt.modulate = Color(0.48, 0.62, 0.16, 0.95)
+			ArtBank.fit_height(bolt, 30.0, false)
+		bolt.modulate = Color(0.42, 0.58, 0.1, 1.0)
 	if _visual:
 		_visual.modulate.a = 0.0
 	if _core:

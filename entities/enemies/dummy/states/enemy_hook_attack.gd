@@ -143,25 +143,60 @@ func _ensure_line() -> void:
 	if _line == null:
 		_line = Line2D.new()
 		_line.name = "HookLine"
-		_line.width = 7.0
-		_line.default_color = Color(0.42, 0.32, 0.12, 0.0)
+		_line.width = 10.0
+		_line.default_color = Color(0.52, 0.22, 0.12, 0.0)
 		_line.z_index = 8
 		enemy.add_child(_line)
+	var core := enemy.get_node_or_null("HookCore") as Line2D
+	if core == null:
+		core = Line2D.new()
+		core.name = "HookCore"
+		core.width = 4.0
+		core.default_color = Color(0.72, 0.34, 0.16, 0.0)
+		core.z_index = 9
+		enemy.add_child(core)
+	var tip := enemy.get_node_or_null("HookTip") as Polygon2D
+	if tip == null:
+		tip = Polygon2D.new()
+		tip.name = "HookTip"
+		tip.polygon = PackedVector2Array([
+			Vector2(14, 0), Vector2(-6, -10), Vector2(-2, 0), Vector2(-8, 11), Vector2(4, 6)
+		])
+		tip.color = Color(0.62, 0.22, 0.12, 0.0)
+		tip.z_index = 10
+		enemy.add_child(tip)
 
 
 func _update_line(reach: float, alpha: float) -> void:
 	if _line == null:
 		return
+	var origin := Vector2(0, -12)
 	var tip := _aim * reach
-	_line.points = PackedVector2Array([Vector2(0, -12), tip])
-	_line.default_color = Color(0.46, 0.28, 0.12, alpha)
-	_line.width = 8.0 if _phase == Phase.FLY else 5.5
+	_line.points = PackedVector2Array([origin, tip])
+	_line.default_color = Color(0.55, 0.22, 0.12, alpha)
+	_line.width = 11.0 if _phase == Phase.FLY else 7.0
+	var core := enemy.get_node_or_null("HookCore") as Line2D
+	if core:
+		core.points = PackedVector2Array([origin, tip])
+		core.default_color = Color(0.78, 0.36, 0.16, alpha * 0.9)
+		core.width = 4.5 if _phase == Phase.FLY else 3.0
+	var barb := enemy.get_node_or_null("HookTip") as Polygon2D
+	if barb:
+		barb.position = tip
+		barb.rotation = _aim_angle
+		barb.color = Color(0.68, 0.24, 0.12, alpha)
 
 
 func _clear_line() -> void:
 	if _line and is_instance_valid(_line):
 		_line.queue_free()
 	_line = null
+	var core := enemy.get_node_or_null("HookCore") as Line2D
+	if core:
+		core.queue_free()
+	var barb := enemy.get_node_or_null("HookTip") as Polygon2D
+	if barb:
+		barb.queue_free()
 
 
 func _restore_vis() -> void:

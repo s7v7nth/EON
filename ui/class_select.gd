@@ -198,14 +198,14 @@ func _make_arch_card(arch: ArchitectureData) -> Button:
 	var btn := Button.new()
 	btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	btn.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	btn.custom_minimum_size = Vector2(200, 340)
+	btn.custom_minimum_size = Vector2(200, 360)
 	btn.text = ""
 	btn.clip_text = false
 	btn.icon = _portrait_for(arch)
 	btn.expand_icon = true
 	btn.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	btn.vertical_icon_alignment = VERTICAL_ALIGNMENT_TOP
-	btn.add_theme_constant_override("icon_max_width", 168)
+	btn.add_theme_constant_override("icon_max_width", 156)
 	var tex_style := ArtBank.button_style(false, Color(0.12, 0.18, 0.24, 1))
 	var tex_hover := ArtBank.button_style(true, Color(0.2, 0.38, 0.48, 1))
 	if tex_style:
@@ -217,7 +217,7 @@ func _make_arch_card(arch: ArchitectureData) -> Button:
 	var pad := MarginContainer.new()
 	pad.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	pad.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
-	pad.offset_top = -148.0
+	pad.offset_top = -176.0
 	pad.add_theme_constant_override("margin_left", 10)
 	pad.add_theme_constant_override("margin_right", 10)
 	pad.add_theme_constant_override("margin_bottom", 12)
@@ -254,7 +254,8 @@ func _make_arch_card(arch: ArchitectureData) -> Button:
 		lock.text = MetaSave.unlock_requirement(int(arch.architecture_id))
 		lock.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		lock.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		lock.add_theme_font_size_override("font_size", 12)
+		lock.custom_minimum_size = Vector2(0, 52)
+		lock.add_theme_font_size_override("font_size", 11)
 		lock.add_theme_color_override("font_color", Color(0.95, 0.45, 0.4))
 		if body:
 			lock.add_theme_font_override("font", body)

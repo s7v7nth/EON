@@ -223,7 +223,8 @@ func apply_definition(def: EnemyDefinition) -> void:
 	if is_hive_chunk():
 		var vis_chunk := get_node_or_null("Visual") as Node2D
 		if vis_chunk:
-			vis_chunk.scale = Vector2.ONE
+			vis_chunk.scale = Vector2(0.92, 0.92)
+			vis_chunk.modulate = Color(0.72, 0.78, 0.38, 1)
 	var vis := get_node_or_null("Visual") as Node2D
 	if vis and def:
 		var swarm := false
@@ -757,12 +758,12 @@ func shed_hive_chunk(count: int = 1) -> void:
 		var add := ENEMY_SCENE.instantiate() as EnemyDummy
 		parent.add_child(add)
 		var ang := TAU * float(i) / float(n) + randf() * 0.4
-		var offset := Vector2(cos(ang), sin(ang)) * 54.0
+		var offset := Vector2(cos(ang), sin(ang)) * 78.0
 		add.global_position = global_position + offset
 		add.apply_definition(HIVE_CHUNK)
 		if target:
 			add.receive_room_alert(target)
-		add.apply_knockback(offset.normalized(), 90.0, 0.18)
+		add.apply_knockback(offset.normalized(), 140.0, 0.22)
 		SignalBus.enemy_spawned.emit(add)
 
 

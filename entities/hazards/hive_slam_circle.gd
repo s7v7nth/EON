@@ -15,7 +15,10 @@ func setup(circle_radius: float) -> void:
 	_ensure_visuals()
 	modulate.a = 0.0
 	var tw := create_tween()
-	tw.tween_property(self, "modulate:a", 1.0, 0.18)
+	tw.tween_property(self, "modulate:a", 1.0, 0.14)
+	var pulse := create_tween().set_loops()
+	pulse.tween_property(_rim, "width", 8.0, 0.22)
+	pulse.tween_property(_rim, "width", 5.5, 0.22)
 
 
 func follow(node: Node2D) -> void:
@@ -54,21 +57,22 @@ func _ensure_visuals() -> void:
 	_fill = Polygon2D.new()
 	_fill.name = "Fill"
 	_fill.polygon = _iso_disk(radius)
-	_fill.color = Color(0.05, 0.04, 0.03, 0.86)
+	# Muddy stain on blue-grey night tiles — black-on-black does not read.
+	_fill.color = Color(0.16, 0.1, 0.04, 0.82)
 	add_child(_fill)
 	_rim = Line2D.new()
 	_rim.name = "Rim"
-	_rim.width = 4.5
-	_rim.default_color = Color(0.38, 0.16, 0.08, 0.98)
+	_rim.width = 6.5
+	_rim.default_color = Color(0.92, 0.38, 0.12, 1.0)
 	_rim.closed = true
 	_rim.points = _iso_disk(radius)
 	add_child(_rim)
 	var inner := Line2D.new()
 	inner.name = "OliveRim"
-	inner.width = 2.0
-	inner.default_color = Color(0.38, 0.52, 0.14, 0.85)
+	inner.width = 3.0
+	inner.default_color = Color(0.58, 0.78, 0.18, 0.98)
 	inner.closed = true
-	inner.points = _iso_disk(radius * 0.82)
+	inner.points = _iso_disk(radius * 0.78)
 	add_child(inner)
 	scale = Vector2(1.0, 0.62)
 

@@ -72,6 +72,19 @@ func _scan() -> void:
 
 
 func _build_look() -> void:
+	# Distinct from the room's neon-green drain stains: olive-rust slurry + rust rim.
+	var fill := Polygon2D.new()
+	fill.name = "Slurry"
+	fill.polygon = _iso_disk(_radius)
+	fill.color = Color(0.28, 0.32, 0.08, 0.88)
+	add_child(fill)
+	var rim := Line2D.new()
+	rim.name = "RustRim"
+	rim.width = 4.0
+	rim.default_color = Color(0.62, 0.28, 0.1, 0.95)
+	rim.closed = true
+	rim.points = _iso_disk(_radius)
+	add_child(rim)
 	var splat := Sprite2D.new()
 	splat.name = "Splat"
 	splat.centered = true
@@ -80,8 +93,8 @@ func _build_look() -> void:
 	if splat.texture == null:
 		splat.texture = ArtBank.tex("res://assets/kenney/splat/splat05.png")
 	if splat.texture:
-		ArtBank.fit_height(splat, maxf(_radius * 1.7, 52.0), false)
-	splat.modulate = Color(0.42, 0.55, 0.16, 0.82)
+		ArtBank.fit_height(splat, maxf(_radius * 1.35, 40.0), false)
+	splat.modulate = Color(0.32, 0.36, 0.1, 0.7)
 	splat.rotation = randf() * TAU
 	add_child(splat)
 	var shape := CollisionShape2D.new()
@@ -90,5 +103,14 @@ func _build_look() -> void:
 	shape.shape = circle
 	add_child(shape)
 	var pulse := create_tween().set_loops()
-	pulse.tween_property(splat, "modulate:a", 0.95, 0.55)
-	pulse.tween_property(splat, "modulate:a", 0.62, 0.55)
+	pulse.tween_property(fill, "color:a", 0.98, 0.45)
+	pulse.tween_property(fill, "color:a", 0.72, 0.45)
+
+
+func _iso_disk(r: float) -> PackedVector2Array:
+	var pts := PackedVector2Array()
+	var n := 18
+	for i in n:
+		var a := TAU * float(i) / float(n)
+		pts.append(Vector2(cos(a) * r, sin(a) * r * 0.55))
+	return pts
