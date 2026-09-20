@@ -188,6 +188,7 @@ static func _floor_sprite(
 
 static func _point_light(_parent: Node2D, _pos: Vector2, _color: Color, _energy: float, _tex_scale: float) -> void:
 	## Compatibility PointLight2D grains the floor. Skip.
+	pass
 
 
 static func radial() -> Texture2D:

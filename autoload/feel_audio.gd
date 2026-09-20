@@ -62,7 +62,7 @@ func _ensure_banks() -> void:
 
 
 func _load_banks() -> void:
-	_hits = _load_many([
+	_fill_bank(_hits, [
 		"res://assets/sfx/impact/impactPunch_medium_000.ogg",
 		"res://assets/sfx/impact/impactPunch_medium_001.ogg",
 		"res://assets/sfx/impact/impactPunch_heavy_000.ogg",
@@ -71,80 +71,86 @@ func _load_banks() -> void:
 		"res://assets/sfx/sci-fi/impactMetal_000.ogg",
 		"res://assets/sfx/rpg-pack/swing.wav",
 	])
-	_hurts = _load_many([
+	_fill_bank(_hurts, [
 		"res://assets/sfx/impact/impactGeneric_light_000.ogg",
 		"res://assets/sfx/impact/impactPlate_medium_000.ogg",
 		"res://assets/sfx/impact/impactPunch_heavy_001.ogg",
 	])
-	_dashes = _load_many([
+	_fill_bank(_dashes, [
 		"res://assets/sfx/sci-fi/thrusterFire_000.ogg",
 		"res://assets/sfx/sci-fi/thrusterFire_001.ogg",
 		"res://assets/sfx/sci-fi/forceField_000.ogg",
 		"res://assets/sfx/sci-fi/spaceEngineSmall_000.ogg",
 	])
-	_pickups = _load_many([
+	_fill_bank(_pickups, [
 		"res://assets/sfx/interface/confirmation_001.ogg",
 		"res://assets/sfx/rpg/handleCoins.ogg",
 		"res://assets/sfx/rpg-pack/coin.wav",
 		"res://assets/sfx/digital/pepSound1.ogg",
 	])
-	_deaths = _load_many([
+	_fill_bank(_deaths, [
 		"res://assets/sfx/sci-fi/explosionCrunch_000.ogg",
 		"res://assets/sfx/sci-fi/explosionCrunch_001.ogg",
 		"res://assets/sfx/oga-scifi/explosion_01.ogg",
 		"res://assets/sfx/rpg-pack/mnstr1.wav",
 	])
-	_swings = _load_many([
+	_fill_bank(_swings, [
 		"res://assets/sfx/rpg-pack/swing.wav",
 		"res://assets/sfx/rpg-pack/swing2.wav",
 		"res://assets/sfx/rpg/knifeSlice.ogg",
 		"res://assets/sfx/sci-fi/laserSmall_000.ogg",
 	])
-	_ui = _load_many([
+	_fill_bank(_ui, [
 		"res://assets/sfx/interface/click_001.ogg",
 		"res://assets/sfx/ui/click-a.ogg",
 		"res://assets/sfx/interface/drop_001.ogg",
 	])
-	_errors = _load_many([
+	_fill_bank(_errors, [
 		"res://assets/sfx/interface/error_001.ogg",
 		"res://assets/sfx/interface/error_002.ogg",
 		"res://assets/sfx/digital/lowThreeTone.ogg",
 	])
-	_coins = _load_many([
+	_fill_bank(_coins, [
 		"res://assets/sfx/rpg/handleCoins.ogg",
 		"res://assets/sfx/rpg-pack/coin.wav",
 		"res://assets/sfx/rpg-pack/coin2.wav",
 	])
-	_boss = _load_many([
+	_fill_bank(_boss, [
 		"res://assets/sfx/sci-fi/lowFrequency_explosion_000.ogg",
 		"res://assets/sfx/rpg-pack/ogre1.wav",
 		"res://assets/sfx/sci-fi/explosionCrunch_002.ogg",
 		"res://assets/sfx/digital/phaserDown1.ogg",
 	])
-	_specials = _load_many([
+	_fill_bank(_specials, [
 		"res://assets/sfx/sci-fi/laserLarge_000.ogg",
 		"res://assets/sfx/sci-fi/forceField_001.ogg",
 		"res://assets/sfx/rpg-pack/spell.wav",
 		"res://assets/sfx/digital/laser1.ogg",
 	])
-	_parries = _load_many([
+	_fill_bank(_parries, [
 		"res://assets/sfx/impact/impactPlate_heavy_000.ogg",
 		"res://assets/sfx/sci-fi/forceField_002.ogg",
 		"res://assets/sfx/digital/highUp.ogg",
 		"res://assets/sfx/space-shooter/sfx_shieldUp.ogg",
 	])
-	_jingle_win = _load_many([
+	_fill_bank(_jingle_win, [
 		"res://assets/sfx/jingles/jingles_HIT01.ogg",
 		"res://assets/sfx/jingles/jingles_HIT05.ogg",
 		"res://assets/sfx/jingles/jingles_HIT10.ogg",
 		"res://assets/sfx/jingles/jingles_STEEL03.ogg",
 	])
-	_jingle_boss = _load_many([
+	_fill_bank(_jingle_boss, [
 		"res://assets/sfx/jingles/jingles_SAX00.ogg",
 		"res://assets/sfx/jingles/jingles_SAX05.ogg",
 		"res://assets/sfx/jingles/jingles_SAX08.ogg",
 		"res://assets/sfx/jingles/jingles_STEEL07.ogg",
 	])
+
+
+func _fill_bank(target: Array[AudioStream], paths: PackedStringArray) -> void:
+	target.clear()
+	for stream in _load_many(paths):
+		target.append(stream)
 
 
 func _load_many(paths: PackedStringArray) -> Array[AudioStream]:
@@ -196,7 +202,18 @@ func play_player_death() -> void:
 
 
 func play_swing() -> void:
+	if _swings.is_empty():
+		_fill_bank(_swings, [
+			"res://assets/sfx/rpg-pack/swing.wav",
+			"res://assets/sfx/rpg-pack/swing2.wav",
+			"res://assets/sfx/rpg/knifeSlice.ogg",
+			"res://assets/sfx/sci-fi/laserSmall_000.ogg",
+		])
 	_play_bank(_swings, -11.0, randf_range(0.94, 1.12), 0.0)
+
+
+func warmup() -> void:
+	_ensure_banks()
 
 
 func play_ui() -> void:
@@ -272,7 +289,8 @@ func _on_room_cleared() -> void:
 
 
 func _play_bank(bank: Array[AudioStream], volume_db: float, pitch: float, delay: float) -> void:
-	_ensure_banks()
+	if bank.is_empty():
+		_ensure_banks()
 	if bank.is_empty():
 		_blip(180.0, 0.05, 0.18)
 		return

@@ -43,6 +43,8 @@ func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	_build()
 	print("CLASS_SELECT_READY")
+	if FeelAudio and FeelAudio.has_method("warmup"):
+		FeelAudio.call_deferred("warmup")
 	_select_route_by_id(&"tutorial")
 	var arches := RunState.get_architectures()
 	if not arches.is_empty():

@@ -21,13 +21,14 @@ func _run() -> void:
 	await get_tree().process_frame
 	assert(player.state_machine.current_state.name == "Attack")
 	# Windup is 0 on light attacks — hitbox is live on the click.
-	await get_tree().create_timer(attack.windup + 0.03).timeout
 	await get_tree().physics_frame
 	assert(player.hitbox.monitoring)
 
 	# After active + recovery, leave Attack and start cooldown.
-	await get_tree().create_timer(attack.active_duration + attack.recovery + 0.08).timeout
-	await get_tree().process_frame
+	var guard := 0
+	while player.state_machine.current_state.name == "Attack" and guard < 90:
+		await get_tree().physics_frame
+		guard += 1
 	assert(player.state_machine.current_state.name != "Attack")
 	assert(not player.hitbox.monitoring)
 	assert(not player.attack_cooldown.is_stopped())
