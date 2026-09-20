@@ -165,7 +165,7 @@ func get_hud_values(_host: Node) -> Dictionary:
 			_weapon_lock,
 			maxf(vent_cooldown_base + heat_max * vent_cooldown_per_heat, 0.01),
 			vent_label,
-			Color(0.7, 0.85, 1.0, 1)
+			Color(0.7, 0.42, 0.16, 1)
 		),
 	}
 
@@ -179,13 +179,13 @@ func _paint_heat_aura(host: Node) -> void:
 	if cv == null:
 		return
 	if heat >= heat_max:
-		cv.set_kit_aura(Color(1.0, 0.22, 0.12, 0.42), Vector2(1.35, 1.35), true)
+		cv.set_kit_aura(Color(0.85, 0.28, 0.1, 0.28), Vector2(1.22, 1.22), true)
 	elif heat >= yellow_threshold:
-		cv.set_kit_aura(Color(1.0, 0.72, 0.12, 0.34), Vector2(1.22, 1.22), true)
+		cv.set_kit_aura(Color(0.72, 0.42, 0.12, 0.22), Vector2(1.12, 1.12), true)
 	elif heat > 8.0 or _vent_fx > 0.0:
-		cv.set_kit_aura(Color(0.45, 0.75, 1.0, 0.22), Vector2(1.1, 1.1), true)
+		cv.set_kit_aura(Color(0.5, 0.38, 0.22, 0.14), Vector2(1.06, 1.06), true)
 	else:
-		cv.set_kit_aura(Color(0.45, 0.75, 1.0, 0.12), Vector2.ONE, false)
+		cv.set_kit_aura(Color(0.42, 0.34, 0.24, 0.08), Vector2.ONE, false)
 
 
 func _vent_blast(host: Node, dumped: float, ratio: float) -> void:

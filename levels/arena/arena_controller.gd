@@ -293,7 +293,7 @@ func _dress_exit_marker() -> void:
 		spr.texture = ArtBank.space("platform_small_SE")
 	if spr.texture:
 		ArtBank.fit_height(spr, 92.0, true)
-		spr.modulate = Color(0.75, 1.15, 0.85, 1)
+		spr.modulate = Color(0.55, 0.42, 0.28, 1)
 	var glow := exit_node.get_node_or_null("ExitGlow") as Sprite2D
 	if glow == null:
 		glow = Sprite2D.new()
@@ -301,12 +301,12 @@ func _dress_exit_marker() -> void:
 		glow.centered = true
 		glow.z_index = 1
 		glow.texture = ArtBank.particle("circle_05")
-		glow.modulate = Color(0.35, 0.95, 0.55, 0.55)
+		glow.modulate = Color(0.7, 0.38, 0.12, 0.4)
 		glow.scale = Vector2(3.4, 1.55)
 		exit_node.add_child(glow)
 	else:
 		glow.scale = Vector2(3.4, 1.55)
-		glow.modulate = Color(0.35, 0.95, 0.55, 0.55)
+		glow.modulate = Color(0.7, 0.38, 0.12, 0.4)
 	spr.z_index = 2
 	glow.z_index = 1
 	var plaque := exit_node.get_node_or_null("ExitPlaque") as PanelContainer
@@ -314,7 +314,7 @@ func _dress_exit_marker() -> void:
 		plaque = PanelContainer.new()
 		plaque.name = "ExitPlaque"
 		plaque.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		plaque.add_theme_stylebox_override("panel", ArtBank.panel_style(&"card", Color(0.55, 1.0, 0.72, 0.96)))
+		plaque.add_theme_stylebox_override("panel", ArtBank.panel_style(&"card", Color(0.42, 0.3, 0.16, 0.94)))
 		var lab := Label.new()
 		lab.name = "ExitHint"
 		lab.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER

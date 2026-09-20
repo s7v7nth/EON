@@ -136,14 +136,14 @@ func try_special(host: Node) -> bool:
 		HitVFX.spawn_optic_burst(
 			(host as Node2D).get_parent(),
 			(host as Node2D).global_position,
-			Color(0.35, 0.95, 0.4, 1),
+			Color(0.38, 0.42, 0.22, 1),
 			Vector2.UP,
 			1.35
 		)
 		HitVFX.spawn_optic_ring(
 			(host as Node2D).get_parent(),
 			(host as Node2D).global_position,
-			Color(0.4, 1.0, 0.45, 0.9),
+			Color(0.4, 0.42, 0.22, 0.7),
 			1.4
 		)
 	SignalBus.special_triggered.emit(host)
@@ -158,7 +158,7 @@ func get_hud_values(host: Node) -> Dictionary:
 	if hp_m > 0.0:
 		pressure = (1.0 - hp_v / hp_m) * 100.0
 	return {
-		"primary": _bar(pressure, 100.0, "Swarm Hunger  %d" % roundi(pressure), Color(0.35, 0.85, 0.45, 1)),
+		"primary": _bar(pressure, 100.0, "Swarm Hunger  %d" % roundi(pressure), Color(0.48, 0.42, 0.22, 1)),
 		"secondary": {},
 	}
 
@@ -207,18 +207,18 @@ func _ensure_swarm(host: Node) -> void:
 			mote.texture = tex
 			mote.centered = true
 			mote.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
-			mote.modulate = Color(0.32, 1.0, 0.48, 0.95)
+			mote.modulate = Color(0.36, 0.4, 0.28, 0.7)
 			mote.z_index = 6
 			# Soft particle sheets have empty opaque rects; never use fit_height here.
-			mote.scale = Vector2(0.11, 0.11)
+			mote.scale = Vector2(0.06, 0.06)
 			_swarm.add_child(mote)
 	_siphon = (host as Node2D).get_node_or_null("SwarmSiphon") as Line2D
 	if _siphon:
 		return
 	_siphon = Line2D.new()
 	_siphon.name = "SwarmSiphon"
-	_siphon.width = 7.0
-	_siphon.default_color = Color(0.28, 1.0, 0.42, 0.0)
+	_siphon.width = 3.0
+	_siphon.default_color = Color(0.42, 0.38, 0.22, 0.0)
 	_siphon.z_index = 5
 	_siphon.joint_mode = Line2D.LINE_JOINT_ROUND
 	_siphon.begin_cap_mode = Line2D.LINE_CAP_ROUND
@@ -242,23 +242,23 @@ func _spin_swarm(host: Node, delta: float) -> void:
 			continue
 		var ang := _swarm_spin + TAU * float(i) / float(maxi(kids.size(), 1))
 		mote.position = Vector2(cos(ang) * radius, sin(ang) * radius * 0.55 - 20.0)
-		mote.modulate = Color(0.32, 1.0, 0.46, 1.0 if hungry else 0.82)
-		mote.scale = Vector2(0.16, 0.16) if hungry else Vector2(0.11, 0.11)
+		mote.modulate = Color(0.38, 0.4, 0.26, 0.72 if hungry else 0.45)
+		mote.scale = Vector2(0.08, 0.08) if hungry else Vector2(0.055, 0.055)
 	if _siphon and is_instance_valid(_siphon) and host is Node2D:
 		if hungry and prey is Node2D:
 			_siphon.points = PackedVector2Array([
 				Vector2(0, -18),
 				(prey as Node2D).global_position - (host as Node2D).global_position + Vector2(0, -16)
 			])
-			_siphon.default_color = Color(0.28, 1.0, 0.4, 0.88)
+			_siphon.default_color = Color(0.45, 0.38, 0.2, 0.35)
 		else:
 			_siphon.points = PackedVector2Array()
-			_siphon.default_color = Color(0.3, 1.0, 0.42, 0.0)
+			_siphon.default_color = Color(0.4, 0.36, 0.2, 0.0)
 	var cv: CombatVisualComponent = host.get("combat_visual") as CombatVisualComponent
 	if cv:
 		cv.set_kit_aura(
-			Color(0.28, 0.95, 0.38, 0.28 if hungry else 0.14),
-			Vector2(1.18, 1.18) if hungry else Vector2(1.05, 1.05),
+			Color(0.32, 0.36, 0.22, 0.16 if hungry else 0.08),
+			Vector2(1.08, 1.08) if hungry else Vector2(1.02, 1.02),
 			true
 		)
 

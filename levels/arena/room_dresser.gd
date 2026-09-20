@@ -467,7 +467,7 @@ static func _scatter_cluster(
 				tex = ArtBank.dungeon_facing(stem, Vector2(0, 1))
 		var spr := ArtBank.add_fitted(props, tex, origin + offset, rng.randf_range(52.0, 78.0), 0, true)
 		if spr:
-			spr.modulate = Color(0.92, 0.94, 0.96).lerp(accent, 0.14)
+			spr.modulate = Color(0.48, 0.42, 0.34).lerp(accent, 0.2)
 
 
 static func _prop_stems(biome: BiomeDefinition) -> PackedStringArray:
