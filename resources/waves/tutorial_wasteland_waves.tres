@@ -10,7 +10,7 @@
 
 [sub_resource type="Resource" id="spawn_w1"]
 script = ExtResource("3_group")
-count = 2
+count = 1
 enemy_scene = ExtResource("4_enemy")
 enemy_definition = ExtResource("5_swarm")
 

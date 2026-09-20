@@ -217,7 +217,7 @@ func _show_start_flow() -> void:
 
 
 func _on_player_died() -> void:
-	_skin_panel(&"rect", Color(0.85, 0.28, 0.24, 0.97))
+	_skin_panel(&"glass", Color(1.0, 0.88, 0.88, 0.97))
 	_show(Mode.DEATH, "You Died", "Rank %s — R new run (same class) · C change class" % RunState.current_room_rank())
 	get_tree().paused = true
 
@@ -233,7 +233,7 @@ func _on_wave_cleared(index: int) -> void:
 
 
 func _on_run_won() -> void:
-	_skin_panel(&"glass", Color(1.0, 0.88, 0.45, 0.97))
+	_skin_panel(&"glass", Color(1.0, 0.96, 0.82, 0.97))
 	_show(Mode.WIN, "Run Complete", "Style %s — %d pts — R again · C class select" % [
 		RunState.current_room_rank(), RunState.style_score
 	])
@@ -257,7 +257,7 @@ func _on_exit_reached() -> void:
 	if RunState.is_last_room():
 		title = "Act Clear — Rank %s" % RunState.current_room_rank()
 		loot_line = "%s — then finish the run" % loot_line
-	_skin_panel(&"glass", Color(0.92, 0.86, 0.62, 0.97))
+	_skin_panel(&"glass", Color(1.0, 0.97, 0.88, 0.97))
 	_show(Mode.REWARD, title, loot_line)
 	_rewards.visible = true
 	_craft.visible = true

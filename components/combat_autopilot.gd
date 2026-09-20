@@ -58,27 +58,32 @@ func _fight(player: Player, enemy: EnemyDummy, _delta: float) -> void:
 	var to_enemy := enemy.global_position - player.global_position
 	var dist := to_enemy.length()
 	player.aim_override = to_enemy
-	var steer := to_enemy
 	var trap_push := _trap_repulsion(player.global_position)
-	if trap_push != Vector2.ZERO:
-		steer += trap_push * 1.6
 	var hp_ratio := 1.0
 	if player.health and player.health.get_max_health() > 0.0:
 		hp_ratio = player.health.current_health / player.health.get_max_health()
-	if dist < 36.0:
-		steer = to_enemy.rotated(1.15) + trap_push
-	elif dist > 52.0:
-		steer = to_enemy + trap_push
+	var energy_ok := true
+	if player.energy:
+		energy_ok = player.energy.current_energy > 4.0
+	var desired := 48.0 if hp_ratio > 0.55 else 78.0
+	var steer := to_enemy
+	if dist < desired - 8.0:
+		steer = to_enemy.rotated(1.25) * -0.4 + to_enemy.orthogonal()
+	elif dist > desired + 18.0:
+		steer = to_enemy
+	else:
+		steer = to_enemy.orthogonal() * (1.0 if hp_ratio > 0.5 else 1.4)
+	steer += trap_push * 2.2
 	_set_move(steer)
-	if hp_ratio < 0.42 and _dash_cd <= 0.0 and player.dash_ready():
+	if (hp_ratio < 0.62 or dist < 28.0) and _dash_cd <= 0.0 and player.dash_ready():
 		_tap_action("dash")
-		_dash_cd = 0.7
-	if dist > 170.0 and _dash_cd <= 0.0 and player.dash_ready():
+		_dash_cd = 0.55
+	if dist > 190.0 and _dash_cd <= 0.0 and player.dash_ready():
 		_tap_action("dash")
-		_dash_cd = 0.85
-	if dist <= 58.0 and _attack_cd <= 0.0:
+		_dash_cd = 0.8
+	if dist <= 56.0 and _attack_cd <= 0.0 and energy_ok and hp_ratio > 0.22:
 		_tap_action("attack")
-		_attack_cd = 0.2
+		_attack_cd = 0.22
 
 
 func _walk_to_exit(player: Player) -> void:
