@@ -70,15 +70,10 @@ func _scan_overlap() -> void:
 
 
 func _ensure_visual() -> void:
-	var fill := get_node_or_null("Fill") as CanvasItem
-	if fill:
-		fill.visible = false
-	var rim := get_node_or_null("Rim") as CanvasItem
-	if rim:
-		rim.visible = false
-	var legacy := get_node_or_null("Visual") as CanvasItem
-	if legacy:
-		legacy.visible = false
+	for n in ["Fill", "Rim", "Visual"]:
+		var leftover := get_node_or_null(n)
+		if leftover:
+			leftover.queue_free()
 
 	_splat = get_node_or_null("Splat") as Sprite2D
 	if _splat == null:

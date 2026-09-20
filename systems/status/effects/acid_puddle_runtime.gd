@@ -13,6 +13,22 @@ func setup(damage: float, duration: float, radius: float = 56.0) -> void:
 	_radius = radius
 
 
+func _ready() -> void:
+	z_index = -1
+	var spr := Sprite2D.new()
+	spr.name = "Splat"
+	spr.centered = true
+	spr.texture = ArtBank.tex("res://assets/kenney/splat/splat05.png")
+	if spr.texture == null:
+		spr.texture = ArtBank.tex("res://assets/kenney/splat/splat03.png")
+	spr.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	if spr.texture:
+		ArtBank.fit_height(spr, 72.0, false)
+	spr.modulate = Color(0.45, 0.95, 0.28, 0.82)
+	spr.rotation = randf() * TAU
+	add_child(spr)
+
+
 func _process(delta: float) -> void:
 	_duration -= delta
 	_tick += delta

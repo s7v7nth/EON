@@ -11,7 +11,6 @@ static func burst(
 ) -> void:
 	if world == null:
 		return
-	_spawn_blood_puddle(world, origin, body_color)
 	_spawn_blood_spray(world, origin)
 	_spawn_splat(world, origin)
 	for _i in maxi(chunk_count, 4):

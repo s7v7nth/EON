@@ -166,6 +166,8 @@ static func _floor_stems(biome: BiomeDefinition) -> PackedStringArray:
 			return PackedStringArray(["stoneTile", "stone", "stoneUneven"])
 		GameplayEnums.BiomeId.JUNGLE, GameplayEnums.BiomeId.TAIGA:
 			return PackedStringArray(["dirt", "dirtTiles", "planks"])
+		GameplayEnums.BiomeId.DOWNTOWN, GameplayEnums.BiomeId.MALL, GameplayEnums.BiomeId.ALLEY:
+			return PackedStringArray(["stoneTile", "stone", "stoneUneven"])
 		GameplayEnums.BiomeId.RESIDENTIAL:
 			return PackedStringArray(["stoneTile", "planks", "stone"])
 		_:
@@ -197,24 +199,15 @@ static func _add_floor_decals(root: Node2D, biome: BiomeDefinition, accent: Colo
 		Vector2(180, -180), Vector2(-340, 120), Vector2(90, 240),
 		Vector2(-120, -240), Vector2(320, -120)
 	]
-	var tech := biome.biome_id == GameplayEnums.BiomeId.DATA_CENTER \
-			or biome.biome_id == GameplayEnums.BiomeId.GATEWAY \
-			or biome.biome_id == GameplayEnums.BiomeId.DOWNTOWN \
-			or biome.biome_id == GameplayEnums.BiomeId.MALL
 	for i in spots.size():
-		var spr: Sprite2D = null
-		if tech:
-			var idx := 1 + (int(biome.biome_id) + i * 3) % 16
-			spr = ArtBank.add_sprite(root, ArtBank.rts_tile(idx), spots[i] + Vector2(rng.randf_range(-18, 18), rng.randf_range(-12, 12)), 2.15, 1, true)
-		else:
-			var splat_idx := 1 + ((int(biome.biome_id) + i * 2) % 8)
-			var splat := ArtBank.tex("res://assets/kenney/splat/splat%02d.png" % splat_idx)
-			if splat == null:
-				splat = ArtBank.tex("res://assets/kenney/splat/splat03.png")
-			spr = ArtBank.add_fitted(root, splat, spots[i] + Vector2(rng.randf_range(-22, 22), rng.randf_range(-16, 16)), rng.randf_range(38.0, 58.0), 1, false)
+		var splat_idx := 1 + ((int(biome.biome_id) + i * 2) % 8)
+		var splat := ArtBank.tex("res://assets/kenney/splat/splat%02d.png" % splat_idx)
+		if splat == null:
+			splat = ArtBank.tex("res://assets/kenney/splat/splat03.png")
+		var spr := ArtBank.add_fitted(root, splat, spots[i] + Vector2(rng.randf_range(-22, 22), rng.randf_range(-16, 16)), rng.randf_range(38.0, 58.0), 1, false)
 		if spr:
-			spr.modulate = Color(accent.r, accent.g, accent.b, 0.55).lightened(0.15)
-			spr.modulate.a = 0.38 if tech else 0.5
+			spr.modulate = Color(accent.r, accent.g, accent.b, 0.55).lightened(0.12)
+			spr.modulate.a = 0.42
 			spr.rotation = rng.randf_range(-0.4, 0.4)
 
 
@@ -301,28 +294,29 @@ static func _add_landmarks(props: Node2D, biome: BiomeDefinition) -> void:
 	var spots: Array[Vector2] = [Vector2(-560, -40), Vector2(570, 30), Vector2(40, -340)]
 	match biome.biome_id:
 		GameplayEnums.BiomeId.DATA_CENTER, GameplayEnums.BiomeId.GATEWAY:
+			var tech: PackedStringArray = PackedStringArray(["machine_generatorLarge", "satelliteDish", "desk_computer"])
 			for i in spots.size():
-				var struct := ArtBank.rts_struct(1 + (int(biome.biome_id) + i * 4) % 12)
-				ArtBank.add_fitted(props, struct, spots[i], 96.0, 2, true)
+				var tex := ArtBank.space_facing(tech[i % tech.size()], Vector2(1, 1))
+				ArtBank.add_fitted(props, tex, spots[i], 92.0, 2, true)
 		GameplayEnums.BiomeId.DOWNTOWN, GameplayEnums.BiomeId.MALL, GameplayEnums.BiomeId.ALLEY:
 			var urban: PackedStringArray = PackedStringArray(["structure", "machine_generatorLarge", "craft_speederA"])
 			for i in spots.size():
 				var tex := ArtBank.space_facing(urban[i % urban.size()], Vector2(1, 1))
 				ArtBank.add_fitted(props, tex, spots[i], 88.0, 2, true)
 		GameplayEnums.BiomeId.LANDFILL, GameplayEnums.BiomeId.WASTELAND:
-			var junk: PackedStringArray = PackedStringArray(["woodenCrate", "barrels", "meteor"])
+			var junk: PackedStringArray = PackedStringArray(["woodenCrate", "barrels", "woodenPile"])
 			for i in spots.size():
 				var stem: String = junk[i % junk.size()]
 				var tex := ArtBank.dungeon_facing(stem, Vector2(0, 1))
 				if tex == null:
-					tex = ArtBank.space_facing(stem, Vector2(1, 1))
+					tex = ArtBank.space_facing("meteor", Vector2(1, 1))
 				ArtBank.add_fitted(props, tex, spots[i], 86.0, 2, true)
 		GameplayEnums.BiomeId.JUNGLE, GameplayEnums.BiomeId.TAIGA:
-			var wild: PackedStringArray = PackedStringArray(["rock_crystals", "rock", "rocks_smallA"])
+			var wild: PackedStringArray = PackedStringArray(["woodenPile", "stoneColumn", "woodenSupports"])
 			for i in spots.size():
-				var tex := ArtBank.space_facing(wild[i % wild.size()], Vector2(1, 1))
+				var tex := ArtBank.dungeon_facing(wild[i % wild.size()], Vector2(0, 1))
 				if tex == null:
-					tex = ArtBank.dungeon_facing("stoneColumn", Vector2(0, 1))
+					tex = ArtBank.space_facing("rock_crystals", Vector2(1, 1))
 				ArtBank.add_fitted(props, tex, spots[i], 90.0, 2, true)
 		_:
 			for i in spots.size():
@@ -342,14 +336,23 @@ static func _scatter_cluster(
 ) -> void:
 	var kit: PackedStringArray = _prop_stems(biome)
 	var count := 3 + (salt % 2)
+	var organic := biome.biome_id == GameplayEnums.BiomeId.LANDFILL \
+			or biome.biome_id == GameplayEnums.BiomeId.WASTELAND \
+			or biome.biome_id == GameplayEnums.BiomeId.JUNGLE \
+			or biome.biome_id == GameplayEnums.BiomeId.TAIGA \
+			or biome.biome_id == GameplayEnums.BiomeId.RESIDENTIAL
 	for j in count:
 		var offset := Vector2(rng.randf_range(-46, 46), rng.randf_range(-30, 30))
 		var stem: String = kit[(salt + j) % kit.size()]
-		var tex := ArtBank.space_facing(stem, Vector2(1, 1))
-		if tex == null:
+		var tex: Texture2D = null
+		if organic:
 			tex = ArtBank.dungeon_facing(stem, Vector2(0, 1))
-		if tex == null:
-			tex = ArtBank.rts_env(1 + ((salt + j) % 18))
+			if tex == null:
+				tex = ArtBank.space_facing(stem, Vector2(1, 1))
+		else:
+			tex = ArtBank.space_facing(stem, Vector2(1, 1))
+			if tex == null:
+				tex = ArtBank.dungeon_facing(stem, Vector2(0, 1))
 		var spr := ArtBank.add_fitted(props, tex, origin + offset, rng.randf_range(52.0, 78.0), 0, true)
 		if spr:
 			spr.modulate = Color(0.92, 0.94, 0.96).lerp(accent, 0.14)
@@ -364,10 +367,10 @@ static func _prop_stems(biome: BiomeDefinition) -> PackedStringArray:
 			])
 		GameplayEnums.BiomeId.LANDFILL, GameplayEnums.BiomeId.WASTELAND:
 			return PackedStringArray([
-				"barrel", "barrels", "rock", "meteor", "crater", "rocks_smallA", "machine_barrel"
+				"barrel", "barrels", "woodenCrate", "woodenPile", "woodenCrates"
 			])
 		GameplayEnums.BiomeId.JUNGLE, GameplayEnums.BiomeId.TAIGA:
-			return PackedStringArray(["rock_crystals", "rock", "rocks_smallA", "barrel", "woodenCrate"])
+			return PackedStringArray(["woodenPile", "stoneColumn", "woodenCrate", "barrel", "woodenSupports"])
 		GameplayEnums.BiomeId.DOWNTOWN, GameplayEnums.BiomeId.MALL, GameplayEnums.BiomeId.ALLEY:
 			return PackedStringArray([
 				"barrels", "structure", "desk_computer", "machine_generatorLarge", "craft_speederA"
@@ -386,10 +389,20 @@ static func _add_centerpiece(root: Node2D, biome: BiomeDefinition, accent: Color
 	if spr:
 		spr.modulate = Color(0.75, 0.8, 0.9).lerp(accent, 0.35)
 	if biome.biome_id == GameplayEnums.BiomeId.LANDFILL or biome.biome_id == GameplayEnums.BiomeId.WASTELAND:
-		var pile := ArtBank.space_facing("barrels", Vector2(1, 1))
+		var pile := ArtBank.dungeon_facing("barrels", Vector2(0, 1))
+		if pile == null:
+			pile = ArtBank.space_facing("barrels", Vector2(1, 1))
 		ArtBank.add_fitted(root, pile, Vector2(-70, 8), 54.0, 2, true)
 		var crate := ArtBank.dungeon_facing("woodenCrate", Vector2(0, 1))
 		ArtBank.add_fitted(root, crate, Vector2(64, 14), 50.0, 2, true)
+	elif biome.biome_id == GameplayEnums.BiomeId.JUNGLE or biome.biome_id == GameplayEnums.BiomeId.TAIGA:
+		var wood := ArtBank.dungeon_facing("woodenPile", Vector2(0, 1))
+		ArtBank.add_fitted(root, wood, Vector2(-62, 10), 58.0, 2, true)
+		var col := ArtBank.dungeon_facing("stoneColumn", Vector2(0, 1))
+		ArtBank.add_fitted(root, col, Vector2(70, 12), 72.0, 2, true)
+	elif biome.biome_id == GameplayEnums.BiomeId.DOWNTOWN or biome.biome_id == GameplayEnums.BiomeId.MALL:
+		var table := ArtBank.dungeon_facing("tableRound", Vector2(0, 1))
+		ArtBank.add_fitted(root, table, Vector2(-8, 12), 48.0, 2, true)
 	if boss:
 		var ring := ArtBank.particle("circle_05")
 		var glow := ArtBank.add_sprite(root, ring, Vector2(0, 8), 1.8, 2, true)

@@ -104,6 +104,7 @@ collision_layer = 0
 collision_mask = 2
 
 [node name="ExitVisual" type="Polygon2D" parent="ExitMarker"]
+visible = false
 color = Color(0.3, 0.75, 0.45, 0.7)
 polygon = PackedVector2Array(-28, -16, 28, -16, 28, 16, -28, 16)
 
