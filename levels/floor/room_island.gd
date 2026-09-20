@@ -4,6 +4,7 @@ extends Node2D
 
 const _IllustratedSet := preload("res://systems/worldgen/illustrated_set.gd")
 const _RoomFootprint := preload("res://systems/worldgen/room_footprint.gd")
+const _RemnantNpc := preload("res://entities/props/remnant_npc.gd")
 
 const DOOR_GAP := 118.0
 const WALL_THICK := 38.0
@@ -24,7 +25,8 @@ func setup(src: DungeonRoom) -> void:
 	if room.footprint == null:
 		room.footprint = _RoomFootprint.make(room.footprint_id)
 	position = room.world_origin
-	_poly = room.footprint.local_poly
+	var lp: PackedVector2Array = room.footprint.local_poly
+	_poly = lp
 	name = "Island_%d_%d" % [room.coord.x, room.coord.y]
 	y_sort_enabled = true
 	_build_floor()
@@ -328,7 +330,7 @@ func _add_boss_stain(root: Node2D) -> void:
 
 
 func _spawn_remnant() -> void:
-	var npc := RemnantNpc.new()
+	var npc := _RemnantNpc.new()
 	npc.name = "Remnant"
 	npc.position = Vector2(-40, -30)
 	if not Geometry2D.is_point_in_polygon(npc.position, _poly):

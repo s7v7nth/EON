@@ -277,16 +277,20 @@ func _button_style(path: String) -> StyleBoxTexture:
 
 func _portrait_for(arch: ArchitectureData) -> Texture2D:
 	if arch == null:
-		return ArtBank.portrait("synthetic")
+		return ArtBank.illustrated("hero_SE")
 	match arch.architecture_id:
 		GameplayEnums.ArchitectureId.NANOMACHINES:
-			return ArtBank.portrait("hive")
+			var hive := ArtBank.illustrated("hive_boss")
+			return hive if hive else ArtBank.portrait("hive")
 		GameplayEnums.ArchitectureId.ELECTRO_TRAIN:
-			return ArtBank.portrait("train")
+			var scrap := ArtBank.illustrated("enemy_scrap")
+			return scrap if scrap else ArtBank.portrait("train")
 		GameplayEnums.ArchitectureId.NEURO_HACKER:
-			return ArtBank.portrait("neuro")
+			var nano := ArtBank.illustrated("enemy_nano")
+			return nano if nano else ArtBank.portrait("neuro")
 		_:
-			return ArtBank.portrait("synthetic")
+			var hero := ArtBank.illustrated("hero_SE")
+			return hero if hero else ArtBank.portrait("synthetic")
 
 
 func _select_route(route: ActRoute) -> void:

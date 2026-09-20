@@ -199,7 +199,7 @@ func _place_player() -> void:
 		entities.add_child(_player)
 	if _current:
 		var local := Vector2(-80, 40)
-		if not _current.contains_point(_current.position + local):
+		if not bool(_current.call("contains_point", _current.position + local)):
 			local = Vector2(0, 20)
 		_player.global_position = _current.position + local
 	RunState.apply_to_player(_player)
@@ -230,7 +230,7 @@ func _on_occupancy(body: Node2D, island: Node2D) -> void:
 
 func _switch_room(island: Node2D) -> void:
 	_current = island
-	var room := island.room
+	var room: DungeonRoom = island.get("room") as DungeonRoom
 	if room == null:
 		return
 	RunState.current_coord = room.coord
@@ -269,11 +269,11 @@ func _try_start_combat() -> void:
 		return
 	if _wave_index >= 0 or _room_cleared or _spawning:
 		return
-	if _current == null or _current.room == null:
+	if _current == null or _current.get("room") == null:
 		return
-	var room := _current.room
+	var room: DungeonRoom = _current.get("room") as DungeonRoom
 	if room.cleared:
-		_current.set_doors_locked(false)
+		_current.call("set_doors_locked", false)
 		_room_cleared = true
 		return
 	match room.kind:
@@ -285,7 +285,7 @@ func _try_start_combat() -> void:
 			return
 		_:
 			pass
-	_current.set_doors_locked(true)
+	_current.call("set_doors_locked", true)
 	_start_first_wave()
 
 
@@ -293,9 +293,11 @@ func _open_quiet_room() -> void:
 	_room_cleared = true
 	_wave_index = 0
 	if _current:
-		_current.set_doors_locked(false)
-		_current.room.cleared = true
-		_current.room.explored = true
+		_current.call("set_doors_locked", false)
+		var droom: DungeonRoom = _current.get("room") as DungeonRoom
+		if droom:
+			droom.cleared = true
+			droom.explored = true
 	SignalBus.room_cleared.emit()
 
 
@@ -318,7 +320,7 @@ func _spawn_orbs(kind: int) -> void:
 	var start_x := -spacing * float(offers.size() - 1) * 0.5
 	for i in offers.size():
 		var pos := _current.position + Vector2(start_x + spacing * float(i), 36.0)
-		orbs.append(ArtifactOrb.spawn_at(_current.entities, pos, offers[i]))
+		orbs.append(ArtifactOrb.spawn_at(_current.get("entities") as Node2D, pos, offers[i]))
 	if kind != DungeonRoom.RoomKind.SHOP:
 		return
 	for orb in orbs:
@@ -338,7 +340,7 @@ func _wave_set_for(room: DungeonRoom) -> WaveSet:
 
 
 func _start_first_wave() -> void:
-	var waves := _wave_set_for(_current.room)
+	var waves: WaveSet = _wave_set_for(_current.get("room") as DungeonRoom)
 	if waves == null or waves.wave_count() == 0:
 		force_clear_room()
 		return
@@ -364,7 +366,7 @@ func _begin_wave(waves: WaveSet, index: int) -> void:
 
 
 func _spawn_wave(wave: WaveDefinition) -> void:
-	var points := _current.spawn_markers() if _current else []
+	var points: Array = _current.call("spawn_markers") if _current else []
 	if points.is_empty():
 		return
 	for group in wave.spawns:
@@ -374,10 +376,11 @@ func _spawn_wave(wave: WaveDefinition) -> void:
 			var marker: Node2D = points[_spawn_cursor % points.size()]
 			_spawn_cursor += 1
 			var enemy := group.enemy_scene.instantiate() as Node2D
-			_current.entities.add_child(enemy)
+			(_current.get("entities") as Node2D).add_child(enemy)
 			enemy.global_position = marker.global_position
 			var def := group.enemy_definition
-			if _current.room and _current.room.is_elite and not _elite_presented and BLISTER:
+			var cur_room: DungeonRoom = _current.get("room") as DungeonRoom
+			if cur_room and cur_room.is_elite and not _elite_presented and BLISTER:
 				def = BLISTER
 			if use_faction_weights and RunState.current_biome and RunState.room_index > 0:
 				if RunState.spawn_roll() < 0.35:
@@ -385,7 +388,7 @@ func _spawn_wave(wave: WaveDefinition) -> void:
 			if def != null and enemy.has_method("apply_definition"):
 				enemy.call("apply_definition", def)
 			if enemy.has_method("apply_elite"):
-				if group.is_elite or (_current.room and _current.room.is_elite and not _elite_presented):
+				if group.is_elite or (cur_room and cur_room.is_elite and not _elite_presented):
 					enemy.call("apply_elite", group.elite_hp_mult, group.elite_move_mult, group.elite_action_speed)
 					_elite_presented = true
 			if enemy is EnemyDummy:
@@ -417,7 +420,10 @@ func _present_boss(enemy: EnemyDummy) -> void:
 func _alert_player() -> void:
 	if _player == null or _current == null:
 		return
-	for child in _current.entities.get_children():
+	var ents: Node2D = _current.get("entities") as Node2D
+	if ents == null:
+		return
+	for child in ents.get_children():
 		if child is EnemyDummy:
 			(child as EnemyDummy).receive_room_alert(_player)
 
@@ -433,7 +439,7 @@ func _on_enemy_died(_enemy: Node) -> void:
 	if _spawning:
 		return
 	if _alive_enemies <= 0 and _wave_index >= 0 and not _room_cleared:
-		_on_wave_cleared(_wave_set_for(_current.room) if _current else DEFAULT_WAVES)
+		_on_wave_cleared(_wave_set_for(_current.get("room") as DungeonRoom) if _current else DEFAULT_WAVES)
 
 
 func _on_wave_cleared(waves: WaveSet) -> void:
@@ -454,7 +460,7 @@ func _on_all_waves_cleared() -> void:
 	RunState.mark_current_room_cleared()
 	RunState.grant_loot_for_room_rank()
 	if _current:
-		_current.set_doors_locked(false)
+		_current.call("set_doors_locked", false)
 	SignalBus.room_cleared.emit()
 
 
@@ -462,23 +468,26 @@ func force_clear_room() -> void:
 	_spawning = false
 	_alive_enemies = 0
 	if _current:
-		for child in _current.entities.get_children():
-			if child is EnemyDummy:
-				child.queue_free()
+		var ents: Node2D = _current.get("entities") as Node2D
+		if ents:
+			for child in ents.get_children():
+				if child is EnemyDummy:
+					child.queue_free()
 	_on_all_waves_cleared()
 
 
 func _on_door_crossed(island: Node2D, _dir: Vector2i, body: Node2D) -> void:
 	if body is not Player:
 		return
-	if island.room == null or not island.room.cleared:
+	var room: DungeonRoom = island.get("room") as DungeonRoom
+	if room == null or not room.cleared:
 		return
-	if island.room.rewarded:
+	if room.rewarded:
 		return
-	if island.room.kind == DungeonRoom.RoomKind.REMNANT:
-		island.room.rewarded = true
+	if room.kind == DungeonRoom.RoomKind.REMNANT:
+		room.rewarded = true
 		return
-	island.room.rewarded = true
+	room.rewarded = true
 	if _exit_latch:
 		return
 	_exit_latch = true
