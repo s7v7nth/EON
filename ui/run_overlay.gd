@@ -210,10 +210,10 @@ func _ensure_combo_toast() -> void:
 	_combo_toast.set_anchors_preset(Control.PRESET_CENTER_TOP)
 	_combo_toast.anchor_left = 0.5
 	_combo_toast.anchor_right = 0.5
-	_combo_toast.offset_left = -260.0
-	_combo_toast.offset_right = 260.0
-	_combo_toast.offset_top = 128.0
-	_combo_toast.offset_bottom = 228.0
+	_combo_toast.offset_left = -280.0
+	_combo_toast.offset_right = 280.0
+	_combo_toast.offset_top = 10.0
+	_combo_toast.offset_bottom = 118.0
 	_combo_toast.z_index = 80
 	_combo_toast.add_theme_stylebox_override("panel", ArtBank.panel_style(&"card", Color(1.0, 0.92, 0.55, 0.97)))
 	_combo_toast.modulate.a = 0.0
@@ -265,6 +265,7 @@ func _show_combo_toast(combo_name: String, description: String) -> void:
 		_combo_body.text = description
 	_combo_toast.visible = true
 	_combo_toast.modulate = Color.WHITE
+	move_child(_combo_toast, get_child_count() - 1)
 	_combo_toast.pivot_offset = _combo_toast.size * 0.5
 	_combo_toast.scale = Vector2(1.12, 1.12)
 	if _combo_tween and _combo_tween.is_valid():
@@ -272,8 +273,8 @@ func _show_combo_toast(combo_name: String, description: String) -> void:
 	_combo_tween = create_tween()
 	_combo_tween.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
 	_combo_tween.tween_property(_combo_toast, "scale", Vector2.ONE, 0.18).set_trans(Tween.TRANS_BACK)
-	_combo_tween.tween_interval(2.15)
-	_combo_tween.tween_property(_combo_toast, "modulate:a", 0.0, 0.4)
+	_combo_tween.tween_interval(3.35)
+	_combo_tween.tween_property(_combo_toast, "modulate:a", 0.0, 0.45)
 	if FeelAudio:
 		FeelAudio.play_ui()
 
@@ -352,8 +353,10 @@ func _on_player_died() -> void:
 
 
 func _on_wave_started(index: int, total: int) -> void:
-	_set_wave_text("Room %d / %d   ·   Wave %d of %d" % [
-		RunState.room_index + 1, RunState.room_count(), index + 1, total
+	var tag := RunState.room_kind_label()
+	var prefix := ("%s · " % tag) if tag != "" else ""
+	_set_wave_text("%sRoom %d / %d   ·   Wave %d of %d" % [
+		prefix, RunState.room_index + 1, RunState.room_count(), index + 1, total
 	])
 
 
@@ -747,7 +750,7 @@ func _finish_reward() -> void:
 	var hold_toast := _combo_toast != null and _combo_toast.modulate.a > 0.35
 	if hold_toast:
 		get_tree().paused = false
-		await get_tree().create_timer(1.9, true, false, true).timeout
+		await get_tree().create_timer(2.6, true, false, true).timeout
 	RunState.finish_room_reward()
 	_finishing_reward = false
 
@@ -855,7 +858,7 @@ func _populate_win_relics() -> void:
 		var empty := Label.new()
 		empty.text = "No relics this run"
 		empty.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		var font := ArtBank.ui_font()
+		var font := ArtBank.body_font()
 		if font:
 			empty.add_theme_font_override("font", font)
 		empty.add_theme_font_size_override("font_size", 14)
@@ -870,7 +873,7 @@ func _populate_win_relics() -> void:
 		lab.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		lab.add_theme_font_size_override("font_size", 13)
 		lab.add_theme_color_override("font_color", Color(0.12, 0.1, 0.08))
-		var font := ArtBank.ui_font()
+		var font := ArtBank.body_font()
 		if font:
 			lab.add_theme_font_override("font", font)
 		chip.add_child(lab)

@@ -239,20 +239,39 @@ func apply_elite(hp_mult: float = 2.0, move_mult: float = 1.12, action_speed: fl
 			_configure_from_stats()
 	attack_range *= 1.08
 	_poise = get_max_poise() * 1.35
-	var visual := get_node_or_null("Visual") as Node2D
-	if visual:
-		visual.modulate = Color(1.15, 0.95, 0.55, 1.0)
+	var vis := get_node_or_null("Visual") as Node2D
+	if vis:
+		vis.modulate = Color(1.18, 0.92, 0.48, 1.0)
 	if combat_visual:
-		combat_visual.modulate = Color(1.1, 0.9, 0.5, 1.0)
+		combat_visual.modulate = Color(1.12, 0.88, 0.42, 1.0)
 	# Light elite threat aura: nearby status pressure via meta (read by hitbox path).
 	set_meta("elite_pressure", 1.12)
 	var hp_bar := get_node_or_null("HealthBar") as HealthBarComponent
 	if hp_bar:
 		var base := definition.display_name if definition != null and definition.display_name != "" else "Enemy"
-		hp_bar.set_label("ELITE " + base)
-		hp_bar.bar_size = Vector2(64, 8)
+		hp_bar.set_label("Elite · " + base)
+		hp_bar.bar_size = Vector2(72, 9)
 		hp_bar.fill_color = Color(0.95, 0.72, 0.15, 0.95)
+		hp_bar.hide_when_full = false
 		hp_bar.queue_redraw()
+	if vis:
+		vis.scale = Vector2(1.32, 1.32)
+	var spr := get_node_or_null("Sprite") as Sprite2D
+	if spr:
+		spr.scale *= 1.18
+	var ring := get_node_or_null("EliteHalo") as Sprite2D
+	if ring == null:
+		ring = Sprite2D.new()
+		ring.name = "EliteHalo"
+		ring.centered = true
+		ring.z_index = -1
+		ring.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+		add_child(ring)
+		move_child(ring, 0)
+	ring.texture = ArtBank.particle("circle_05")
+	if ring.texture:
+		ArtBank.fit_height(ring, 88.0, false)
+	ring.modulate = Color(1.0, 0.78, 0.18, 0.62)
 
 
 func apply_route_pressure(pressure: float) -> void:

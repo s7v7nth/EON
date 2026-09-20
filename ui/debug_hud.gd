@@ -179,7 +179,7 @@ func _paint_label(label: Label, size: int, color: Color, title: bool = false) ->
 	label.add_theme_color_override("font_color", color)
 	label.add_theme_color_override("font_outline_color", Color(0.0, 0.0, 0.0, 0.9))
 	label.add_theme_constant_override("outline_size", 6 if title else 5)
-	var font := ArtBank.title_font() if title else ArtBank.ui_font()
+	var font := ArtBank.body_heavy() if title else ArtBank.body_font()
 	if font:
 		label.add_theme_font_override("font", font)
 
@@ -290,11 +290,15 @@ func _refresh_location_from_run_state() -> void:
 
 
 func _location_display_name(biome_id: int) -> String:
+	var named := ""
 	if RunState.current_biome and int(RunState.current_biome.biome_id) == biome_id:
-		var named := RunState.current_biome.display_name
-		if named != "":
-			return named
-	return _biome_name(biome_id)
+		named = RunState.current_biome.display_name
+	if named == "":
+		named = _biome_name(biome_id)
+	var kind := RunState.room_kind_label()
+	if kind != "":
+		return "%s  ·  %s" % [named, kind]
+	return named
 
 
 func _biome_name(biome_id: int) -> String:
@@ -388,7 +392,7 @@ func _ensure_gold_label() -> void:
 	_gold_label = Label.new()
 	_gold_label.name = "GoldLabel"
 	_paint_label(_gold_label, 18, Color(1.0, 0.86, 0.32))
-	_gold_label.text = "GOLD  0"
+	_gold_label.text = "Gold  0"
 	row.add_child(_gold_label)
 	health_bar.get_parent().add_child(row)
 	health_bar.get_parent().move_child(row, 0)
@@ -397,7 +401,7 @@ func _ensure_gold_label() -> void:
 
 func _on_gold_changed(amount: int) -> void:
 	if _gold_label:
-		_gold_label.text = "GOLD  %d" % amount
+		_gold_label.text = "Gold  %d" % amount
 
 
 func _ensure_boss_bar() -> void:
@@ -428,7 +432,7 @@ func _ensure_boss_bar() -> void:
 	_boss_name = Label.new()
 	_boss_name.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_paint_label(_boss_name, 16, Color(1.0, 0.82, 0.78), true)
-	_boss_name.text = "WARDEN"
+	_boss_name.text = "Warden"
 	inner.add_child(_boss_name)
 	_boss_bar = ProgressBar.new()
 	_boss_bar.custom_minimum_size = Vector2(0, 16)
@@ -447,7 +451,7 @@ func _on_boss_spawned(boss_name: String) -> void:
 		_ensure_boss_bar()
 	_boss_wrap.visible = true
 	if _boss_name:
-		_boss_name.text = boss_name.to_upper()
+		_boss_name.text = boss_name
 
 
 func _on_boss_health(current: float, max_value: float, boss_name: String) -> void:
@@ -455,7 +459,7 @@ func _on_boss_health(current: float, max_value: float, boss_name: String) -> voi
 		_ensure_boss_bar()
 	_boss_wrap.visible = current > 0.0
 	if _boss_name and boss_name != "":
-		_boss_name.text = boss_name.to_upper()
+		_boss_name.text = boss_name
 	if _boss_bar:
 		_boss_bar.max_value = maxf(max_value, 1.0)
 		_boss_bar.value = current
@@ -469,7 +473,7 @@ func _on_boss_health(current: float, max_value: float, boss_name: String) -> voi
 
 func _on_boss_phase(phase: int, boss_name: String) -> void:
 	if _boss_name:
-		_boss_name.text = "%s  —  PHASE %d" % [boss_name.to_upper(), phase]
+		_boss_name.text = "%s  —  Phase %d" % [boss_name, phase]
 
 
 func _hide_boss_bar(_a = null) -> void:

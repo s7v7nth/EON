@@ -730,6 +730,22 @@ func is_elite_room() -> bool:
 	return room_index == 2 or room_index == 6
 
 
+func room_kind_label() -> String:
+	if is_boss_room():
+		return "Boss"
+	if is_elite_room():
+		return "Elite"
+	match current_room_kind():
+		DungeonRoom.RoomKind.SHOP:
+			return "Shop"
+		DungeonRoom.RoomKind.TREASURE:
+			return "Cache"
+		DungeonRoom.RoomKind.SECRET:
+			return "Secret"
+		_:
+			return ""
+
+
 func combat_pressure() -> float:
 	if is_tutorial_route() or not route_picked:
 		return 1.0

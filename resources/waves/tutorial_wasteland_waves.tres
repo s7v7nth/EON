@@ -43,5 +43,5 @@ spawns = Array[ExtResource("3_group")]([SubResource("spawn_w3")])
 
 [resource]
 script = ExtResource("1_set")
-between_wave_heal = 0.4
+between_wave_heal = 0.2
 waves = Array[ExtResource("2_def")]([SubResource("wave_1"), SubResource("wave_2"), SubResource("wave_3")])

@@ -275,7 +275,7 @@ static func _add_props(root: Node2D, biome: BiomeDefinition, accent: Color) -> v
 	rng.seed = int(biome.biome_id) * 4243 + 88
 	var clusters: Array[Vector2] = [
 		Vector2(-480, -210), Vector2(500, -190), Vector2(-430, 230),
-		Vector2(460, 220), Vector2(-180, -300), Vector2(210, 310)
+		Vector2(520, 80), Vector2(-180, -300), Vector2(420, -40)
 	]
 	if _is_boss_room():
 		# Keep the pit clear for the warden.

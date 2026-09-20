@@ -34,6 +34,8 @@ var _blocked_entry_dir: Vector2i = Vector2i.ZERO
 var _exit_latch: bool = false
 var _spawn_cursor: int = 0
 var _door_nodes: Array[Area2D] = []
+var _elite_presented: bool = false
+const EXIT_CLAIM_RADIUS := 140.0
 
 @onready var _entities: Node2D = get_node(entities_path)
 @onready var _spawn_points: Node2D = get_node(spawn_points_path)
@@ -64,6 +66,7 @@ func _on_route_chosen(_route_id: StringName) -> void:
 	_blocked_entry_dir = Vector2i.ZERO
 	_exit_latch = false
 	_spawn_cursor = 0
+	_elite_presented = false
 	_apply_biome()
 	is_final_room = RunState.is_last_room()
 	_setup_exits()
@@ -72,6 +75,11 @@ func _on_route_chosen(_route_id: StringName) -> void:
 
 func _on_architecture_changed(_architecture_id: int) -> void:
 	_try_start_combat()
+
+
+func _physics_process(_delta: float) -> void:
+	if _room_cleared and not _exit_latch:
+		_claim_exit_if_player_near()
 
 
 func _try_start_combat() -> void:
@@ -280,8 +288,15 @@ func _dress_exit_marker() -> void:
 		glow.z_index = 1
 		glow.texture = ArtBank.particle("circle_05")
 		glow.modulate = Color(0.35, 0.95, 0.55, 0.45)
-		glow.scale = Vector2(1.6, 0.7)
+		glow.scale = Vector2(2.5, 1.15)
 		exit_node.add_child(glow)
+	else:
+		glow.scale = Vector2(2.5, 1.15)
+	var shape_node := exit_node.get_node_or_null("ExitShape") as CollisionShape2D
+	if shape_node:
+		var rect := RectangleShape2D.new()
+		rect.size = Vector2(210, 130)
+		shape_node.shape = rect
 
 
 func _clear_procedural_doors() -> void:
@@ -448,6 +463,11 @@ func _spawn_biome_traps() -> void:
 		# Offset from enemy spawns so traps aren't stacked on markers.
 		var offset := Vector2(-90 + (i % 3) * 40, 70 + (i % 2) * 36)
 		trap.global_position = marker.global_position + offset
+		var spawn_pos := Vector2(-150, 50)
+		var exit_pos := Vector2(0, 250)
+		if trap.global_position.distance_to(spawn_pos) < 160.0 \
+				or trap.global_position.distance_to(exit_pos) < 150.0:
+			trap.global_position = Vector2(340.0 + float(i % 3) * 70.0, -220.0 + float(i % 2) * 80.0)
 		if trap.has_method("configure"):
 			trap.call(
 				"configure",
@@ -506,13 +526,18 @@ func _spawn_wave(wave: WaveDefinition) -> void:
 				def = RunState.pick_enemy_for_biome(def)
 			if def != null and enemy.has_method("apply_definition"):
 				enemy.call("apply_definition", def)
-			if group.is_elite and enemy.has_method("apply_elite"):
-				enemy.call(
-					"apply_elite",
-					group.elite_hp_mult,
-					group.elite_move_mult,
-					group.elite_action_speed
-				)
+			if enemy.has_method("apply_elite"):
+				if group.is_elite:
+					enemy.call(
+						"apply_elite",
+						group.elite_hp_mult,
+						group.elite_move_mult,
+						group.elite_action_speed
+					)
+					_elite_presented = true
+				elif RunState.is_elite_room() and not _elite_presented:
+					enemy.call("apply_elite", 2.2, 1.14, 1.18)
+					_elite_presented = true
 			if enemy is EnemyDummy:
 				(enemy as EnemyDummy).apply_route_pressure(RunState.combat_pressure())
 			if enemy is EnemyDummy and (enemy as EnemyDummy).definition and (enemy as EnemyDummy).definition.is_boss:
@@ -536,7 +561,7 @@ func _present_boss(enemy: EnemyDummy) -> void:
 	HitStop.punch(0.16, 0.22)
 	if FeelAudio:
 		FeelAudio.play_boss()
-	var name_txt := "WARDEN"
+	var name_txt := "Warden"
 	if enemy.definition and enemy.definition.display_name != "":
 		name_txt = enemy.definition.display_name
 	SignalBus.boss_spawned.emit(name_txt)
@@ -553,14 +578,14 @@ func _present_boss(enemy: EnemyDummy) -> void:
 	plate_wrap.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	plate_wrap.add_theme_stylebox_override("panel", ArtBank.panel_style(&"card", Color(1.0, 0.42, 0.32, 0.96)))
 	var plate := Label.new()
-	plate.text = name_txt.to_upper()
+	plate.text = name_txt
 	plate.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	plate.custom_minimum_size = Vector2(240, 24)
 	plate.add_theme_font_size_override("font_size", 18)
 	plate.add_theme_color_override("font_color", Color(1.0, 0.92, 0.88))
 	plate.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.95))
 	plate.add_theme_constant_override("outline_size", 6)
-	var plate_font := ArtBank.title_font()
+	var plate_font := ArtBank.body_heavy()
 	if plate_font:
 		plate.add_theme_font_override("font", plate_font)
 	plate_wrap.add_child(plate)
@@ -699,6 +724,32 @@ func _show_exit() -> void:
 		(exit_node as Area2D).monitoring = true
 		if not exit_node.body_entered.is_connected(_on_exit_body_entered):
 			exit_node.body_entered.connect(_on_exit_body_entered)
+	call_deferred("_claim_exit_if_player_near")
+
+
+func _claim_exit_if_player_near() -> void:
+	if not _room_cleared or _exit_latch:
+		return
+	if RunState.is_procedural_run():
+		return
+	if exit_marker_path == NodePath() or not has_node(exit_marker_path):
+		return
+	var exit_node := get_node(exit_marker_path) as Node2D
+	if exit_node == null or not exit_node.visible:
+		return
+	var player := get_tree().get_first_node_in_group("player") as Node2D
+	if player == null and player_path != NodePath() and has_node(player_path):
+		player = get_node(player_path) as Node2D
+	if player == null:
+		return
+	if player.global_position.distance_to(exit_node.global_position) <= EXIT_CLAIM_RADIUS:
+		_on_exit_body_entered(player)
+		return
+	if exit_node is Area2D:
+		for body in (exit_node as Area2D).get_overlapping_bodies():
+			if body is Player:
+				_on_exit_body_entered(body)
+				return
 
 
 func _on_exit_body_entered(body: Node2D) -> void:

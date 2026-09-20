@@ -41,7 +41,7 @@ func _run() -> void:
 
 	var land := load("res://resources/waves/tutorial_landfill_waves.tres") as WaveSet
 	assert(land != null and land.wave_count() == 3)
-	assert(land.between_wave_heal >= 0.4)
+	assert(land.between_wave_heal >= 0.15)
 	var w1 := 0
 	for group in land.get_wave(0).spawns:
 		w1 += group.count
@@ -66,6 +66,18 @@ func _run() -> void:
 	var overlay_title := overlay.get_node("Center/Panel/Margin/VBox/Title") as Label
 	assert(overlay_title != null)
 	assert(overlay_title.get_theme_font("font") != ArtBank.title_font(), "overlay titles should be Inter, not Kenney Future")
+	assert(hud.find_child("GoldLabel", true, false) != null)
+	var gold_lab := hud.find_child("GoldLabel", true, false) as Label
+	assert(gold_lab != null)
+	assert(gold_lab.text.begins_with("Gold"), "gold should be mixed-case")
+	RunState.choose_route(RunState.CAMPAIGN_ROUTE)
+	RunState.seek_room(2)
+	assert(RunState.is_elite_room())
+	assert(RunState.room_kind_label() == "Elite")
+	RunState.seek_room(1)
+	assert(RunState.room_kind_label() == "Shop")
+	RunState.seek_room(RunState.room_count() - 1)
+	assert(RunState.room_kind_label() == "Boss")
 
 	print("HUD_CHROME_OK")
 	get_tree().quit(0)

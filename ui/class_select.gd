@@ -184,7 +184,7 @@ func _build() -> void:
 	col.add_child(_start)
 
 	var help := Label.new()
-	help.text = "1–4 pick architecture · Enter begin · in run: WASD · LMB attack · RMB special/block · Space dash · Q cast · R restart"
+	help.text = "T / C / P pick route · 1–4 pick architecture · Enter begin · in run: WASD · LMB attack · RMB special/block · Space dash · Q cast · R restart"
 	help.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	help.add_theme_font_size_override("font_size", 13)
 	help.add_theme_color_override("font_color", Color(0.55, 0.6, 0.68))
@@ -285,6 +285,13 @@ func _select_route(route: ActRoute) -> void:
 			break
 
 
+func _select_route_by_id(route_id: StringName) -> void:
+	for route in RunState.get_available_routes():
+		if route and route.route_id == route_id:
+			_select_route(route)
+			return
+
+
 func _select_arch(arch: ArchitectureData) -> void:
 	_selected_arch = arch
 	for i in _arch_buttons.size():
@@ -303,6 +310,12 @@ func _unhandled_input(event: InputEvent) -> void:
 	var key := event as InputEventKey
 	var arches := RunState.get_architectures()
 	match key.physical_keycode:
+		KEY_T:
+			_select_route_by_id(&"tutorial")
+		KEY_C:
+			_select_route_by_id(&"campaign")
+		KEY_P:
+			_select_route_by_id(&"procedural")
 		KEY_1, KEY_KP_1:
 			if arches.size() > 0:
 				_select_arch(arches[0])

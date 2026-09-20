@@ -22,6 +22,8 @@ func _run() -> void:
 	assert(RunState.current_room_kind() == DungeonRoom.RoomKind.COMBAT)
 	RunState.seek_room(1)
 	assert(RunState.current_room_kind() == DungeonRoom.RoomKind.SHOP, "campaign room 2 should be a shop")
+	RunState.seek_room(2)
+	assert(RunState.is_elite_room(), "campaign room 3 should be an elite")
 	RunState.seek_room(campaign.total_rooms() - 1)
 	assert(RunState.is_boss_room(), "campaign last room should be the warden")
 	RunState.seek_room(0)
