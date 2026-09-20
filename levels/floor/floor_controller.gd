@@ -138,14 +138,16 @@ func _make_hall(root: Node2D, a: DungeonRoom, b: DungeonRoom, dir: Vector2i) -> 
 	floor.polygon = PackedVector2Array([
 		Vector2(-hl, -hw), Vector2(hl, -hw), Vector2(hl, hw), Vector2(-hl, hw)
 	])
-	floor.color = Color(0.10, 0.08, 0.09, 1)
+	floor.color = Color(0.08, 0.09, 0.1, 1)
 	hall.add_child(floor)
 	var tile := Sprite2D.new()
-	tile.texture = ArtBank.illustrated("floor_ruin")
+	tile.texture = ArtBank.illustrated("floor_street")
+	if tile.texture == null:
+		tile.texture = ArtBank.illustrated("floor_ruin")
 	if tile.texture:
 		tile.centered = true
 		tile.z_index = -18
-		tile.modulate = Color(1.06, 0.98, 0.9, 1)
+		tile.modulate = Color(0.92, 1.02, 1.06, 1)
 		hall.add_child(tile)
 		var sz := ArtBank.apply_opaque_region(tile)
 		tile.scale = Vector2((length + 36.0) / maxf(sz.x, 1.0), (hw * 2.2) / maxf(sz.y, 1.0))

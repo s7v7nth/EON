@@ -35,7 +35,7 @@ func lock_here() -> void:
 
 func strike() -> void:
 	if _fill:
-		_fill.color = Color(0.04, 0.03, 0.02, 0.92)
+		_fill.color = Color(0.04, 0.1, 0.08, 0.92)
 	var tw := create_tween()
 	tw.tween_property(self, "scale", Vector2(1.08, 0.78), 0.08)
 	tw.tween_property(self, "modulate:a", 0.0, 0.28)
@@ -58,20 +58,20 @@ func _ensure_visuals() -> void:
 	_fill = Polygon2D.new()
 	_fill.name = "Fill"
 	_fill.polygon = _iso_disk(radius)
-	# Muddy stain on blue-grey night tiles — black-on-black does not read.
-	_fill.color = Color(0.12, 0.07, 0.03, 0.9)
+	# Wet asphalt tell on night concrete — cyan rim, toxic inner. Not rust gold.
+	_fill.color = Color(0.05, 0.09, 0.11, 0.9)
 	add_child(_fill)
 	_rim = Line2D.new()
 	_rim.name = "Rim"
 	_rim.width = 8.0
-	_rim.default_color = Color(1.0, 0.42, 0.12, 1.0)
+	_rim.default_color = Color(0.25, 0.95, 0.92, 1.0)
 	_rim.closed = true
 	_rim.points = _iso_disk(radius)
 	add_child(_rim)
 	var inner := Line2D.new()
-	inner.name = "OliveRim"
+	inner.name = "ToxicRim"
 	inner.width = 4.0
-	inner.default_color = Color(0.62, 0.84, 0.16, 1.0)
+	inner.default_color = Color(0.48, 1.0, 0.22, 1.0)
 	inner.closed = true
 	inner.points = _iso_disk(radius * 0.78)
 	add_child(inner)

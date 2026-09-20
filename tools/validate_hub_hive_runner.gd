@@ -79,7 +79,7 @@ func _run() -> void:
 	await get_tree().process_frame
 	assert(slam.modulate.a > 0.0 or slam.get_child_count() > 0)
 	assert(slam.get_node_or_null("Rim") != null)
-	assert(slam.get_node_or_null("OliveRim") != null)
+	assert(slam.get_node_or_null("ToxicRim") != null)
 	assert(slam.z_index > -12)
 	slam.queue_free()
 
@@ -88,7 +88,7 @@ func _run() -> void:
 	bile.call("setup", 5.0, 2.0, 40.0)
 	await get_tree().process_frame
 	assert(bile.is_in_group("nano_bile"))
-	assert(bile.get_node_or_null("RustRim") != null)
+	assert(bile.get_node_or_null("NanoRim") != null)
 	assert(bile.get_node_or_null("Slurry") != null)
 	bile.queue_free()
 

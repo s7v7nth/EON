@@ -55,12 +55,14 @@ func _build_look() -> void:
 	spr.name = "Body"
 	spr.centered = true
 	spr.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
-	spr.texture = ArtBank.illustrated_facing("hero", Vector2(1, 1))
+	spr.texture = ArtBank.illustrated("clerk")
+	if spr.texture == null:
+		spr.texture = ArtBank.illustrated_facing("hero", Vector2(1, 1))
 	if spr.texture == null:
 		spr.texture = ArtBank.illustrated("hero_SE")
 	if spr.texture:
 		ArtBank.fit_height(spr, 88.0, true)
-	spr.modulate = Color(0.78, 0.68, 0.52, 1)
+	spr.modulate = Color.WHITE
 	spr.position = Vector2(6, -8)
 	add_child(spr)
 	var shape := CollisionShape2D.new()
@@ -71,7 +73,7 @@ func _build_look() -> void:
 	_prompt = Label.new()
 	_prompt.position = Vector2(-48, 34)
 	_prompt.add_theme_font_size_override("font_size", 13)
-	_prompt.add_theme_color_override("font_color", Color(0.72, 0.55, 0.32))
+	_prompt.add_theme_color_override("font_color", Color(0.45, 0.92, 1.0))
 	_prompt.text = "E  listen"
 	_prompt.visible = false
 	add_child(_prompt)
@@ -87,7 +89,7 @@ func _build_stall() -> void:
 	if back.texture:
 		ArtBank.fit_height(back, 110.0, true)
 	back.position = Vector2(8, -18)
-	back.modulate = Color(0.72, 0.58, 0.42, 1)
+	back.modulate = Color.WHITE
 	back.z_index = -2
 	add_child(back)
 	var counter := Sprite2D.new()
@@ -100,7 +102,7 @@ func _build_stall() -> void:
 	if counter.texture:
 		ArtBank.fit_height(counter, 48.0, true)
 	counter.position = Vector2(-18, 18)
-	counter.modulate = Color(0.7, 0.62, 0.4, 1)
+	counter.modulate = Color.WHITE
 	counter.z_index = -1
 	add_child(counter)
 	var lamp := Sprite2D.new()
@@ -111,7 +113,7 @@ func _build_stall() -> void:
 	if lamp.texture:
 		ArtBank.fit_height(lamp, 42.0, true)
 	lamp.position = Vector2(36, -28)
-	lamp.modulate = Color(1.05, 0.82, 0.48, 0.9)
+	lamp.modulate = Color(0.85, 1.05, 1.1, 1)
 	lamp.z_index = -1
 	add_child(lamp)
 
@@ -137,7 +139,7 @@ func _build_scrap_banner() -> void:
 	_plaque.offset_top = -138.0
 	_plaque.offset_bottom = -72.0
 	_plaque.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_plaque.add_theme_stylebox_override("panel", ArtBank.panel_style(&"card", Color(0.12, 0.1, 0.08, 0.94)))
+	_plaque.add_theme_stylebox_override("panel", ArtBank.panel_style(&"card", Color(0.05, 0.1, 0.14, 0.92)))
 	_plaque.visible = false
 	root.add_child(_plaque)
 	var col := VBoxContainer.new()
@@ -149,7 +151,7 @@ func _build_scrap_banner() -> void:
 	speaker.text = "Municipal issue"
 	speaker.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	speaker.add_theme_font_size_override("font_size", 12)
-	speaker.add_theme_color_override("font_color", Color(0.72, 0.55, 0.32))
+	speaker.add_theme_color_override("font_color", Color(0.45, 0.9, 0.98))
 	var speaker_font := ArtBank.body_bold()
 	if speaker_font:
 		speaker.add_theme_font_override("font", speaker_font)
@@ -160,7 +162,7 @@ func _build_scrap_banner() -> void:
 	_body.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_body.custom_minimum_size = Vector2(700, 44)
 	_body.add_theme_font_size_override("font_size", 16)
-	_body.add_theme_color_override("font_color", Color(0.88, 0.8, 0.62))
+	_body.add_theme_color_override("font_color", Color(0.86, 0.94, 0.98))
 	_body.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
 	_body.add_theme_constant_override("outline_size", 4)
 	var font := ArtBank.body_font()
@@ -174,7 +176,7 @@ func _process(delta: float) -> void:
 	var near := _player_in_range()
 	if _prompt:
 		_prompt.visible = near
-		_prompt.modulate = Color(1.1, 0.9, 0.55, 1) if near else Color.WHITE
+		_prompt.modulate = Color(0.7, 1.05, 1.1, 1) if near else Color.WHITE
 	if _plaque and _plaque.visible and not near:
 		_plaque.visible = false
 	if _listen_cool > 0.0:
@@ -219,7 +221,7 @@ func _player_in_range() -> bool:
 func _on_body_entered(body: Node2D) -> void:
 	if body is Player:
 		_near = true
-		_prompt.modulate = Color(1.1, 0.9, 0.55, 1)
+		_prompt.modulate = Color(0.7, 1.05, 1.1, 1)
 
 
 func _on_body_exited(body: Node2D) -> void:

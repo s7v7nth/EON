@@ -151,7 +151,7 @@ func _ensure_spit() -> void:
 		_spit = Line2D.new()
 		_spit.name = "BileSpit"
 		_spit.width = 14.0
-		_spit.default_color = Color(0.5, 0.68, 0.1, 0.0)
+		_spit.default_color = Color(0.42, 0.95, 0.22, 0.0)
 		_spit.z_index = 9
 		enemy.add_child(_spit)
 
@@ -161,7 +161,7 @@ func _update_spit(reach: float, alpha: float) -> void:
 		return
 	var tip := _aim * reach
 	_spit.points = PackedVector2Array([Vector2(0, -18), tip])
-	_spit.default_color = Color(0.5, 0.7, 0.1, alpha)
+	_spit.default_color = Color(0.42, 0.95, 0.22, alpha)
 	_spit.width = 16.0 if _phase == Phase.VOLLEY else 11.0
 
 

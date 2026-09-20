@@ -1,6 +1,6 @@
 class_name IllustratedSet
 extends RefCounted
-## EON illustrated ruin. Neon vs toxic, not a cloned street / clone-pod set.
+## EON dying-city pack. Wet concrete, shopfronts, neon vs toxic — not dungeon ruin, not a 1:1 street clone.
 
 const TILE_SCALE := 1.0
 const TILE_W := 256.0
@@ -9,13 +9,17 @@ const TILE_H := 128.0
 
 static func floor_tex(rng: RandomNumberGenerator, want_toxic: bool = false) -> Texture2D:
 	if want_toxic:
-		return ArtBank.illustrated("floor_toxic")
+		var toxic := ArtBank.illustrated("floor_street_c")
+		return toxic if toxic else ArtBank.illustrated("floor_toxic")
 	var roll := rng.randf() if rng else randf()
 	if roll < 0.28:
-		return ArtBank.illustrated("floor_ruin_b")
+		var b := ArtBank.illustrated("floor_street_b")
+		return b if b else ArtBank.illustrated("floor_ruin_b")
 	if roll < 0.52:
-		return ArtBank.illustrated("floor_ruin_c")
-	return ArtBank.illustrated("floor_ruin")
+		var c := ArtBank.illustrated("floor_street_c")
+		return c if c else ArtBank.illustrated("floor_ruin_c")
+	var a := ArtBank.illustrated("floor_street")
+	return a if a else ArtBank.illustrated("floor_ruin")
 
 
 static func place_floor(
@@ -132,7 +136,7 @@ static func _lamps(parent: Node2D, rng: RandomNumberGenerator, biome: BiomeDefin
 			continue
 		p += Vector2(rng.randf_range(-10, 10), rng.randf_range(-8, 8))
 		ArtBank.add_fitted(parent, tex, p, rng.randf_range(110.0, 138.0), 4, true)
-		_point_light(parent, p + Vector2(0, -36), Color(1.0, 0.55, 0.22, 1), 0.85, 2.1)
+		_point_light(parent, p + Vector2(0, -36), Color(0.35, 0.95, 1.0, 1), 0.9, 2.2)
 
 
 static func _pylons(parent: Node2D, rng: RandomNumberGenerator, biome: BiomeDefinition, keep_center_clear: bool) -> void:

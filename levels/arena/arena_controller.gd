@@ -314,14 +314,14 @@ func _dress_exit_marker() -> void:
 		plaque = PanelContainer.new()
 		plaque.name = "ExitPlaque"
 		plaque.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		plaque.add_theme_stylebox_override("panel", ArtBank.panel_style(&"card", Color(0.42, 0.3, 0.16, 0.94)))
+		plaque.add_theme_stylebox_override("panel", ArtBank.panel_style(&"card", Color(0.08, 0.18, 0.22, 0.92)))
 		var lab := Label.new()
 		lab.name = "ExitHint"
 		lab.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		lab.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		lab.custom_minimum_size = Vector2(108, 24)
 		lab.add_theme_font_size_override("font_size", 16)
-		lab.add_theme_color_override("font_color", Color(0.08, 0.18, 0.1, 1))
+		lab.add_theme_color_override("font_color", Color(0.7, 0.95, 1.0, 1))
 		lab.add_theme_color_override("font_outline_color", Color(1, 1, 1, 0.45))
 		lab.add_theme_constant_override("outline_size", 3)
 		var font := ArtBank.body_bold()

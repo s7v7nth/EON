@@ -3,8 +3,8 @@ extends CanvasLayer
 
 const HP_FILL := Color(0.92, 0.22, 0.28, 1)
 const HP_FILL_LOW := Color(1.0, 0.45, 0.12, 1)
-const ENERGY_FILL := Color(0.58, 0.4, 0.22, 1)
-const ADRENALINE_FILL := Color(0.98, 0.78, 0.18, 1)
+const ENERGY_FILL := Color(0.28, 0.82, 0.92, 1)
+const ADRENALINE_FILL := Color(0.95, 0.42, 0.78, 1)
 
 @onready var health_bar: ProgressBar = $Margin/VBox/HealthBar
 @onready var energy_bar: ProgressBar = $Margin/VBox/EnergyBar
@@ -43,9 +43,9 @@ func _ready() -> void:
 	health_bar.modulate = Color.WHITE
 	energy_bar.modulate = Color.WHITE
 	adrenaline_bar.modulate = Color.WHITE
-	_paint_label(location_banner, 18, Color(0.78, 0.7, 0.58, 0.98), false)
-	_paint_label(style_label, 16, Color(0.82, 0.62, 0.32))
-	_paint_label(status_label, 13, Color(1.0, 0.82, 0.28))
+	_paint_label(location_banner, 18, Color(0.72, 0.92, 0.98, 0.98), false)
+	_paint_label(style_label, 16, Color(0.55, 0.92, 1.0))
+	_paint_label(status_label, 13, Color(0.95, 0.78, 0.35))
 	status_label.visible = false
 	var weapon_label := health_bar.get_parent().get_node_or_null("WeaponLabel")
 	if weapon_label:
@@ -57,12 +57,12 @@ func _ready() -> void:
 	health_bar.get_parent().add_child(_hp_label)
 	health_bar.get_parent().move_child(_hp_label, health_bar.get_index())
 	_primary_label = Label.new()
-	_paint_label(_primary_label, 12, Color(0.72, 0.58, 0.38))
+	_paint_label(_primary_label, 12, Color(0.55, 0.86, 0.92))
 	_primary_label.text = "Energy"
 	energy_bar.get_parent().add_child(_primary_label)
 	energy_bar.get_parent().move_child(_primary_label, energy_bar.get_index())
 	_secondary_label = Label.new()
-	_paint_label(_secondary_label, 12, Color(1.0, 0.88, 0.45))
+	_paint_label(_secondary_label, 12, Color(0.95, 0.62, 0.85))
 	_secondary_label.text = "Adrenaline"
 	adrenaline_bar.get_parent().add_child(_secondary_label)
 	adrenaline_bar.get_parent().move_child(_secondary_label, adrenaline_bar.get_index())
@@ -116,7 +116,7 @@ func _wrap_hud_chrome() -> void:
 	var chrome := PanelContainer.new()
 	chrome.name = "Chrome"
 	chrome.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	chrome.add_theme_stylebox_override("panel", ArtBank.panel_style(&"glass", Color(0.14, 0.07, 0.05, 0.9)))
+	chrome.add_theme_stylebox_override("panel", ArtBank.panel_style(&"glass", Color(0.05, 0.1, 0.14, 0.82)))
 	var inner := MarginContainer.new()
 	inner.name = "ChromePad"
 	inner.add_theme_constant_override("margin_left", 12)
@@ -142,7 +142,7 @@ func _wrap_location_banner() -> void:
 	plaque.offset_right = 210.0
 	plaque.offset_top = 14.0
 	plaque.offset_bottom = 52.0
-	plaque.add_theme_stylebox_override("panel", ArtBank.panel_style(&"card", Color(0.12, 0.07, 0.05, 0.92)))
+	plaque.add_theme_stylebox_override("panel", ArtBank.panel_style(&"card", Color(0.06, 0.12, 0.16, 0.88)))
 	var parent := location_banner.get_parent()
 	parent.remove_child(location_banner)
 	plaque.add_child(location_banner)
@@ -160,7 +160,7 @@ func _wrap_location_banner() -> void:
 func _style_bar(bar: ProgressBar, fill: Color) -> void:
 	if bar == null:
 		return
-	var bg := ArtBank.panel_style(&"bar", Color(0.05, 0.03, 0.03, 0.95))
+	var bg := ArtBank.panel_style(&"bar", Color(0.04, 0.07, 0.09, 0.95))
 	bar.add_theme_stylebox_override("background", bg)
 	var flat := StyleBoxFlat.new()
 	flat.bg_color = fill
@@ -384,7 +384,7 @@ func _ensure_gold_label() -> void:
 	row.add_theme_constant_override("separation", 6)
 	_gold_label = Label.new()
 	_gold_label.name = "GoldLabel"
-	_paint_label(_gold_label, 18, Color(0.95, 0.82, 0.35))
+	_paint_label(_gold_label, 18, Color(0.85, 0.92, 0.55))
 	_gold_label.text = "Gold  0"
 	row.add_child(_gold_label)
 	health_bar.get_parent().add_child(row)
@@ -409,7 +409,7 @@ func _ensure_boss_bar() -> void:
 	_boss_wrap.offset_right = -280.0
 	_boss_wrap.offset_top = 58.0
 	_boss_wrap.offset_bottom = 118.0
-	_boss_wrap.add_theme_stylebox_override("panel", ArtBank.panel_style(&"glass", Color(0.22, 0.08, 0.1, 0.9)))
+	_boss_wrap.add_theme_stylebox_override("panel", ArtBank.panel_style(&"glass", Color(0.08, 0.04, 0.08, 0.88)))
 	var col := VBoxContainer.new()
 	col.add_theme_constant_override("separation", 2)
 	_boss_wrap.add_child(col)

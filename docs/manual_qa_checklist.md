@@ -92,14 +92,15 @@
 - [ ] Overlay после clear **не телепортирует** — выходишь пешком в коридор
 - [ ] Quiet rooms (remnant / shop / cache): двери сразу проходимы из коридора — не нужно «войти в occupancy чтобы открыть»
 - [ ] Standing on an island enters that room even if occupancy missed after a reward overlay
-- [ ] Hive island keeps **Data Center · Boss** while you stand on those tiles — neighbor remnant / hallway does not steal occupancy, quiet-heal, or respawn a second butcher
+- [ ] Hive island keeps **Data Center · Boss** while you stand on those tiles — neighbor remnant / hallway does not steal occupancy, quiet-heal, or respawn a second sweeper
 - [ ] Campaign: F9 на старте → pick reward if it pops → юг Remnant (**stall just inside the door**, **E = one scrap** on a bottom banner) → восток **The Hive**
 - [ ] Clerk: **E listen** only when in range; first visit — 12 sequential Hades scraps as a **bottom line** (stall stays visible, не speech dump, не auto-talk от overlap); потом node line «Fine. Drawer node…» → Нейро unlock; repeat visit — 3 scraps
 - [ ] Clerk **не** выдаёт Улей; kit снимаешь с The Hive
 - [ ] Улей-босс в графе (campaign/procedural); kill пишет meta unlock
-- [ ] Hive tells: slam = dark floor circle then mass (выйти из круга); nano-bile = olive spit line then lasting **olive-rust slurry** (не комнатный neon drain stain); flesh-hook = **meat-nano cable with a barb** (not a clean orange laser), kiss = pull (sidestep the line); swarm chunks fall off — kill or they crawl back and the butcher gets thicker
-- [ ] The Hive stands in the room, not stuffed in the door; slam circle has a rust/olive rim you can actually see on the night floor
-- [ ] Комнаты — illustrated ruin (неон vs toxic, rim-lit hostiles, contrasty night) **без** Kenney-вокселей / Roblox-dim / клона улицы с clone-pod
+- [ ] Hive tells: slam = dark wet-asphalt circle then mass (выйти из круга); nano-bile = toxic spit line then lasting **dark nanite slurry with a magenta rim** (не комнатный neon drain stain); flesh-hook = **nano cable with a barb** (not a clean orange laser), kiss = pull (sidestep the line); swarm chunks fall off — kill or they crawl back and the sweeper gets thicker
+- [ ] The Hive stands in the room, not stuffed in the door; slam circle has a cyan/toxic rim you can actually see on the night floor
+- [ ] Комнаты — dying-city isometric **sci-fi** (concrete sidewalks, shopfronts, wet neon, toxic green, rim-lit machines) **без** Diablo/castlevania dungeon, hooded-cape paladin portraits, starfield, Kenney-вокселей / Roblox-dim / 1:1 клона улицы с clone-pod
+- [ ] HUD — thin cyan night glass (not gold parchment / rust plate); class select uses city night + architecture machines, not a gold wordmark on a galaxy
 - [ ] Переход через дверь: короткий fade (без резкого чёрного кадра / hard cut)
 - [ ] У дверей есть проём в стене + рамка коридора (не сплошная стена с оверлеем); столбы стоят по бокам дыры, не в центре
 - [ ] Пол/стены комнаты имеют сетку, углы и neon-акценты под цвет биома (не голый серый прямоугольник)

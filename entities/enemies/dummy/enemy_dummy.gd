@@ -224,13 +224,13 @@ func apply_definition(def: EnemyDefinition) -> void:
 		var vis_chunk := get_node_or_null("Visual") as Node2D
 		if vis_chunk:
 			vis_chunk.scale = Vector2(0.78, 0.78)
-			vis_chunk.modulate = Color(0.82, 0.9, 0.32, 1)
+			vis_chunk.modulate = Color(0.55, 0.95, 0.45, 1)
 		var chunk_bar := get_node_or_null("HealthBar") as HealthBarComponent
 		if chunk_bar:
 			chunk_bar.set_label("Hive chunk")
 			chunk_bar.hide_when_full = false
 			chunk_bar.bar_size = Vector2(46, 7)
-			chunk_bar.fill_color = Color(0.55, 0.72, 0.18, 0.95)
+			chunk_bar.fill_color = Color(0.42, 0.92, 0.35, 0.95)
 	var vis := get_node_or_null("Visual") as Node2D
 	if vis and def:
 		var swarm := false

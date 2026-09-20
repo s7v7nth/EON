@@ -117,7 +117,7 @@ func _wrap_wave_plaque() -> void:
 	_wave_plaque.offset_right = 360.0
 	_wave_plaque.offset_top = -64.0
 	_wave_plaque.offset_bottom = -16.0
-	_wave_plaque.add_theme_stylebox_override("panel", ArtBank.panel_style(&"card", Color(0.36, 0.3, 0.22, 0.94)))
+	_wave_plaque.add_theme_stylebox_override("panel", ArtBank.panel_style(&"card", Color(0.08, 0.16, 0.2, 0.9)))
 	_wave_plaque.visible = false
 	var parent := _wave_label.get_parent()
 	parent.remove_child(_wave_label)
@@ -228,7 +228,7 @@ func _ensure_combo_toast() -> void:
 	_combo_toast.offset_bottom = 86.0
 	_combo_toast.z_index = 80
 	_combo_toast.process_mode = Node.PROCESS_MODE_ALWAYS
-	_combo_toast.add_theme_stylebox_override("panel", ArtBank.panel_style(&"card", Color(0.72, 0.52, 0.22, 0.96)))
+	_combo_toast.add_theme_stylebox_override("panel", ArtBank.panel_style(&"card", Color(0.08, 0.22, 0.28, 0.94)))
 	_combo_toast.modulate.a = 0.0
 	var pad := MarginContainer.new()
 	pad.add_theme_constant_override("margin_left", 16)
@@ -243,7 +243,7 @@ func _ensure_combo_toast() -> void:
 	kicker.text = "Named combo"
 	kicker.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	kicker.add_theme_font_size_override("font_size", 13)
-	kicker.add_theme_color_override("font_color", Color(0.35, 0.22, 0.08, 1))
+	kicker.add_theme_color_override("font_color", Color(0.45, 0.88, 0.95, 1))
 	var kicker_font := ArtBank.body_bold()
 	if kicker_font:
 		kicker.add_theme_font_override("font", kicker_font)
@@ -251,8 +251,8 @@ func _ensure_combo_toast() -> void:
 	_combo_title = Label.new()
 	_combo_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_combo_title.add_theme_font_size_override("font_size", 32)
-	_combo_title.add_theme_color_override("font_color", Color(0.12, 0.08, 0.04, 1))
-	_combo_title.add_theme_color_override("font_outline_color", Color(1.0, 0.95, 0.7, 0.55))
+	_combo_title.add_theme_color_override("font_color", Color(0.85, 0.97, 1.0, 1))
+	_combo_title.add_theme_color_override("font_outline_color", Color(0.05, 0.12, 0.16, 0.7))
 	_combo_title.add_theme_constant_override("outline_size", 4)
 	var title_font := ArtBank.body_heavy()
 	if title_font:
@@ -287,7 +287,7 @@ func _ensure_combo_chip() -> void:
 	_combo_chip.offset_bottom = -72.0
 	_combo_chip.z_index = 70
 	_combo_chip.process_mode = Node.PROCESS_MODE_ALWAYS
-	_combo_chip.add_theme_stylebox_override("panel", ArtBank.panel_style(&"card", Color(0.38, 0.28, 0.16, 0.95)))
+	_combo_chip.add_theme_stylebox_override("panel", ArtBank.panel_style(&"card", Color(0.06, 0.14, 0.18, 0.92)))
 	_combo_chip.modulate.a = 0.0
 	var pad := MarginContainer.new()
 	pad.add_theme_constant_override("margin_left", 12)
@@ -299,7 +299,7 @@ func _ensure_combo_chip() -> void:
 	_combo_chip_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_combo_chip_title.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	_combo_chip_title.add_theme_font_size_override("font_size", 18)
-	_combo_chip_title.add_theme_color_override("font_color", Color(0.86, 0.72, 0.48, 1))
+	_combo_chip_title.add_theme_color_override("font_color", Color(0.7, 0.94, 1.0, 1))
 	var chip_font := ArtBank.body_heavy()
 	if chip_font:
 		_combo_chip_title.add_theme_font_override("font", chip_font)
@@ -555,7 +555,7 @@ func _on_route_pressed(route: ActRoute) -> void:
 
 func _show_arch_pick() -> void:
 	_populate_arch_pick()
-	_skin_panel(&"glass", Color(0.9, 0.84, 0.62, 0.97))
+	_skin_panel(&"glass", Color(0.12, 0.22, 0.28, 0.94))
 	_show(Mode.ARCH_PICK, "Choose Architecture", "Defines your combat language — Q = special")
 	_arch.visible = true
 	if _route:
@@ -680,9 +680,9 @@ func _make_boon_card(upgrade: UpgradeData, hotkey: int = 0, on_pick: Callable = 
 	var house_c := UpgradeData.house_color(upgrade.house)
 	var combo_name := ArtifactCombos.combo_name_if_granted(RunState.owned_upgrade_ids(), upgrade.upgrade_id)
 	if combo_name != "":
-		tint = Color(0.95, 0.78, 0.22, 1)
-		btn.add_theme_stylebox_override("normal", _card_style(tint, Color(1.0, 0.94, 0.7, 1)))
-		btn.add_theme_stylebox_override("hover", _card_style(tint.lightened(0.12), Color(1.05, 0.98, 0.78, 1)))
+		tint = Color(0.28, 0.82, 0.92, 1)
+		btn.add_theme_stylebox_override("normal", _card_style(tint, Color(0.08, 0.16, 0.2, 1)))
+		btn.add_theme_stylebox_override("hover", _card_style(tint.lightened(0.12), Color(0.1, 0.22, 0.26, 1)))
 	else:
 		btn.add_theme_stylebox_override("normal", _card_style(tint, Color(0.92, 0.94, 1.0, 1)))
 		btn.add_theme_stylebox_override("hover", _card_style(tint.lightened(0.18), Color(1.05, 1.05, 1.08, 1)))
@@ -708,7 +708,7 @@ func _make_boon_card(upgrade: UpgradeData, hotkey: int = 0, on_pick: Callable = 
 	key.text = "[ %d ]" % hotkey if hotkey > 0 else ""
 	key.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	key.add_theme_font_size_override("font_size", 12)
-	key.add_theme_color_override("font_color", Color(0.35, 0.24, 0.08, 1) if combo_name != "" else Color(0.78, 0.82, 0.9))
+	key.add_theme_color_override("font_color", Color(0.55, 0.92, 1.0) if combo_name != "" else Color(0.78, 0.82, 0.9))
 	var key_font := ArtBank.body_bold()
 	if key_font:
 		key.add_theme_font_override("font", key_font)
@@ -729,7 +729,7 @@ func _make_boon_card(upgrade: UpgradeData, hotkey: int = 0, on_pick: Callable = 
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	title.add_theme_font_size_override("font_size", 18)
-	title.add_theme_color_override("font_color", Color(0.18, 0.12, 0.04, 1) if combo_name != "" else Color(0.96, 0.97, 1.0))
+	title.add_theme_color_override("font_color", Color(0.88, 0.98, 1.0) if combo_name != "" else Color(0.96, 0.97, 1.0))
 	var title_font := ArtBank.body_heavy()
 	if title_font:
 		title.add_theme_font_override("font", title_font)
@@ -740,8 +740,8 @@ func _make_boon_card(upgrade: UpgradeData, hotkey: int = 0, on_pick: Callable = 
 		badge.text = "Completes  %s" % combo_name
 		badge.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		badge.add_theme_font_size_override("font_size", 13)
-		badge.add_theme_color_override("font_color", Color(0.42, 0.28, 0.06, 1))
-		badge.add_theme_color_override("font_outline_color", Color(1.0, 0.92, 0.55, 0.85))
+		badge.add_theme_color_override("font_color", Color(0.55, 0.95, 1.0, 1))
+		badge.add_theme_color_override("font_outline_color", Color(0.04, 0.1, 0.14, 0.85))
 		badge.add_theme_constant_override("outline_size", 3)
 		var badge_font := ArtBank.body_bold()
 		if badge_font:
@@ -986,12 +986,12 @@ func _populate_win_relics() -> void:
 		return
 	for relic_name in names:
 		var chip := PanelContainer.new()
-		chip.add_theme_stylebox_override("panel", ArtBank.panel_style(&"card", Color(0.95, 0.88, 0.55, 0.95)))
+		chip.add_theme_stylebox_override("panel", ArtBank.panel_style(&"card", Color(0.12, 0.28, 0.34, 0.95)))
 		var lab := Label.new()
 		lab.text = relic_name
 		lab.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		lab.add_theme_font_size_override("font_size", 13)
-		lab.add_theme_color_override("font_color", Color(0.12, 0.1, 0.08))
+		lab.add_theme_color_override("font_color", Color(0.82, 0.95, 1.0))
 		var font := ArtBank.body_font()
 		if font:
 			lab.add_theme_font_override("font", font)

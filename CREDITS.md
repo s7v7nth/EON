@@ -31,6 +31,6 @@ Attribution is not required under CC0; we credit the authors anyway.
 
 Godot `GradientTexture2D` lighting remains engine MIT.
 
-## Illustrated ruin pack
+## Illustrated dying-city pack
 
-Hand-authored isometric hero / hostiles / floors / walls / EON props under `assets/illustrated/` (original, CC0 for this project). Not Kenney voxels and not a 1:1 copy of third-party screenshots.
+Hand-authored isometric hero / hostiles / floors / walls / EON props under `assets/illustrated/` (original, CC0 for this project). Dying-city sci-fi: concrete, shopfronts, wet neon, toxic green, rim-lit machines. Not Kenney voxels, not a 1:1 copy of third-party screenshots, and not dark-fantasy dungeon paint.

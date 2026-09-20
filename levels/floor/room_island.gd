@@ -80,7 +80,7 @@ func _build_floor() -> void:
 	floor.name = "Floor"
 	floor.z_index = -20
 	floor.polygon = _poly
-	floor.color = Color(0.05, 0.045, 0.055, 1)
+	floor.color = Color(0.06, 0.07, 0.08, 1)
 	add_child(floor)
 
 
@@ -172,13 +172,15 @@ func _add_door_sill(dir: Vector2i) -> void:
 	var outward := Vector2(float(dir.x), float(dir.y))
 	var tile := Sprite2D.new()
 	tile.name = "Sill_%d_%d" % [dir.x, dir.y]
-	tile.texture = ArtBank.illustrated("floor_ruin")
+	tile.texture = ArtBank.illustrated("floor_street")
+	if tile.texture == null:
+		tile.texture = ArtBank.illustrated("floor_ruin")
 	if tile.texture == null:
 		return
 	tile.centered = true
 	tile.z_index = -15
 	tile.position = p + outward * 40.0
-	tile.modulate = Color(1.04, 0.97, 0.9, 1)
+	tile.modulate = Color(0.92, 1.02, 1.06, 1)
 	tile.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 	add_child(tile)
 	var sz := ArtBank.apply_opaque_region(tile)
@@ -351,7 +353,7 @@ func _add_boss_stain(root: Node2D) -> void:
 	stain.centered = true
 	stain.modulate = Color(0.95, 0.2, 0.18, 0.55)
 	if room and room.boss_id == &"hive":
-		stain.modulate = Color(0.42, 0.55, 0.16, 0.62)
+		stain.modulate = Color(0.28, 0.85, 0.22, 0.62)
 	stain.scale = Vector2(1.4, 0.9)
 	stain.z_index = -3
 	root.add_child(stain)
@@ -359,7 +361,7 @@ func _add_boss_stain(root: Node2D) -> void:
 	glow.texture = ArtBank.radial_light()
 	glow.color = Color(0.95, 0.18, 0.12, 1)
 	if room and room.boss_id == &"hive":
-		glow.color = Color(0.45, 0.72, 0.18, 1)
+		glow.color = Color(0.35, 0.95, 0.28, 1)
 	glow.energy = 0.9
 	glow.texture_scale = 2.8
 	root.add_child(glow)

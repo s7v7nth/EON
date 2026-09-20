@@ -1,5 +1,5 @@
 extends Area2D
-## Lasting olive spit. Walk around it. Standing in last spit eats HP.
+## Lasting nano-bile spit. Walk around it. Standing in last spit eats HP.
 
 var _damage: float = 5.0
 var _duration: float = 6.0
@@ -72,16 +72,16 @@ func _scan() -> void:
 
 
 func _build_look() -> void:
-	# Distinct from the room's neon-green drain stains: olive-rust slurry + rust rim.
+	# Distinct from the room's bright drain stains: darker nanite slurry + magenta rim.
 	var fill := Polygon2D.new()
 	fill.name = "Slurry"
 	fill.polygon = _iso_disk(_radius)
-	fill.color = Color(0.34, 0.38, 0.08, 0.94)
+	fill.color = Color(0.08, 0.32, 0.1, 0.94)
 	add_child(fill)
 	var rim := Line2D.new()
-	rim.name = "RustRim"
+	rim.name = "NanoRim"
 	rim.width = 5.5
-	rim.default_color = Color(0.72, 0.3, 0.08, 1.0)
+	rim.default_color = Color(0.92, 0.28, 0.72, 1.0)
 	rim.closed = true
 	rim.points = _iso_disk(_radius)
 	add_child(rim)
@@ -94,7 +94,7 @@ func _build_look() -> void:
 		splat.texture = ArtBank.tex("res://assets/kenney/splat/splat05.png")
 	if splat.texture:
 		ArtBank.fit_height(splat, maxf(_radius * 1.35, 40.0), false)
-	splat.modulate = Color(0.32, 0.36, 0.1, 0.7)
+	splat.modulate = Color(0.35, 0.85, 0.22, 0.7)
 	splat.rotation = randf() * TAU
 	add_child(splat)
 	var shape := CollisionShape2D.new()

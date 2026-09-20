@@ -149,7 +149,7 @@ func _ensure_line() -> void:
 		_line = Line2D.new()
 		_line.name = "HookLine"
 		_line.width = 16.0
-		_line.default_color = Color(0.42, 0.28, 0.1, 0.0)
+		_line.default_color = Color(0.22, 0.55, 0.58, 0.0)
 		_line.z_index = 8
 		enemy.add_child(_line)
 	var core := enemy.get_node_or_null("HookCore") as Line2D
@@ -157,7 +157,7 @@ func _ensure_line() -> void:
 		core = Line2D.new()
 		core.name = "HookCore"
 		core.width = 6.0
-		core.default_color = Color(0.58, 0.42, 0.12, 0.0)
+		core.default_color = Color(0.45, 0.95, 0.85, 0.0)
 		core.z_index = 9
 		enemy.add_child(core)
 	var tip := enemy.get_node_or_null("HookTip") as Polygon2D
@@ -167,7 +167,7 @@ func _ensure_line() -> void:
 		tip.polygon = PackedVector2Array([
 			Vector2(22, 0), Vector2(-4, -14), Vector2(6, -4), Vector2(-10, 0), Vector2(6, 8), Vector2(-6, 16)
 		])
-		tip.color = Color(0.48, 0.22, 0.1, 0.0)
+		tip.color = Color(0.85, 0.22, 0.55, 0.0)
 		tip.z_index = 10
 		enemy.add_child(tip)
 	if enemy.get_node_or_null("HookMeat") == null:
@@ -181,7 +181,7 @@ func _ensure_line() -> void:
 			lump.polygon = PackedVector2Array([
 				Vector2(8, 0), Vector2(2, -7), Vector2(-8, -3), Vector2(-6, 5), Vector2(3, 7)
 			])
-			lump.color = Color(0.4, 0.32, 0.1, 0.0)
+			lump.color = Color(0.22, 0.55, 0.18, 0.0)
 			meat.add_child(lump)
 
 
@@ -191,18 +191,18 @@ func _update_line(reach: float, alpha: float) -> void:
 	var origin := Vector2(0, -12)
 	var tip := _aim * reach
 	_line.points = PackedVector2Array([origin, tip])
-	_line.default_color = Color(0.38, 0.26, 0.08, alpha)
+	_line.default_color = Color(0.18, 0.48, 0.52, alpha)
 	_line.width = 18.0 if _phase == Phase.FLY else 12.0
 	var core := enemy.get_node_or_null("HookCore") as Line2D
 	if core:
 		core.points = PackedVector2Array([origin, tip])
-		core.default_color = Color(0.62, 0.48, 0.14, alpha * 0.95)
+		core.default_color = Color(0.42, 0.95, 0.82, alpha * 0.95)
 		core.width = 7.0 if _phase == Phase.FLY else 4.5
 	var barb := enemy.get_node_or_null("HookTip") as Polygon2D
 	if barb:
 		barb.position = tip
 		barb.rotation = _aim_angle
-		barb.color = Color(0.52, 0.22, 0.1, alpha)
+		barb.color = Color(0.92, 0.28, 0.62, alpha)
 	var meat := enemy.get_node_or_null("HookMeat") as Node2D
 	if meat:
 		var kids := meat.get_children()
@@ -213,7 +213,7 @@ func _update_line(reach: float, alpha: float) -> void:
 			var t := (float(i) + 1.0) / float(kids.size() + 1)
 			lump.position = origin.lerp(tip, t)
 			lump.rotation = _aim_angle + 0.4 * sin(float(i) * 1.7)
-			lump.color = Color(0.4, 0.3, 0.1, alpha * 0.9)
+			lump.color = Color(0.28, 0.72, 0.18, alpha * 0.9)
 
 
 func _clear_line() -> void:
