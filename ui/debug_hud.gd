@@ -35,6 +35,7 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_hide_debug_dumps()
 	_wrap_hud_chrome()
+	_wrap_location_banner()
 	_style_bar(health_bar, HP_FILL)
 	_style_bar(energy_bar, ENERGY_FILL)
 	_style_bar(adrenaline_bar, ADRENALINE_FILL)
@@ -103,29 +104,68 @@ func _hide_debug_dumps() -> void:
 func _wrap_hud_chrome() -> void:
 	var margin := $Margin as MarginContainer
 	var vbox := $Margin/VBox as VBoxContainer
-	if margin == null or vbox == null or vbox.get_parent() is PanelContainer:
+	if margin == null or vbox == null:
+		return
+	var parent := vbox.get_parent()
+	if parent is PanelContainer:
+		return
+	if parent is MarginContainer and parent.get_parent() is PanelContainer:
 		return
 	var chrome := PanelContainer.new()
 	chrome.name = "Chrome"
 	chrome.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	chrome.add_theme_stylebox_override("panel", ArtBank.panel_style(&"glass", Color(0.78, 0.82, 0.95, 0.92)))
+	chrome.add_theme_stylebox_override("panel", ArtBank.panel_style(&"glass", Color(0.78, 0.82, 0.95, 0.94)))
+	var inner := MarginContainer.new()
+	inner.name = "ChromePad"
+	inner.add_theme_constant_override("margin_left", 12)
+	inner.add_theme_constant_override("margin_right", 12)
+	inner.add_theme_constant_override("margin_top", 10)
+	inner.add_theme_constant_override("margin_bottom", 10)
 	margin.remove_child(vbox)
-	chrome.add_child(vbox)
+	inner.add_child(vbox)
+	chrome.add_child(inner)
 	margin.add_child(chrome)
+
+
+func _wrap_location_banner() -> void:
+	if location_banner == null or location_banner.get_parent() is PanelContainer:
+		return
+	var plaque := PanelContainer.new()
+	plaque.name = "LocationChrome"
+	plaque.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	plaque.set_anchors_preset(Control.PRESET_CENTER_TOP)
+	plaque.anchor_left = 0.5
+	plaque.anchor_right = 0.5
+	plaque.offset_left = -170.0
+	plaque.offset_right = 170.0
+	plaque.offset_top = 14.0
+	plaque.offset_bottom = 52.0
+	plaque.add_theme_stylebox_override("panel", ArtBank.panel_style(&"card", Color(0.86, 0.9, 1.0, 0.94)))
+	var parent := location_banner.get_parent()
+	parent.remove_child(location_banner)
+	plaque.add_child(location_banner)
+	parent.add_child(plaque)
+	location_banner.set_anchors_preset(Control.PRESET_FULL_RECT)
+	location_banner.offset_left = 8.0
+	location_banner.offset_right = -8.0
+	location_banner.offset_top = 2.0
+	location_banner.offset_bottom = -2.0
+	location_banner.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	location_banner.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	plaque.visible = location_banner.text != ""
 
 
 func _style_bar(bar: ProgressBar, fill: Color) -> void:
 	if bar == null:
 		return
-	var bg := StyleBoxFlat.new()
-	bg.bg_color = Color(0.06, 0.07, 0.1, 0.95)
-	bg.set_corner_radius_all(6)
-	bg.set_border_width_all(1)
-	bg.border_color = Color(0.0, 0.0, 0.0, 0.7)
-	var fg := StyleBoxFlat.new()
-	fg.bg_color = fill
-	fg.set_corner_radius_all(6)
+	var bg := ArtBank.panel_style(&"bar", Color(0.14, 0.16, 0.2, 0.95))
 	bar.add_theme_stylebox_override("background", bg)
+	var fg: StyleBox = ArtBank.nine_slice(ArtBank.BAR_GLOSS, 8.0, fill)
+	if fg == null:
+		var flat := StyleBoxFlat.new()
+		flat.bg_color = fill
+		flat.set_corner_radius_all(6)
+		fg = flat
 	bar.add_theme_stylebox_override("fill", fg)
 	bar.modulate = Color.WHITE
 	bar.show_percentage = false
@@ -238,6 +278,9 @@ func _on_biome_changed(biome_id: int) -> void:
 		biome_label.visible = false
 	if location_banner:
 		location_banner.text = loc
+		var chrome := location_banner.get_parent() as CanvasItem
+		if chrome and chrome != self:
+			chrome.visible = loc != ""
 
 
 func _refresh_location_from_run_state() -> void:
@@ -344,7 +387,7 @@ func _ensure_gold_label() -> void:
 	_gold_label = Label.new()
 	_gold_label.name = "GoldLabel"
 	_paint_label(_gold_label, 18, Color(1.0, 0.86, 0.32))
-	_gold_label.text = "0"
+	_gold_label.text = "GOLD  0"
 	row.add_child(_gold_label)
 	health_bar.get_parent().add_child(row)
 	health_bar.get_parent().move_child(row, 0)
@@ -353,7 +396,7 @@ func _ensure_gold_label() -> void:
 
 func _on_gold_changed(amount: int) -> void:
 	if _gold_label:
-		_gold_label.text = str(amount)
+		_gold_label.text = "GOLD  %d" % amount
 
 
 func _ensure_boss_bar() -> void:
@@ -368,7 +411,7 @@ func _ensure_boss_bar() -> void:
 	_boss_wrap.offset_right = -280.0
 	_boss_wrap.offset_top = 58.0
 	_boss_wrap.offset_bottom = 118.0
-	_boss_wrap.add_theme_stylebox_override("panel", ArtBank.panel_style(&"rect", Color(0.95, 0.35, 0.3, 0.95)))
+	_boss_wrap.add_theme_stylebox_override("panel", ArtBank.panel_style(&"glass", Color(1.0, 0.72, 0.68, 0.96)))
 	var col := VBoxContainer.new()
 	col.add_theme_constant_override("separation", 2)
 	_boss_wrap.add_child(col)

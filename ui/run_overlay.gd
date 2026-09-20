@@ -26,6 +26,9 @@ var _boss_tween: Tween
 var _dimmer: ColorRect
 var _last_style_rank: String = ""
 var _style_tween: Tween
+var _end_nodes: Array[Node] = []
+var _win_nodes: Array[Node] = []
+var _wave_plaque: PanelContainer
 
 
 func _ready() -> void:
@@ -76,6 +79,44 @@ func _ready() -> void:
 	_title.add_theme_font_size_override("font_size", 32)
 	_title.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
 	_title.add_theme_constant_override("outline_size", 6)
+	_subtitle.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_wrap_wave_plaque()
+
+
+func _wrap_wave_plaque() -> void:
+	if _wave_label == null or _wave_label.get_parent() is PanelContainer:
+		return
+	_wave_plaque = PanelContainer.new()
+	_wave_plaque.name = "WavePlaque"
+	_wave_plaque.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_wave_plaque.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
+	_wave_plaque.anchor_top = 1.0
+	_wave_plaque.anchor_bottom = 1.0
+	_wave_plaque.offset_left = 12.0
+	_wave_plaque.offset_right = 360.0
+	_wave_plaque.offset_top = -64.0
+	_wave_plaque.offset_bottom = -16.0
+	_wave_plaque.add_theme_stylebox_override("panel", ArtBank.panel_style(&"card", Color(0.82, 0.88, 1.0, 0.94)))
+	_wave_plaque.visible = false
+	var parent := _wave_label.get_parent()
+	parent.remove_child(_wave_label)
+	_wave_plaque.add_child(_wave_label)
+	parent.add_child(_wave_plaque)
+	_wave_label.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_wave_label.offset_left = 10.0
+	_wave_label.offset_right = -10.0
+	_wave_label.offset_top = 4.0
+	_wave_label.offset_bottom = -4.0
+	_wave_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_wave_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+
+
+func _set_wave_text(text: String) -> void:
+	if _wave_label:
+		_wave_label.text = text
+	if _wave_plaque:
+		_wave_plaque.visible = text != ""
 
 
 func _ensure_route_box() -> void:
@@ -218,42 +259,38 @@ func _show_start_flow() -> void:
 
 func _on_player_died() -> void:
 	_skin_panel(&"glass", Color(1.0, 0.88, 0.88, 0.97))
-	_show(Mode.DEATH, "You Died", "Rank %s — R new run (same class) · C change class" % RunState.current_room_rank())
+	_show(Mode.DEATH, "You Died", "Rank %s" % RunState.current_room_rank())
+	_populate_end_actions()
 	get_tree().paused = true
 
 
 func _on_wave_started(index: int, total: int) -> void:
-	_wave_label.text = "Room %d/%d — Wave %d / %d" % [
+	_set_wave_text("ROOM %d / %d   ·   WAVE %d OF %d" % [
 		RunState.room_index + 1, RunState.room_count(), index + 1, total
-	]
+	])
 
 
 func _on_wave_cleared(index: int) -> void:
-	_wave_label.text = "Wave %d cleared — Rank %s" % [index + 1, RunState.current_room_rank()]
+	_set_wave_text("WAVE %d CLEAR   ·   RANK %s" % [index + 1, RunState.current_room_rank()])
 
 
 func _on_run_won() -> void:
 	_skin_panel(&"glass", Color(1.0, 0.98, 0.9, 0.97))
-	var relic_line := "Relics  —"
-	var names: PackedStringArray = []
-	for upgrade in RunState.crafted_upgrades:
-		if upgrade:
-			names.append(upgrade.display_name)
-	if not names.is_empty():
-		relic_line = "Relics  %s" % ", ".join(names)
-	_show(Mode.WIN, "Run Complete", "Style %s — %d pts — Gold %d\n%s\nR again · C class select" % [
-		RunState.current_room_rank(), RunState.style_score, RunState.gold, relic_line
+	_show(Mode.WIN, "Run Complete", "Style %s  ·  %d pts  ·  Gold %d" % [
+		RunState.current_room_rank(), RunState.style_score, RunState.gold
 	])
 	_rewards.visible = false
 	_craft.visible = false
 	_arch.visible = false
 	if _route:
 		_route.visible = false
+	_populate_win_relics()
+	_populate_end_actions()
 	get_tree().paused = true
 
 
 func _on_exit_reached() -> void:
-	_populate_craft()
+	var has_craft := _populate_craft()
 	_populate_reward_upgrades()
 	var loot_line := "Choose one artifact — click a card or press 1 / 2 / 3"
 	if not RunState.last_loot.is_empty():
@@ -267,7 +304,7 @@ func _on_exit_reached() -> void:
 	_skin_panel(&"glass", Color(1.0, 0.97, 0.88, 0.97))
 	_show(Mode.REWARD, title, loot_line)
 	_rewards.visible = true
-	_craft.visible = true
+	_craft.visible = has_craft
 	_arch.visible = false
 	if _route:
 		_route.visible = false
@@ -386,18 +423,15 @@ func _find_player() -> Player:
 	return root.find_child("Player", true, false) as Player
 
 
-func _populate_craft() -> void:
+func _populate_craft() -> bool:
 	for node in _craft_nodes:
 		if is_instance_valid(node):
 			node.queue_free()
 	_craft_nodes.clear()
 	var upgrades := RunState.get_craftable_upgrades()
 	if upgrades.is_empty():
-		var empty := Label.new()
-		empty.text = "No crafts available (need tags/arch)"
-		_craft.add_child(empty)
-		_craft_nodes.append(empty)
-		return
+		_craft.visible = false
+		return false
 	for upgrade in upgrades:
 		var btn := Button.new()
 		btn.text = "%s — %s" % [upgrade.display_name, upgrade.description]
@@ -405,9 +439,7 @@ func _populate_craft() -> void:
 		_skin_button(btn, Color(0.82, 0.9, 1.0, 1))
 		_craft.add_child(btn)
 		_craft_nodes.append(btn)
-
-
-func _populate_reward_upgrades() -> void:
+	return true
 	for node in _reward_extra_nodes:
 		if is_instance_valid(node):
 			node.queue_free()
@@ -589,6 +621,7 @@ func _show(mode: Mode, title: String, subtitle: String) -> void:
 	_title.text = title
 	_subtitle.text = subtitle
 	_panel.visible = true
+	_fit_panel(mode)
 	if _dimmer:
 		_dimmer.visible = true
 		_dimmer.color = Color(0.02, 0.03, 0.05, 0.62)
@@ -597,3 +630,94 @@ func _show(mode: Mode, title: String, subtitle: String) -> void:
 	_arch.visible = mode == Mode.ARCH_PICK
 	if _route:
 		_route.visible = mode == Mode.ROUTE_PICK
+	if mode != Mode.DEATH and mode != Mode.WIN:
+		_clear_end_nodes()
+	if mode != Mode.WIN:
+		_clear_win_nodes()
+
+
+func _fit_panel(mode: Mode) -> void:
+	if _panel == null:
+		return
+	match mode:
+		Mode.REWARD:
+			_panel.custom_minimum_size = Vector2(940, 420)
+		Mode.DEATH:
+			_panel.custom_minimum_size = Vector2(560, 280)
+		Mode.WIN:
+			_panel.custom_minimum_size = Vector2(640, 340)
+		Mode.ROUTE_PICK, Mode.ARCH_PICK:
+			_panel.custom_minimum_size = Vector2(720, 420)
+		_:
+			_panel.custom_minimum_size = Vector2(560, 240)
+
+
+func _clear_end_nodes() -> void:
+	for node in _end_nodes:
+		if is_instance_valid(node):
+			node.queue_free()
+	_end_nodes.clear()
+
+
+func _clear_win_nodes() -> void:
+	for node in _win_nodes:
+		if is_instance_valid(node):
+			node.queue_free()
+	_win_nodes.clear()
+
+
+func _populate_end_actions() -> void:
+	_clear_end_nodes()
+	var row := HBoxContainer.new()
+	row.alignment = BoxContainer.ALIGNMENT_CENTER
+	row.add_theme_constant_override("separation", 12)
+	_vbox.add_child(row)
+	_end_nodes.append(row)
+	var again := Button.new()
+	again.text = "NEW RUN"
+	again.pressed.connect(func() -> void: RunState.restart_run())
+	_skin_button(again, Color(1.0, 0.9, 0.45, 1))
+	row.add_child(again)
+	var classes := Button.new()
+	classes.text = "CLASS SELECT"
+	classes.pressed.connect(func() -> void: RunState.return_to_class_select())
+	_skin_button(classes, Color(0.85, 0.9, 1.0, 1))
+	row.add_child(classes)
+
+
+func _populate_win_relics() -> void:
+	_clear_win_nodes()
+	var names: PackedStringArray = []
+	for upgrade in RunState.crafted_upgrades:
+		if upgrade:
+			names.append(upgrade.display_name)
+	var wrap := HBoxContainer.new()
+	wrap.alignment = BoxContainer.ALIGNMENT_CENTER
+	wrap.add_theme_constant_override("separation", 8)
+	_vbox.add_child(wrap)
+	_vbox.move_child(wrap, _subtitle.get_index() + 1)
+	_win_nodes.append(wrap)
+	if names.is_empty():
+		var empty := Label.new()
+		empty.text = "No relics this run"
+		empty.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		var font := ArtBank.ui_font()
+		if font:
+			empty.add_theme_font_override("font", font)
+		empty.add_theme_font_size_override("font_size", 14)
+		empty.add_theme_color_override("font_color", Color(0.75, 0.78, 0.85))
+		wrap.add_child(empty)
+		return
+	for name in names:
+		var chip := PanelContainer.new()
+		chip.add_theme_stylebox_override("panel", ArtBank.panel_style(&"card", Color(0.95, 0.88, 0.55, 0.95)))
+		var lab := Label.new()
+		lab.text = name
+		lab.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		lab.add_theme_font_size_override("font_size", 13)
+		lab.add_theme_color_override("font_color", Color(0.12, 0.1, 0.08))
+		var font := ArtBank.ui_font()
+		if font:
+			lab.add_theme_font_override("font", font)
+		chip.add_child(lab)
+		wrap.add_child(chip)

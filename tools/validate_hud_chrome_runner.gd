@@ -58,6 +58,8 @@ func _run() -> void:
 	assert(fill == null or not fill.visible, "acid polygon must be hidden")
 	var splat := trap.get_node_or_null("Splat") as Sprite2D
 	assert(splat != null and splat.visible)
+	assert(hud.find_child("LocationChrome", true, false) != null, "location should sit in a Kenney plaque")
+	assert(overlay.find_child("WavePlaque", true, false) != null, "wave counter should sit in a Kenney plaque")
 
 	print("HUD_CHROME_OK")
 	get_tree().quit(0)
