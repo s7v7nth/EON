@@ -42,6 +42,7 @@ var _shadow: Sprite2D
 var _stem: String = "astronautA"
 var _target_h: float = 88.0
 var _last_dir_key: String = ""
+var _custom_stem: String = ""
 
 
 func _ready() -> void:
@@ -77,6 +78,17 @@ func set_combat_pose_active(active: bool) -> void:
 	_combat_locked = active
 
 
+func apply_custom_stem(stem: String, target_h: float = 0.0) -> void:
+	if stem.strip_edges() == "":
+		return
+	_custom_stem = stem
+	_stem = stem
+	if target_h > 8.0:
+		_target_h = target_h
+	_last_dir_key = ""
+	_apply_texture()
+
+
 func current_texture() -> Texture2D:
 	if _sprite:
 		return _sprite.texture
@@ -107,6 +119,9 @@ func _ensure_sprites() -> void:
 
 
 func _refresh_stem() -> void:
+	if _custom_stem != "":
+		_stem = _custom_stem
+		return
 	match body_style:
 		BodyStyle.NANO:
 			_stem = "astronautB"
@@ -124,11 +139,11 @@ func _refresh_stem() -> void:
 			_stem = "craft_speederA"
 			_target_h = 92.0
 		BodyStyle.BEAST:
-			_stem = "alien"
-			_target_h = 90.0
+			_stem = "rover"
+			_target_h = 78.0
 		BodyStyle.SAVAGE:
 			_stem = "alien"
-			_target_h = 86.0
+			_target_h = 76.0
 		_:
 			_stem = "astronautA"
 			_target_h = 88.0

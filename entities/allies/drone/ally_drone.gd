@@ -114,6 +114,14 @@ func _strike(enemy: Node2D) -> void:
 		var status: StatusComponent = enemy.get("status") as StatusComponent
 		if status:
 			status.add_buildup(StatusComponent.STATUS_GLITCH, glitch, 2.5)
+		if enemy is Node2D:
+			HitVFX.spawn_optic_burst(
+				(enemy as Node2D).get_parent(),
+				(enemy as Node2D).global_position,
+				Color(0.75, 0.4, 1.0, 1),
+				Vector2.UP,
+				0.7
+			)
 
 
 func _nearest_enemy() -> Node2D:
@@ -158,5 +166,5 @@ func _ensure_visual() -> void:
 	spr.texture = ArtBank.space("satelliteDish_SE")
 	if spr.texture == null:
 		spr.texture = ArtBank.rts_unit(8)
-	ArtBank.fit_height(spr, 38.0, true)
+	ArtBank.fit_height(spr, 48.0, true)
 	spr.modulate = Color(0.78, 0.62, 1.0, 1)

@@ -24,6 +24,8 @@ visual_color = Color(0.72, 0.2, 0.35, 1)
 prefers_kite = false
 behavior_modules = Array[Resource]([ExtResource("8_beh")])
 tags = PackedStringArray("boss", "warden", "cyborg")
+visual_stem = "craft_cargoB"
+visual_height = 148.0
 status_vulnerabilities = {
 "glitch": 1.35,
 "shock": 1.2,

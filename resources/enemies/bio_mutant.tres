@@ -20,6 +20,8 @@ visual_color = Color(0.35, 0.75, 0.28, 1)
 prefers_kite = false
 behavior_modules = Array[Resource]([ExtResource("5_burst")])
 tags = PackedStringArray("bio", "death_burst")
+visual_stem = "craft_miner"
+visual_height = 92.0
 status_vulnerabilities = {
 "burn": 1.45,
 "bleed": 0.7,

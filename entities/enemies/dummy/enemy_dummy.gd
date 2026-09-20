@@ -193,6 +193,10 @@ func apply_definition(def: EnemyDefinition) -> void:
 			visual.color = Color(def.visual_color.r, def.visual_color.g, def.visual_color.b, 1.0)
 	if combat_visual:
 		combat_visual.apply_faction_look(def.faction, def.visual_color)
+		if def.visual_stem != "":
+			var vis_body := get_node_or_null("Visual") as Node2D
+			if vis_body and vis_body.has_method("apply_custom_stem"):
+				vis_body.call("apply_custom_stem", def.visual_stem, def.visual_height)
 	_poise = get_max_poise()
 	_flinch_time = 0.0
 	boss_phase = 1
@@ -249,6 +253,20 @@ func apply_elite(hp_mult: float = 2.0, move_mult: float = 1.12, action_speed: fl
 		hp_bar.bar_size = Vector2(64, 8)
 		hp_bar.fill_color = Color(0.95, 0.72, 0.15, 0.95)
 		hp_bar.queue_redraw()
+
+
+func apply_route_pressure(pressure: float) -> void:
+	## Campaign / procedural densify HP so tutorial stays teachable.
+	var p := maxf(pressure, 1.0)
+	set_meta("combat_pressure", p)
+	if p <= 1.02 or stats == null:
+		return
+	var dup := stats.duplicate(true) as CharacterStats
+	if dup == null:
+		return
+	dup.max_health = maxf(dup.max_health * p, dup.max_health)
+	stats = dup
+	_configure_from_stats()
 
 
 func _install_behaviors(def: EnemyDefinition) -> void:

@@ -49,6 +49,11 @@ extends Resource
 ## Gold granted on kill. 0 = infer from tags / elite / boss.
 @export var gold_reward: int = 0
 
+@export_group("Visual")
+## Kenney Space Kit stem override (alien, rover, turret_single, craft_cargoA...).
+@export var visual_stem: String = ""
+@export var visual_height: float = 0.0
+
 
 func get_resist(damage_type: GameplayEnums.DamageType) -> float:
 	if use_resist_overrides:

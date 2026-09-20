@@ -111,6 +111,20 @@ func try_special(host: Node) -> bool:
 		var status: StatusComponent = child.get("status") as StatusComponent
 		if status:
 			status.apply_status(StatusComponent.STATUS_ACID, 6.0, 2.0)
+	if host is Node2D:
+		HitVFX.spawn_optic_burst(
+			(host as Node2D).get_parent(),
+			(host as Node2D).global_position,
+			Color(0.35, 0.95, 0.4, 1),
+			Vector2.UP,
+			1.35
+		)
+		HitVFX.spawn_optic_ring(
+			(host as Node2D).get_parent(),
+			(host as Node2D).global_position,
+			Color(0.4, 1.0, 0.45, 0.9),
+			1.4
+		)
 	SignalBus.special_triggered.emit(host)
 	return true
 

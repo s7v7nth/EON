@@ -44,6 +44,7 @@ func tick(host: Node, delta: float) -> void:
 		health.take_damage(red_self_dps * delta)
 	elif heat > 0.0:
 		heat = maxf(heat - heat_decay_per_sec * delta, 0.0)
+	_paint_heat_aura(host)
 
 
 func is_action_locked(_host: Node) -> bool:
@@ -139,6 +140,21 @@ func _gain_heat() -> void:
 	heat = minf(heat + heat_gain_per_action, heat_max)
 
 
+func _paint_heat_aura(host: Node) -> void:
+	var cv: CombatVisualComponent = host.get("combat_visual") as CombatVisualComponent
+	if cv == null or cv.aura == null:
+		return
+	if heat >= heat_max:
+		cv.aura.color = Color(1.0, 0.22, 0.12, 0.58)
+		cv.aura.visible = true
+	elif heat >= yellow_threshold:
+		cv.aura.color = Color(1.0, 0.72, 0.12, 0.42)
+		cv.aura.visible = true
+	elif heat > 8.0:
+		cv.aura.color = Color(0.45, 0.75, 1.0, 0.28)
+		cv.aura.visible = true
+
+
 func _vent_blast(host: Node, dumped: float, ratio: float) -> void:
 	var parent := host.get_parent()
 	if parent == null or host is not Node2D:
@@ -162,4 +178,18 @@ func _vent_blast(host: Node, dumped: float, ratio: float) -> void:
 			"apply_knockback",
 			(enemy.global_position - origin).normalized(),
 			200.0 + 180.0 * ratio
+		)
+	if host is Node2D:
+		HitVFX.spawn_optic_burst(
+			(host as Node2D).get_parent(),
+			origin,
+			Color(1.0, 0.45, 0.12, 1),
+			Vector2.UP,
+			1.2 + ratio
+		)
+		HitVFX.spawn_optic_ring(
+			(host as Node2D).get_parent(),
+			origin,
+			Color(1.0, 0.55, 0.15, 0.9),
+			1.1 + ratio
 		)

@@ -256,8 +256,9 @@ func apply_faction_look(faction: GameplayEnums.Faction, base_color: Color) -> vo
 ## Melee pose variants — combo index / enemy attack style.
 ## 0 slash, 1 reverse, 2 overhead, 3 thrust, 4 rising.
 const MELEE_VARIANT_COUNT := 5
-const MIN_WINDUP_VISUAL := 0.18
-const MIN_SWING_VISUAL := 0.26
+const MIN_WINDUP_VISUAL := 0.22
+const MIN_SWING_VISUAL := 0.28
+const MIN_HOSTILE_WINDUP := 0.32
 
 
 func play_melee_windup(aim_angle: float, duration: float, variant: int = 0) -> void:
@@ -301,27 +302,27 @@ func play_hostile_melee_windup(aim_angle: float, duration: float, variant: int =
 	var pose := _melee_pose(aim_angle, v)
 	weapon.rotation = pose.wind_from
 	weapon.position = pose.weapon_pos
-	weapon.scale = Vector2(1.45, 1.45)
-	telegraph.polygon = _diamond_poly(24.0)
+	weapon.scale = Vector2(1.55, 1.55)
+	telegraph.polygon = _diamond_poly(32.0)
 	telegraph.rotation = pose.tele_rot
 	telegraph.position = pose.tele_pos
-	telegraph.scale = Vector2(0.7, 0.7)
-	telegraph.color = Color(1.0, 0.2, 0.12, 0.0)
-	swing_arc.polygon = _scale_poly(pose.arc_poly, 1.15)
+	telegraph.scale = Vector2(0.55, 0.55)
+	telegraph.color = Color(1.0, 0.12, 0.08, 0.0)
+	swing_arc.polygon = _scale_poly(pose.arc_poly, 1.28)
 	swing_arc.rotation = pose.arc_from
 	swing_arc.position = pose.arc_pos
-	swing_arc.color = Color(1.0, 0.25, 0.15, 0.4)
+	swing_arc.color = Color(1.0, 0.85, 0.2, 0.55)
 	swing_arc.modulate.a = 0.0
 	if body:
 		body.scale = Vector2.ONE
 		body.modulate = Color(1.35, 0.85, 0.75, 1)
 		body.rotation = pose.body_wind_rot * 0.4
 	_tween = create_tween()
-	var wind := maxf(duration, MIN_WINDUP_VISUAL)
+	var wind := maxf(duration, MIN_HOSTILE_WINDUP)
 	_tween.tween_property(weapon, "rotation", pose.wind_to, wind * 0.85).set_trans(Tween.TRANS_BACK)
-	_tween.parallel().tween_property(telegraph, "color:a", 0.95, wind * 0.3)
-	_tween.parallel().tween_property(telegraph, "scale", Vector2(1.75, 1.75), wind)
-	_tween.parallel().tween_property(swing_arc, "modulate:a", 0.9, wind * 0.45)
+	_tween.parallel().tween_property(telegraph, "color:a", 1.0, wind * 0.22)
+	_tween.parallel().tween_property(telegraph, "scale", Vector2(2.15, 2.15), wind)
+	_tween.parallel().tween_property(swing_arc, "modulate:a", 1.0, wind * 0.35)
 	if body:
 		_tween.parallel().tween_property(body, "scale", Vector2(0.88, 1.14), wind)
 		_tween.parallel().tween_property(body, "modulate", Color(1.6, 0.55, 0.4, 1), wind)
@@ -541,7 +542,7 @@ func play_hostile_pattern_windup(
 	rotation = 0.0
 	weapon.visible = true
 	var fwd := Vector2.from_angle(aim_angle)
-	var wind := maxf(duration, 0.12)
+	var wind := maxf(duration, MIN_HOSTILE_WINDUP)
 	match pattern:
 		AttackData.PatternKind.OVERHEAD_SLAM:
 			var radius := slam_radius if slam_radius > 0.0 else 72.0

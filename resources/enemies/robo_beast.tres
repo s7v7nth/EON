@@ -20,6 +20,8 @@ visual_color = Color(0.7, 0.45, 0.2, 1)
 prefers_kite = false
 behavior_modules = Array[Resource]([ExtResource("5_beh")])
 tags = PackedStringArray("beast", "chase")
+visual_stem = "rover"
+visual_height = 76.0
 status_vulnerabilities = {
 "bleed": 1.65,
 "burn": 1.2

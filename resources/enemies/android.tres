@@ -20,6 +20,8 @@ visual_color = Color(0.25, 0.7, 0.85, 1)
 prefers_kite = true
 behavior_modules = Array[Resource]([ExtResource("5_beh")])
 tags = PackedStringArray("android", "medic")
+visual_stem = "turret_single"
+visual_height = 86.0
 status_vulnerabilities = {
 "shock": 1.55,
 "glitch": 1.3

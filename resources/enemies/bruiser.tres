@@ -21,6 +21,8 @@ visual_color = Color(0.45, 0.18, 0.22, 1)
 prefers_kite = false
 behavior_modules = Array[Resource]([ExtResource("6_beh")])
 tags = PackedStringArray("savage", "melee")
+visual_stem = "craft_cargoA"
+visual_height = 108.0
 status_vulnerabilities = {
 "burn": 1.55,
 "bleed": 1.25
