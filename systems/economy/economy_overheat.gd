@@ -4,12 +4,12 @@ extends "res://systems/economy/resource_economy.gd"
 ## Special (Vent) dumps heat into an AoE and locks weapons briefly.
 
 @export var heat_max: float = 100.0
-@export var heat_gain_per_action: float = 22.0
-@export var heat_decay_per_sec: float = 12.0
+@export var heat_gain_per_action: float = 16.0
+@export var heat_decay_per_sec: float = 16.0
 @export var yellow_threshold: float = 50.0
 @export var yellow_damage_mult: float = 1.5
 @export var red_damage_mult: float = 2.0
-@export var red_self_dps: float = 3.5
+@export var red_self_dps: float = 1.6
 @export var vent_base_damage: float = 20.0
 @export var vent_radius: float = 120.0
 @export var vent_cooldown_base: float = 0.6

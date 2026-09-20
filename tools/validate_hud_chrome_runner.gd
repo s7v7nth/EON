@@ -60,7 +60,9 @@ func _run() -> void:
 	assert(splat != null and splat.visible)
 	assert(hud.find_child("LocationChrome", true, false) != null, "location should sit in a Kenney plaque")
 	assert(overlay.find_child("WavePlaque", true, false) != null, "wave counter should sit in a Kenney plaque")
-	assert(overlay.find_child("ComboToast", true, false) != null, "combo toast should exist")
+	var toast := overlay.find_child("ComboToast", true, false) as Control
+	assert(toast != null, "combo toast should exist")
+	assert(toast.anchor_top > 0.4, "named combo toast should sit mid-screen, not under the location plaque")
 	assert(ArtBank.body_font() != null, "Inter body font must load")
 	assert(ArtBank.body_font() != ArtBank.title_font(), "body type should not be Kenney Future")
 	var overlay_title := overlay.get_node("Center/Panel/Margin/VBox/Title") as Label

@@ -35,7 +35,10 @@ var _exit_latch: bool = false
 var _spawn_cursor: int = 0
 var _door_nodes: Array[Area2D] = []
 var _elite_presented: bool = false
-const EXIT_CLAIM_RADIUS := 140.0
+## Tight radius around the marker, plus a south-door band so walking down always leaves.
+const EXIT_CLAIM_RADIUS := 168.0
+const EXIT_SOUTH_Y := 168.0
+const EXIT_SOUTH_X := 420.0
 
 @onready var _entities: Node2D = get_node(entities_path)
 @onready var _spawn_points: Node2D = get_node(spawn_points_path)
@@ -287,15 +290,38 @@ func _dress_exit_marker() -> void:
 		glow.centered = true
 		glow.z_index = 1
 		glow.texture = ArtBank.particle("circle_05")
-		glow.modulate = Color(0.35, 0.95, 0.55, 0.45)
-		glow.scale = Vector2(2.5, 1.15)
+		glow.modulate = Color(0.35, 0.95, 0.55, 0.55)
+		glow.scale = Vector2(3.4, 1.55)
 		exit_node.add_child(glow)
 	else:
-		glow.scale = Vector2(2.5, 1.15)
+		glow.scale = Vector2(3.4, 1.55)
+		glow.modulate = Color(0.35, 0.95, 0.55, 0.55)
+	var plaque := exit_node.get_node_or_null("ExitPlaque") as PanelContainer
+	if plaque == null:
+		plaque = PanelContainer.new()
+		plaque.name = "ExitPlaque"
+		plaque.position = Vector2(-92, -78)
+		plaque.custom_minimum_size = Vector2(184, 30)
+		plaque.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		plaque.add_theme_stylebox_override("panel", ArtBank.panel_style(&"card", Color(0.55, 1.0, 0.72, 0.96)))
+		var lab := Label.new()
+		lab.name = "ExitHint"
+		lab.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		lab.custom_minimum_size = Vector2(176, 22)
+		lab.add_theme_font_size_override("font_size", 14)
+		lab.add_theme_color_override("font_color", Color(0.08, 0.18, 0.1, 1))
+		lab.add_theme_color_override("font_outline_color", Color(1, 1, 1, 0.35))
+		lab.add_theme_constant_override("outline_size", 2)
+		var font := ArtBank.body_bold()
+		if font:
+			lab.add_theme_font_override("font", font)
+		lab.text = "South door"
+		plaque.add_child(lab)
+		exit_node.add_child(plaque)
 	var shape_node := exit_node.get_node_or_null("ExitShape") as CollisionShape2D
 	if shape_node:
 		var rect := RectangleShape2D.new()
-		rect.size = Vector2(210, 130)
+		rect.size = Vector2(280, 170)
 		shape_node.shape = rect
 
 
@@ -457,17 +483,18 @@ func _spawn_biome_traps() -> void:
 		traps_root.name = "Traps"
 		add_child(traps_root)
 	for i in biome.trap_count:
-		var marker: Node2D = points[i % points.size()] as Node2D
 		var trap := biome.trap_scene.instantiate() as Node2D
 		traps_root.add_child(trap)
-		# Offset from enemy spawns so traps aren't stacked on markers.
-		var offset := Vector2(-90 + (i % 3) * 40, 70 + (i % 2) * 36)
-		trap.global_position = marker.global_position + offset
+		# Corners only — keep the fight lane and the south door clean.
+		var corners: Array[Vector2] = [
+			Vector2(-420, -250), Vector2(460, -240), Vector2(-430, 210), Vector2(470, 40)
+		]
+		trap.global_position = corners[i % corners.size()]
 		var spawn_pos := Vector2(-150, 50)
 		var exit_pos := Vector2(0, 250)
-		if trap.global_position.distance_to(spawn_pos) < 160.0 \
-				or trap.global_position.distance_to(exit_pos) < 150.0:
-			trap.global_position = Vector2(340.0 + float(i % 3) * 70.0, -220.0 + float(i % 2) * 80.0)
+		if trap.global_position.distance_to(spawn_pos) < 200.0 \
+				or trap.global_position.distance_to(exit_pos) < 180.0:
+			trap.global_position = Vector2(420.0 + float(i % 3) * 50.0, -260.0 + float(i % 2) * 40.0)
 		if trap.has_method("configure"):
 			trap.call(
 				"configure",
@@ -743,6 +770,11 @@ func _claim_exit_if_player_near() -> void:
 	if player == null:
 		return
 	if player.global_position.distance_to(exit_node.global_position) <= EXIT_CLAIM_RADIUS:
+		_on_exit_body_entered(player)
+		return
+	## Walking south of the room (the glowing door) is enough — spawn sits at y=50.
+	if player.global_position.y >= EXIT_SOUTH_Y \
+			and absf(player.global_position.x - exit_node.global_position.x) <= EXIT_SOUTH_X:
 		_on_exit_body_entered(player)
 		return
 	if exit_node is Area2D:

@@ -71,6 +71,7 @@ func _ready() -> void:
 	SignalBus.combo_unlocked.connect(_on_combo_unlocked)
 	SignalBus.combo_proc.connect(_on_combo_proc)
 	SignalBus.synergy_triggered.connect(_on_synergy_triggered)
+	SignalBus.room_cleared.connect(_on_room_cleared)
 	_ensure_boss_banner()
 	SignalBus.boss_spawned.connect(_on_boss_spawned)
 	SignalBus.boss_phase.connect(_on_boss_phase)
@@ -207,14 +208,17 @@ func _ensure_combo_toast() -> void:
 	_combo_toast = PanelContainer.new()
 	_combo_toast.name = "ComboToast"
 	_combo_toast.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_combo_toast.set_anchors_preset(Control.PRESET_CENTER_TOP)
+	_combo_toast.set_anchors_preset(Control.PRESET_CENTER)
 	_combo_toast.anchor_left = 0.5
 	_combo_toast.anchor_right = 0.5
-	_combo_toast.offset_left = -280.0
-	_combo_toast.offset_right = 280.0
-	_combo_toast.offset_top = 10.0
-	_combo_toast.offset_bottom = 118.0
+	_combo_toast.anchor_top = 0.5
+	_combo_toast.anchor_bottom = 0.5
+	_combo_toast.offset_left = -300.0
+	_combo_toast.offset_right = 300.0
+	_combo_toast.offset_top = -86.0
+	_combo_toast.offset_bottom = 86.0
 	_combo_toast.z_index = 80
+	_combo_toast.process_mode = Node.PROCESS_MODE_ALWAYS
 	_combo_toast.add_theme_stylebox_override("panel", ArtBank.panel_style(&"card", Color(1.0, 0.92, 0.55, 0.97)))
 	_combo_toast.modulate.a = 0.0
 	var pad := MarginContainer.new()
@@ -273,8 +277,8 @@ func _show_combo_toast(combo_name: String, description: String) -> void:
 	_combo_tween = create_tween()
 	_combo_tween.set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
 	_combo_tween.tween_property(_combo_toast, "scale", Vector2.ONE, 0.18).set_trans(Tween.TRANS_BACK)
-	_combo_tween.tween_interval(3.35)
-	_combo_tween.tween_property(_combo_toast, "modulate:a", 0.0, 0.45)
+	_combo_tween.tween_interval(3.8)
+	_combo_tween.tween_property(_combo_toast, "modulate:a", 0.0, 0.5)
 	if FeelAudio:
 		FeelAudio.play_ui()
 
@@ -362,6 +366,15 @@ func _on_wave_started(index: int, total: int) -> void:
 
 func _on_wave_cleared(index: int) -> void:
 	_set_wave_text("Wave %d clear   ·   Rank %s" % [index + 1, RunState.current_room_rank()])
+
+
+func _on_room_cleared() -> void:
+	if RunState.current_room_kind() == DungeonRoom.RoomKind.SHOP:
+		_set_wave_text("Shop  ·  walk an orb, then the south door")
+	elif RunState.current_room_kind() == DungeonRoom.RoomKind.TREASURE:
+		_set_wave_text("Cache  ·  walk an orb, then the south door")
+	else:
+		_set_wave_text("South door open   ·   Rank %s" % RunState.current_room_rank())
 
 
 func _on_run_won() -> void:
@@ -522,13 +535,16 @@ func _populate_craft() -> bool:
 	if upgrades.is_empty():
 		_craft.visible = false
 		return false
-	for upgrade in upgrades:
-		var btn := Button.new()
-		btn.text = "%s — %s" % [upgrade.display_name, upgrade.description]
-		btn.pressed.connect(_on_craft.bind(upgrade))
-		_skin_button(btn, Color(0.82, 0.9, 1.0, 1))
-		_craft.add_child(btn)
-		_craft_nodes.append(btn)
+	var cap := mini(upgrades.size(), 3)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 12)
+	row.alignment = BoxContainer.ALIGNMENT_CENTER
+	_craft.add_child(row)
+	_craft_nodes.append(row)
+	for i in cap:
+		var card := _make_boon_card(upgrades[i], 0, _on_craft.bind(upgrades[i]))
+		card.custom_minimum_size = Vector2(200, 176)
+		row.add_child(card)
 	return true
 
 
@@ -565,7 +581,7 @@ func _populate_reward_upgrades() -> void:
 		_offer_buttons.append(card)
 
 
-func _make_boon_card(upgrade: UpgradeData, hotkey: int = 0) -> Button:
+func _make_boon_card(upgrade: UpgradeData, hotkey: int = 0, on_pick: Callable = Callable()) -> Button:
 	var btn := Button.new()
 	btn.custom_minimum_size = Vector2(228, 268)
 	btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -576,7 +592,10 @@ func _make_boon_card(upgrade: UpgradeData, hotkey: int = 0) -> Button:
 	btn.add_theme_stylebox_override("normal", _card_style(tint, Color(0.92, 0.94, 1.0, 1)))
 	btn.add_theme_stylebox_override("hover", _card_style(tint.lightened(0.18), Color(1.05, 1.05, 1.08, 1)))
 	btn.add_theme_stylebox_override("pressed", _card_style(house_c, Color(0.9, 0.9, 1.0, 1)))
-	btn.pressed.connect(_on_reward_upgrade.bind(upgrade))
+	if on_pick.is_valid():
+		btn.pressed.connect(on_pick)
+	else:
+		btn.pressed.connect(_on_reward_upgrade.bind(upgrade))
 	var pad := MarginContainer.new()
 	pad.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	pad.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -738,6 +757,10 @@ func _finish_reward() -> void:
 		return
 	_finishing_reward = true
 	_mode = Mode.HIDDEN
+	var hold_toast := _combo_toast != null and _combo_toast.visible and _combo_toast.modulate.a > 0.35
+	if hold_toast:
+		get_tree().paused = true
+		await get_tree().create_timer(3.1, true, false, true).timeout
 	_panel.visible = false
 	if _dimmer:
 		_dimmer.visible = false
@@ -747,10 +770,6 @@ func _finish_reward() -> void:
 		if is_instance_valid(node):
 			node.queue_free()
 	_reward_extra_nodes.clear()
-	var hold_toast := _combo_toast != null and _combo_toast.modulate.a > 0.35
-	if hold_toast:
-		get_tree().paused = false
-		await get_tree().create_timer(2.6, true, false, true).timeout
 	RunState.finish_room_reward()
 	_finishing_reward = false
 
@@ -798,7 +817,7 @@ func _fit_panel(mode: Mode) -> void:
 		return
 	match mode:
 		Mode.REWARD:
-			_panel.custom_minimum_size = Vector2(940, 420)
+			_panel.custom_minimum_size = Vector2(960, 520)
 		Mode.DEATH:
 			_panel.custom_minimum_size = Vector2(560, 280)
 		Mode.WIN:

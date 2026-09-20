@@ -25,6 +25,9 @@ static func spawn_at(
 		label.add_theme_color_override("font_color", Color(1.0, 0.92, 0.92, 1))
 	label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.85))
 	label.add_theme_constant_override("outline_size", 4)
+	var pop_font := ArtBank.body_heavy() if is_crit else ArtBank.body_font()
+	if pop_font:
+		label.add_theme_font_override("font", pop_font)
 	label.position = Vector2(-14, -18)
 	root.add_child(label)
 	world.add_child(root)
@@ -58,7 +61,7 @@ static func spawn_label(
 	label.add_theme_color_override("font_color", color)
 	label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
 	label.add_theme_constant_override("outline_size", 5)
-	var font := ArtBank.ui_font()
+	var font := ArtBank.body_bold()
 	if font:
 		label.add_theme_font_override("font", font)
 	label.position = Vector2(-28, -18)

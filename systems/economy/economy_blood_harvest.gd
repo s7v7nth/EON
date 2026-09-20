@@ -2,9 +2,9 @@ class_name EconomyBloodHarvest
 extends "res://systems/economy/resource_economy.gd"
 ## Hive: no energy. Passive HP drain fuels the swarm; hits/kills restore HP.
 
-@export var hp_drain_percent_per_sec: float = 0.022
-@export var life_steal: float = 0.20
-@export var heal_on_kill: float = 16.0
+@export var hp_drain_percent_per_sec: float = 0.03
+@export var life_steal: float = 0.14
+@export var heal_on_kill: float = 10.0
 @export var dash_hp_cost_percent: float = 0.04
 @export var special_hp_cost_percent: float = 0.06
 @export var special_radius: float = 100.0
@@ -75,7 +75,7 @@ func on_hit(host: Node, _target: Node) -> void:
 	var health: HealthComponent = host.get("health") as HealthComponent
 	if health == null or life_steal <= 0.0:
 		return
-	health.heal(4.0 * life_steal * 10.0)
+	health.heal(life_steal * 10.0)
 
 
 func on_kill(host: Node, _enemy: Node) -> void:

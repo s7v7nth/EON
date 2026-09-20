@@ -799,7 +799,7 @@ func _on_offensive_hit(target: HurtboxComponent) -> void:
 	if active_economy:
 		active_economy.on_hit(self, target)
 	if _life_steal_bonus > 0.0:
-		health.heal(4.0 * _life_steal_bonus * 10.0)
+		health.heal(_life_steal_bonus * 12.0)
 
 
 func effective_damage_multiplier() -> float:

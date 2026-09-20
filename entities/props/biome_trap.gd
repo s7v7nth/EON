@@ -3,7 +3,7 @@ extends Area2D
 ## Floor hazard — Kenney splat only, no greybox polygons.
 
 @export var damage_per_tick: float = 4.0
-@export var tick_interval: float = 0.45
+@export var tick_interval: float = 0.7
 @export var status_id: StringName = &""
 @export var status_buildup: float = 18.0
 @export var trap_color: Color = Color(0.9, 0.35, 0.2, 0.55)
