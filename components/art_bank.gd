@@ -34,10 +34,13 @@ static func tex(path: String) -> Texture2D:
 		return null
 	if _cache.has(path):
 		return _cache[path] as Texture2D
-	if not ResourceLoader.exists(path):
-		_cache[path] = null
-		return null
-	var loaded: Texture2D = load(path) as Texture2D
+	var loaded: Texture2D = null
+	if ResourceLoader.exists(path):
+		loaded = load(path) as Texture2D
+	if loaded == null and FileAccess.file_exists(path):
+		var img := Image.new()
+		if img.load(path) == OK:
+			loaded = ImageTexture.create_from_image(img)
 	_cache[path] = loaded
 	return loaded
 

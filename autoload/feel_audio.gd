@@ -140,9 +140,12 @@ func _load_banks() -> void:
 func _load_many(paths: PackedStringArray) -> Array[AudioStream]:
 	var out: Array[AudioStream] = []
 	for path in paths:
-		if not ResourceLoader.exists(path):
-			continue
-		var stream := load(path) as AudioStream
+		var stream: AudioStream = null
+		if ResourceLoader.exists(path):
+			stream = load(path) as AudioStream
+		if stream == null and FileAccess.file_exists(path):
+			if path.ends_with(".ogg"):
+				stream = AudioStreamOggVorbis.load_from_file(path)
 		if stream:
 			out.append(stream)
 	return out
