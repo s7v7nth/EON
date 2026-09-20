@@ -30,7 +30,7 @@ const HINTS := {
 	},
 }
 
-var _selected_route: ActRoute
+var _selected_route_id: StringName = &"tutorial"
 var _selected_arch: ArchitectureData
 var _route_buttons: Array[Button] = []
 var _arch_buttons: Array[Button] = []
@@ -42,9 +42,8 @@ func _ready() -> void:
 	set_anchors_preset(PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	_build()
-	var routes := RunState.get_available_routes()
-	if not routes.is_empty():
-		_select_route(routes[0])
+	print("CLASS_SELECT_READY")
+	_select_route_by_id(&"tutorial")
 	var arches := RunState.get_architectures()
 	if not arches.is_empty():
 		for arch in arches:
@@ -122,12 +121,14 @@ func _build() -> void:
 	var route_row := HBoxContainer.new()
 	route_row.add_theme_constant_override("separation", 10)
 	col.add_child(route_row)
-	for route in RunState.get_available_routes():
+	for choice in RunState.route_choices():
 		var btn := Button.new()
 		btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		btn.custom_minimum_size = Vector2(0, 44)
-		btn.text = "%s  ·  %d rooms" % [route.display_name, route.total_rooms()]
-		btn.pressed.connect(_select_route.bind(route))
+		var rid: StringName = choice.get("id", &"tutorial")
+		btn.text = "%s  ·  %d rooms" % [str(choice.get("display_name", "")), int(choice.get("rooms", 0))]
+		btn.set_meta("route_id", rid)
+		btn.pressed.connect(_select_route_by_id.bind(rid))
 		var route_style := ArtBank.button_style(false, Color(0.18, 0.42, 0.52, 1))
 		var route_hover := ArtBank.button_style(true, Color(0.28, 0.7, 0.82, 1))
 		if route_style:
@@ -296,21 +297,11 @@ func _portrait_for(arch: ArchitectureData) -> Texture2D:
 			return hero if hero else ArtBank.portrait("synthetic")
 
 
-func _select_route(route: ActRoute) -> void:
-	_selected_route = route
-	for btn in _route_buttons:
-		btn.modulate = Color(0.55, 0.62, 0.68)
-	for btn in _route_buttons:
-		if route and btn.text.begins_with(route.display_name):
-			btn.modulate = Color(0.72, 0.96, 1.0)
-			break
-
-
 func _select_route_by_id(route_id: StringName) -> void:
-	for route in RunState.get_available_routes():
-		if route and route.route_id == route_id:
-			_select_route(route)
-			return
+	_selected_route_id = route_id
+	for btn in _route_buttons:
+		var bid: StringName = btn.get_meta("route_id", &"")
+		btn.modulate = Color(0.72, 0.96, 1.0) if bid == route_id else Color(0.55, 0.62, 0.68)
 
 
 func _select_arch(arch: ArchitectureData) -> void:
@@ -361,13 +352,16 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _begin_run() -> void:
-	if _selected_route == null or _selected_arch == null:
+	if _selected_arch == null:
 		return
 	if not MetaSave.is_architecture_unlocked(int(_selected_arch.architecture_id)):
 		_flavor.text = MetaSave.unlock_requirement(int(_selected_arch.architecture_id))
 		return
+	var route := RunState.load_route_by_id(_selected_route_id)
+	if route == null:
+		return
 	RunState.reset()
-	RunState.choose_route(_selected_route)
+	RunState.choose_route(route)
 	if not RunState.choose_architecture_data(_selected_arch):
 		_flavor.text = MetaSave.unlock_requirement(int(_selected_arch.architecture_id))
 		return

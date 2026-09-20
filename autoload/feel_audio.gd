@@ -32,7 +32,7 @@ func _ready() -> void:
 		p.volume_db = -8.0
 		add_child(p)
 		_players.append(p)
-	_load_banks()
+	## SFX banks wait until first play so boot can paint class select.
 	if not SignalBus.damage_dealt.is_connected(_on_damage_dealt):
 		SignalBus.damage_dealt.connect(_on_damage_dealt)
 	if not SignalBus.parry_success.is_connected(_on_parry):
@@ -49,6 +49,16 @@ func _ready() -> void:
 		SignalBus.player_died.connect(_on_player_died)
 	if not SignalBus.room_cleared.is_connected(_on_room_cleared):
 		SignalBus.room_cleared.connect(_on_room_cleared)
+
+
+var _banks_loaded: bool = false
+
+
+func _ensure_banks() -> void:
+	if _banks_loaded:
+		return
+	_banks_loaded = true
+	_load_banks()
 
 
 func _load_banks() -> void:
@@ -262,6 +272,7 @@ func _on_room_cleared() -> void:
 
 
 func _play_bank(bank: Array[AudioStream], volume_db: float, pitch: float, delay: float) -> void:
+	_ensure_banks()
 	if bank.is_empty():
 		_blip(180.0, 0.05, 0.18)
 		return

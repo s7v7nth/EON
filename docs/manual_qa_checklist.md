@@ -3,6 +3,7 @@
 Ручной прогон вертикального среза. Обновляй этот файл при изменении механик/контента (см. правило проекта).
 
 ## Старт / архитектуры
+- [ ] Boot: splash then class select in **seconds** (Compatibility / OpenGL), not a minutes-long gray hang. Editor Play and `godot --rendering-method gl_compatibility --path .` both reach class select. No Forward+ required.
 - [ ] В начале рана есть выбор маршрута: Tutorial (3) / Campaign (Acts 1–4) / **Procedural (12)**
 - [ ] Виден выбор всех 4 архитектур (Синтетик / Улей / Паровоз / Нейро-хакер)
 - [ ] Синтетик открыт всегда; Улей / Паровоз / Нейро **закрыты** до Hive / Warden / remnant hub talk

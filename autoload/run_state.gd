@@ -1,10 +1,9 @@
 extends Node
 ## Persists across room scene changes for a single run.
 
-const TUTORIAL_ROUTE := preload("res://resources/runs/tutorial_route.tres")
-const CAMPAIGN_ROUTE := preload("res://resources/runs/campaign_route.tres")
-const PROCEDURAL_ROUTE := preload("res://resources/runs/procedural_route.tres")
-const DEFAULT_ROUTE := TUTORIAL_ROUTE
+const PATH_TUTORIAL := "res://resources/runs/tutorial_route.tres"
+const PATH_CAMPAIGN := "res://resources/runs/campaign_route.tres"
+const PATH_PROCEDURAL := "res://resources/runs/procedural_route.tres"
 const ARCH_CATALOG := preload("res://resources/architectures/architecture_catalog.tres")
 const UPGRADE_CATALOG := preload("res://resources/upgrades/upgrade_catalog.tres")
 const ENEMY_CATALOG := preload("res://resources/enemies/enemy_catalog.tres")
@@ -18,6 +17,28 @@ const LAYOUT_SCENES: PackedStringArray = [
 
 ## Near-wall inset for door / entry spawn (±800×±450 arena half-extents).
 const ARENA_DOOR_OFFSET := Vector2(760, 405)
+
+var _route_tutorial: ActRoute
+var _route_campaign: ActRoute
+var _route_procedural: ActRoute
+var TUTORIAL_ROUTE: ActRoute:
+	get:
+		if _route_tutorial == null:
+			_route_tutorial = load(PATH_TUTORIAL) as ActRoute
+		return _route_tutorial
+var CAMPAIGN_ROUTE: ActRoute:
+	get:
+		if _route_campaign == null:
+			_route_campaign = load(PATH_CAMPAIGN) as ActRoute
+		return _route_campaign
+var PROCEDURAL_ROUTE: ActRoute:
+	get:
+		if _route_procedural == null:
+			_route_procedural = load(PATH_PROCEDURAL) as ActRoute
+		return _route_procedural
+var DEFAULT_ROUTE: ActRoute:
+	get:
+		return TUTORIAL_ROUTE
 
 var arch_catalog: ArchitectureCatalog
 var upgrade_catalog: UpgradeCatalog
@@ -71,9 +92,8 @@ func _ready() -> void:
 	arch_catalog = ARCH_CATALOG as ArchitectureCatalog
 	upgrade_catalog = UPGRADE_CATALOG as UpgradeCatalog
 	enemy_catalog = ENEMY_CATALOG as EnemyCatalog
-	_merge_shared_boons()
-	current_route = DEFAULT_ROUTE as ActRoute
-	_sync_route_cursor()
+	## Do not load campaign / tutorial biomes / wave scenes until a route is chosen.
+	call_deferred("_merge_shared_boons")
 	if architecture == null:
 		architecture = _default_architecture()
 	if owned_tags.is_empty() and architecture:
@@ -202,6 +222,25 @@ func _library_boon(id: StringName) -> UpgradeData:
 		if item and item.upgrade_id == id:
 			return item
 	return null
+
+
+## Class-select labels only. Do not load biome/wave PackedScenes here.
+func route_choices() -> Array[Dictionary]:
+	return [
+		{"id": &"tutorial", "display_name": "Tutorial Slice", "rooms": 3},
+		{"id": &"campaign", "display_name": "Full Campaign", "rooms": 7},
+		{"id": &"procedural", "display_name": "Procedural", "rooms": 12},
+	]
+
+
+func load_route_by_id(route_id: StringName) -> ActRoute:
+	match route_id:
+		&"campaign":
+			return CAMPAIGN_ROUTE
+		&"procedural":
+			return PROCEDURAL_ROUTE
+		_:
+			return TUTORIAL_ROUTE
 
 
 func get_available_routes() -> Array[ActRoute]:

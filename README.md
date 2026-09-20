@@ -8,7 +8,7 @@ Isometric Hades-like action roguelike (Godot 4.7). Four architectures, dash/atta
 godot --path .
 ```
 
-Main scene is class select (`res://ui/class_select.tscn`). Pick a route and an architecture, then **Begin Run**.
+Main scene boots a dark splash then class select (`res://ui/class_select.tscn`). Renderer is **GL Compatibility** (not Forward+). macOS uses native `opengl3`, not ANGLE. Pick a route and an architecture, then **Begin Run**.
 
 - **WASD** move
 - **LMB** attack (hold to charge-throw on Синтетик)
@@ -28,7 +28,7 @@ godot --headless --path . res://tools/validate_hud_chrome.tscn
 godot --headless --path . res://tools/validate_hub_hive.tscn
 ```
 
-Vulkan issues on some VMs: `godot --rendering-driver opengl3 --path .`
+Default Play / `godot --path .` already uses Compatibility. Force it with `godot --rendering-method gl_compatibility --path .`. On some VMs also `godot --rendering-driver opengl3 --path .`.
 
 ## What you can do
 
