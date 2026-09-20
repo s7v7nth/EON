@@ -109,21 +109,22 @@ func _make_hall(root: Node2D, a: DungeonRoom, b: DungeonRoom, dir: Vector2i) -> 
 	root.add_child(hall)
 	var floor := Polygon2D.new()
 	floor.z_index = -19
-	var hw := 52.0
+	var hw := 78.0
 	var hl := length * 0.5
 	floor.polygon = PackedVector2Array([
 		Vector2(-hl, -hw), Vector2(hl, -hw), Vector2(hl, hw), Vector2(-hl, hw)
 	])
-	floor.color = Color(0.07, 0.06, 0.07, 1)
+	floor.color = Color(0.10, 0.08, 0.09, 1)
 	hall.add_child(floor)
 	var tile := Sprite2D.new()
 	tile.texture = ArtBank.illustrated("floor_ruin")
 	if tile.texture:
 		tile.centered = true
 		tile.z_index = -18
+		tile.modulate = Color(1.06, 0.98, 0.9, 1)
 		hall.add_child(tile)
 		var sz := ArtBank.apply_opaque_region(tile)
-		tile.scale = Vector2(length / maxf(sz.x, 1.0), (hw * 2.15) / maxf(sz.y, 1.0))
+		tile.scale = Vector2((length + 36.0) / maxf(sz.x, 1.0), (hw * 2.2) / maxf(sz.y, 1.0))
 	var walls := StaticBody2D.new()
 	walls.collision_layer = 1
 	walls.collision_mask = 0
@@ -131,9 +132,9 @@ func _make_hall(root: Node2D, a: DungeonRoom, b: DungeonRoom, dir: Vector2i) -> 
 	for side in [-1, 1]:
 		var shape := CollisionShape2D.new()
 		var rect := RectangleShape2D.new()
-		rect.size = Vector2(length, 22.0)
+		rect.size = Vector2(length, 18.0)
 		shape.shape = rect
-		shape.position = Vector2(0, float(side) * (hw + 8.0))
+		shape.position = Vector2(0, float(side) * (hw + 10.0))
 		walls.add_child(shape)
 
 

@@ -6,8 +6,8 @@ const _IllustratedSet := preload("res://systems/worldgen/illustrated_set.gd")
 const _RoomFootprint := preload("res://systems/worldgen/room_footprint.gd")
 const _RemnantNpc := preload("res://entities/props/remnant_npc.gd")
 
-const DOOR_GAP := 118.0
-const WALL_THICK := 38.0
+const DOOR_GAP := 196.0
+const WALL_THICK := 32.0
 
 var room: DungeonRoom
 var occupancy: Area2D
@@ -62,11 +62,13 @@ func set_doors_locked(locked: bool) -> void:
 		if body:
 			body.collision_layer = 1 if locked else 0
 			body.visible = locked
-		var spr: Sprite2D = door_sprites.get(dir)
-		if spr:
-			spr.texture = _IllustratedSet.wall_tex(_facing_name(dir))
-			ArtBank.fit_height(spr, 96.0, true)
-			spr.modulate = Color(0.45, 0.9, 1.0, 1) if not locked else Color(0.35, 0.22, 0.2, 1)
+		var sprs: Variant = door_sprites.get(dir)
+		if sprs is Array:
+			for spr in sprs:
+				var sprite := spr as Sprite2D
+				if sprite == null:
+					continue
+				sprite.modulate = Color(0.45, 0.9, 1.0, 1) if not locked else Color(0.35, 0.22, 0.2, 1)
 
 
 func door_local(dir: Vector2i) -> Vector2:
@@ -103,7 +105,7 @@ func _add_edge_with_doors(walls: StaticBody2D, a: Vector2, b: Vector2) -> void:
 	var gaps: Array[Vector2] = []
 	for dir in room.door_dirs():
 		var dpos := door_local(dir)
-		if _point_on_segment(dpos, a, b, 28.0):
+		if _point_on_segment(dpos, a, b, 48.0):
 			gaps.append(dpos)
 	if gaps.is_empty():
 		_add_segment(walls, a, b)
@@ -146,18 +148,51 @@ func _add_segment(walls: StaticBody2D, a: Vector2, b: Vector2) -> void:
 
 
 func _add_door_prop(dir: Vector2i) -> void:
-	var spr := Sprite2D.new()
-	spr.name = "Door_%d_%d" % [dir.x, dir.y]
-	spr.centered = true
-	spr.z_index = 2
-	spr.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
-	spr.position = door_local(dir)
-	spr.texture = _IllustratedSet.wall_tex(_facing_name(dir))
-	ArtBank.fit_height(spr, 96.0, true)
-	## Spawn open; combat occupancy tints these shut.
-	spr.modulate = Color(0.45, 0.9, 1.0, 1)
-	add_child(spr)
-	door_sprites[dir] = spr
+	## Posts sit beside the hole so the gap itself stays visually walkable.
+	var tangent := Vector2(float(-dir.y), float(dir.x))
+	var posts: Array[Sprite2D] = []
+	for side in [-1, 1]:
+		var spr := Sprite2D.new()
+		spr.name = "DoorPost_%d_%d_%d" % [dir.x, dir.y, side]
+		spr.centered = true
+		spr.z_index = 2
+		spr.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+		spr.position = door_local(dir) + tangent * (DOOR_GAP * 0.46) * float(side)
+		spr.texture = _IllustratedSet.wall_tex(_facing_name(dir))
+		ArtBank.fit_height(spr, 88.0, true)
+		spr.modulate = Color(0.45, 0.9, 1.0, 1)
+		add_child(spr)
+		posts.append(spr)
+	door_sprites[dir] = posts
+	_add_door_sill(dir)
+
+
+func _add_door_sill(dir: Vector2i) -> void:
+	var p := door_local(dir)
+	var outward := Vector2(float(dir.x), float(dir.y))
+	var tangent := Vector2(float(-dir.y), float(dir.x))
+	var half := DOOR_GAP * 0.46
+	var poly := Polygon2D.new()
+	poly.name = "Sill_%d_%d" % [dir.x, dir.y]
+	poly.z_index = -16
+	poly.color = Color(0.13, 0.11, 0.12, 1)
+	poly.polygon = PackedVector2Array([
+		p + tangent * -half + outward * -22.0,
+		p + tangent * half + outward * -22.0,
+		p + tangent * half + outward * 78.0,
+		p + tangent * -half + outward * 78.0
+	])
+	add_child(poly)
+	var tile := Sprite2D.new()
+	tile.texture = ArtBank.illustrated("floor_ruin")
+	if tile.texture:
+		tile.centered = true
+		tile.z_index = -15
+		tile.position = p + outward * 36.0
+		tile.modulate = Color(1.05, 0.98, 0.92, 1)
+		add_child(tile)
+		var sz := ArtBank.apply_opaque_region(tile)
+		tile.scale = Vector2((DOOR_GAP + 24.0) / maxf(sz.x, 1.0), 110.0 / maxf(sz.y, 1.0))
 
 
 func _add_blocker(dir: Vector2i) -> void:

@@ -157,6 +157,29 @@ func _run() -> void:
 	assert(AttackData.PatternKind.FAN_SHOT == 5)
 	assert(AttackData.PatternKind.HOOK == 6)
 
+	# Cleared start-room south door is a physics hole into the remnant hallway.
+	var floor_scene := load("res://levels/floor/floor_world.tscn") as PackedScene
+	var floor := floor_scene.instantiate() as Node2D
+	add_child(floor)
+	await get_tree().physics_frame
+	await get_tree().physics_frame
+	if floor.has_method("force_clear_room"):
+		floor.call("force_clear_room")
+	await get_tree().physics_frame
+	var start_room: DungeonRoom = RunState.dungeon.get_room(RunState.dungeon.start_coord)
+	assert(start_room != null and start_room.has_door(Vector2i(0, 1)), "campaign start must door south")
+	var door_p := _FloorPlacer.door_world(start_room, Vector2i(0, 1))
+	var inward := door_p + Vector2(0, -40)
+	var outward := door_p + Vector2(0, 96)
+	var space := floor.get_world_2d().direct_space_state
+	var query := PhysicsRayQueryParameters2D.create(inward, outward)
+	query.collision_mask = 1
+	query.collide_with_areas = false
+	var hit := space.intersect_ray(query)
+	assert(hit.is_empty(), "start south door must be walkable after clear, hit %s" % str(hit))
+	floor.queue_free()
+	await get_tree().process_frame
+
 	# Cheater path: class data refuses locked kits even if forced.
 	MetaSave.wipe_for_tests()
 	RunState.reset()
