@@ -292,7 +292,7 @@ func _begin_run() -> void:
 
 
 func _autopilot_begin() -> void:
-	await get_tree().create_timer(1.15).timeout
+	await get_tree().create_timer(2.2).timeout
 	if not is_inside_tree():
 		return
 	_begin_run()
