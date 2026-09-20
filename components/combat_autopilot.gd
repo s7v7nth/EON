@@ -38,7 +38,7 @@ func _physics_process(delta: float) -> void:
 		_release_all()
 		player.aim_override = Vector2.ZERO
 		_reward_wait += delta
-		if _reward_wait >= 0.9:
+		if _reward_wait >= 2.6:
 			_tap_key(KEY_1)
 			_reward_wait = 0.0
 		return

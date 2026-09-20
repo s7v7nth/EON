@@ -233,9 +233,16 @@ func _on_wave_cleared(index: int) -> void:
 
 
 func _on_run_won() -> void:
-	_skin_panel(&"glass", Color(1.0, 0.96, 0.82, 0.97))
-	_show(Mode.WIN, "Run Complete", "Style %s — %d pts — R again · C class select" % [
-		RunState.current_room_rank(), RunState.style_score
+	_skin_panel(&"glass", Color(1.0, 0.98, 0.9, 0.97))
+	var relic_line := "Relics  —"
+	var names: PackedStringArray = []
+	for upgrade in RunState.crafted_upgrades:
+		if upgrade:
+			names.append(upgrade.display_name)
+	if not names.is_empty():
+		relic_line = "Relics  %s" % ", ".join(names)
+	_show(Mode.WIN, "Run Complete", "Style %s — %d pts — Gold %d\n%s\nR again · C class select" % [
+		RunState.current_room_rank(), RunState.style_score, RunState.gold, relic_line
 	])
 	_rewards.visible = false
 	_craft.visible = false
