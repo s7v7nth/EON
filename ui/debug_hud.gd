@@ -116,7 +116,7 @@ func _wrap_hud_chrome() -> void:
 	var chrome := PanelContainer.new()
 	chrome.name = "Chrome"
 	chrome.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	chrome.add_theme_stylebox_override("panel", ArtBank.panel_style(&"glass", Color(0.05, 0.1, 0.14, 0.82)))
+	chrome.add_theme_stylebox_override("panel", ArtBank.panel_style(&"glass", Color(0.04, 0.08, 0.11, 0.58)))
 	var inner := MarginContainer.new()
 	inner.name = "ChromePad"
 	inner.add_theme_constant_override("margin_left", 12)
@@ -251,7 +251,7 @@ func _on_style_changed(score: int, multiplier: float, rank: String) -> void:
 	if style_label:
 		style_label.text = "Style  %s   ×%.1f" % [rank, multiplier]
 		if rank != _last_style_rank and _last_style_rank != "":
-			style_label.modulate = Color(1.4, 1.2, 0.6)
+			style_label.modulate = Color(0.7, 1.2, 1.3)
 			var tw := create_tween()
 			tw.tween_property(style_label, "modulate", Color.WHITE, 0.4)
 		_last_style_rank = rank

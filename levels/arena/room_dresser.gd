@@ -196,7 +196,7 @@ static func _place_iso_piece(
 	s.modulate = modulate
 	s.z_index = z
 	parent.add_child(s)
-	ArtBank.fit_height(s, 102.0 * tile_scale, true)
+	ArtBank.fit_height(s, 168.0 * tile_scale, true)
 	return s
 
 
@@ -207,9 +207,9 @@ static func _wall_modulate(biome: BiomeDefinition) -> Color:
 		GameplayEnums.BiomeId.DATA_CENTER, GameplayEnums.BiomeId.GATEWAY:
 			return Color(0.82, 0.92, 1.0, 1)
 		GameplayEnums.BiomeId.LANDFILL, GameplayEnums.BiomeId.WASTELAND:
-			return Color(0.95, 0.88, 0.72, 1)
+			return Color(0.9, 0.96, 0.92, 1)
 		GameplayEnums.BiomeId.JUNGLE, GameplayEnums.BiomeId.TAIGA:
-			return Color(0.78, 0.92, 0.7, 1)
+			return Color(0.82, 0.94, 0.78, 1)
 		_:
 			return Color.WHITE
 
@@ -223,8 +223,6 @@ static func _add_lighting(arena: Node2D, biome: BiomeDefinition) -> void:
 	grade.name = "Grade"
 	## Slight cool night, never a crushed voxel wash.
 	grade.color = Color(0.90, 0.92, 0.97, 1)
-	if biome and (biome.biome_id == GameplayEnums.BiomeId.LANDFILL or biome.biome_id == GameplayEnums.BiomeId.WASTELAND):
-		grade.color = Color(0.92, 0.90, 0.86, 1)
 	layer.add_child(grade)
 	var tex := ArtBank.radial_light()
 	var moon := PointLight2D.new()

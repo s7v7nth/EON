@@ -17,10 +17,10 @@ const BOSS_WAVE_SET = preload("res://resources/waves/boss_encounter_waves.tres")
 
 const DOOR_SIZE := Vector2(72, 40)
 const DOOR_COLORS := {
-	Vector2i(0, -1): Color(0.35, 0.7, 0.95, 0.75),
-	Vector2i(1, 0): Color(0.35, 0.85, 0.55, 0.75),
-	Vector2i(0, 1): Color(0.3, 0.75, 0.45, 0.75),
-	Vector2i(-1, 0): Color(0.9, 0.7, 0.35, 0.75),
+	Vector2i(0, -1): Color(0.35, 0.82, 0.95, 0.75),
+	Vector2i(1, 0): Color(0.42, 0.9, 0.92, 0.75),
+	Vector2i(0, 1): Color(0.32, 0.78, 0.88, 0.75),
+	Vector2i(-1, 0): Color(0.55, 0.88, 1.0, 0.75),
 }
 
 var _wave_index: int = -1
@@ -286,14 +286,14 @@ func _dress_exit_marker() -> void:
 		spr.z_index = 2
 		spr.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 		exit_node.add_child(spr)
-	spr.texture = ArtBank.dungeon_facing("stoneWallDoorOpen", Vector2(0, 1))
+	spr.texture = _city_door_tex(Vector2(0, 1))
 	if spr.texture == null:
-		spr.texture = ArtBank.dungeon_facing("stoneWallArchway", Vector2(0, 1))
+		spr.texture = ArtBank.illustrated("wall_slab_S")
 	if spr.texture == null:
-		spr.texture = ArtBank.space("platform_small_SE")
+		spr.texture = ArtBank.illustrated("wall_slab_SE")
 	if spr.texture:
-		ArtBank.fit_height(spr, 92.0, true)
-		spr.modulate = Color(0.55, 0.42, 0.28, 1)
+		ArtBank.fit_height(spr, 132.0, true)
+		spr.modulate = Color(0.72, 0.95, 1.0, 1)
 	var glow := exit_node.get_node_or_null("ExitGlow") as Sprite2D
 	if glow == null:
 		glow = Sprite2D.new()
@@ -301,12 +301,12 @@ func _dress_exit_marker() -> void:
 		glow.centered = true
 		glow.z_index = 1
 		glow.texture = ArtBank.particle("circle_05")
-		glow.modulate = Color(0.7, 0.38, 0.12, 0.4)
+		glow.modulate = Color(0.35, 0.85, 1.0, 0.4)
 		glow.scale = Vector2(3.4, 1.55)
 		exit_node.add_child(glow)
 	else:
 		glow.scale = Vector2(3.4, 1.55)
-		glow.modulate = Color(0.7, 0.38, 0.12, 0.4)
+		glow.modulate = Color(0.35, 0.85, 1.0, 0.4)
 	spr.z_index = 2
 	glow.z_index = 1
 	var plaque := exit_node.get_node_or_null("ExitPlaque") as PanelContainer
@@ -422,10 +422,11 @@ func _make_door(dir: Vector2i) -> Area2D:
 	door_spr.name = "DoorSprite"
 	door_spr.centered = true
 	door_spr.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
-	door_spr.texture = ArtBank.dungeon_facing("stoneWallDoorClosed", Vector2(dir))
+	door_spr.texture = _city_door_tex(Vector2(dir))
 	if door_spr.texture == null:
-		door_spr.texture = ArtBank.dungeon_facing("stoneWallArchway", Vector2(dir))
-	ArtBank.fit_height(door_spr, 124.0, true)
+		door_spr.texture = ArtBank.illustrated("wall_slab_SE")
+	ArtBank.fit_height(door_spr, 132.0, true)
+	door_spr.modulate = Color(0.72, 0.95, 1.0, 1)
 	door.add_child(door_spr)
 	door.body_entered.connect(_on_door_body_entered.bind(dir))
 	door.body_exited.connect(_on_door_body_exited.bind(dir))
@@ -879,11 +880,19 @@ func _set_door_unlocked_look(door: Area2D) -> void:
 		threshold.color = Color(frame_col.r, frame_col.g, frame_col.b, 0.45)
 	var door_spr := door.get_node_or_null("DoorSprite") as Sprite2D
 	if door_spr:
-		door_spr.texture = ArtBank.dungeon_facing("stoneWallDoorOpen", Vector2(dir))
+		door_spr.texture = _city_door_tex(Vector2(dir))
 		if door_spr.texture == null:
-			door_spr.texture = ArtBank.dungeon_facing("stoneWallArchway", Vector2(dir))
-		ArtBank.fit_height(door_spr, 124.0, true)
-		door_spr.modulate = Color(1.15, 1.2, 1.05)
+			door_spr.texture = ArtBank.illustrated("wall_slab_SE")
+		ArtBank.fit_height(door_spr, 132.0, true)
+		door_spr.modulate = Color(0.85, 1.05, 1.1)
+
+
+func _city_door_tex(dir: Vector2) -> Texture2D:
+	var facing := ArtBank.dir4_from(dir)
+	var tex := ArtBank.illustrated("wall_slab_%s" % facing)
+	if tex:
+		return tex
+	return ArtBank.illustrated("wall_slab_SE")
 
 
 func _on_player_died() -> void:

@@ -99,8 +99,8 @@
 - [ ] Улей-босс в графе (campaign/procedural); kill пишет meta unlock
 - [ ] Hive tells: slam = dark wet-asphalt circle then mass (выйти из круга); nano-bile = toxic spit line then lasting **dark nanite slurry with a magenta rim** (не комнатный neon drain stain); flesh-hook = **nano cable with a barb** (not a clean orange laser), kiss = pull (sidestep the line); swarm chunks fall off — kill or they crawl back and the sweeper gets thicker
 - [ ] The Hive stands in the room, not stuffed in the door; slam circle has a cyan/toxic rim you can actually see on the night floor
-- [ ] Комнаты — dying-city isometric **sci-fi** (concrete sidewalks, shopfronts, wet neon, toxic green, rim-lit machines) **без** Diablo/castlevania dungeon, hooded-cape paladin portraits, starfield, Kenney-вокселей / Roblox-dim / 1:1 клона улицы с clone-pod
-- [ ] HUD — thin cyan night glass (not gold parchment / rust plate); class select uses city night + architecture machines, not a gold wordmark on a galaxy
+- [ ] Комнаты — dying-city isometric **sci-fi** (concrete sidewalks, **shopfronts on island edges**, wet neon, toxic green, rim-lit machines) **без** Diablo/castlevania dungeon, hooded-cape paladin portraits, starfield, Kenney-вокселей / Roblox-dim / 1:1 клона улицы с clone-pod
+- [ ] HUD — thin cyan night glass (not gold parchment / rust plate); Energy cyan, Adrenaline **magenta** (not gold); class select uses city night + architecture machines, not a gold wordmark on a galaxy
 - [ ] Переход через дверь: короткий fade (без резкого чёрного кадра / hard cut)
 - [ ] У дверей есть проём в стене + рамка коридора (не сплошная стена с оверлеем); столбы стоят по бокам дыры, не в центре
 - [ ] Пол/стены комнаты имеют сетку, углы и neon-акценты под цвет биома (не голый серый прямоугольник)

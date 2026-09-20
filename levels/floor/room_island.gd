@@ -68,7 +68,7 @@ func set_doors_locked(locked: bool) -> void:
 				var sprite := spr as Sprite2D
 				if sprite == null:
 					continue
-				sprite.modulate = Color(0.45, 0.9, 1.0, 1) if not locked else Color(0.35, 0.22, 0.2, 1)
+				sprite.modulate = Color(0.72, 0.95, 1.0, 1) if not locked else Color(0.22, 0.28, 0.34, 1)
 
 
 func door_local(dir: Vector2i) -> Vector2:
@@ -159,8 +159,8 @@ func _add_door_prop(dir: Vector2i) -> void:
 		spr.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 		spr.position = door_local(dir) + tangent * (DOOR_GAP * 0.46) * float(side)
 		spr.texture = _IllustratedSet.wall_tex(_facing_name(dir))
-		ArtBank.fit_height(spr, 88.0, true)
-		spr.modulate = Color(0.45, 0.9, 1.0, 1)
+		ArtBank.fit_height(spr, 132.0, true)
+		spr.modulate = Color(0.72, 0.95, 1.0, 1)
 		add_child(spr)
 		posts.append(spr)
 	door_sprites[dir] = posts
@@ -303,36 +303,51 @@ func _dress() -> void:
 		_add_boss_stain(root)
 
 
-func _add_edge_walls(root: Node2D) -> void:
+func _add_edge_walls(_root: Node2D) -> void:
+	## Direct children so y-sort occludes against the remnant / Hive, not as one blob.
+	var centroid := Vector2.ZERO
+	for p in _poly:
+		centroid += p
+	centroid /= float(_poly.size())
 	var n := _poly.size()
 	for i in n:
 		var a := _poly[i]
 		var b := _poly[(i + 1) % n]
+		var delta := b - a
+		var length := delta.length()
+		if length < 96.0:
+			continue
+		var along := delta / length
+		var ortho := along.orthogonal().normalized()
 		var mid := (a + b) * 0.5
-		var skip := false
-		for dir in room.door_dirs():
-			if _point_on_segment(door_local(dir), a, b, 40.0):
-				skip = true
-				break
-		if skip:
-			continue
-		if rng_skip(mid):
-			continue
-		var spr := Sprite2D.new()
-		spr.centered = true
-		spr.z_index = -1
-		spr.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
-		var facing := (b - a).orthogonal().normalized()
-		spr.texture = _IllustratedSet.wall_tex(ArtBank.dir4_from(facing))
-		if spr.texture:
-			ArtBank.fit_height(spr, 88.0, true)
-			spr.position = mid
+		var outward := ortho if mid.distance_to(centroid + ortho * 40.0) > mid.distance_to(centroid - ortho * 40.0) else -ortho
+		if Geometry2D.is_point_in_polygon(mid + outward * 18.0, _poly):
+			outward = -outward
+		var spacing := 158.0
+		var count := maxi(1, int(round(length / spacing)))
+		for k in count:
+			var t := (float(k) + 0.5) / float(count)
+			var pos := a.lerp(b, t)
+			var near_door := false
+			for dir in room.door_dirs():
+				if pos.distance_to(door_local(dir)) < DOOR_GAP * 0.62:
+					near_door = true
+					break
+			if near_door:
+				continue
+			var spr := Sprite2D.new()
+			spr.name = "Shopfront_%d_%d" % [i, k]
+			spr.centered = true
+			spr.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+			spr.texture = _IllustratedSet.wall_tex(ArtBank.dir_diag_from(outward))
+			if spr.texture == null:
+				spr.texture = _IllustratedSet.wall_tex(ArtBank.dir4_from(outward))
+			if spr.texture == null:
+				continue
+			ArtBank.fit_height(spr, 168.0, true)
+			spr.position = pos + outward * 14.0
 			spr.modulate = Color.WHITE
-			root.add_child(spr)
-
-
-func rng_skip(mid: Vector2) -> bool:
-	return int(absf(mid.x) + absf(mid.y)) % 3 == 0
+			add_child(spr)
 
 
 func _facing_name(dir: Vector2i) -> String:

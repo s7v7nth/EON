@@ -118,8 +118,8 @@ func get_hud_values(host: Node) -> Dictionary:
 	var adr_v := adrenaline.current_adrenaline if adrenaline else 0.0
 	var adr_m := adrenaline.get_max_adrenaline() if adrenaline else 100.0
 	return {
-		"primary": _bar(energy_v, energy_m, "Energy", Color(0.25, 0.55, 0.95, 1)),
-		"secondary": _bar(adr_v, adr_m, "Adrenaline", Color(0.95, 0.8, 0.2, 1)),
+		"primary": _bar(energy_v, energy_m, "Energy", Color(0.28, 0.82, 0.92, 1)),
+		"secondary": _bar(adr_v, adr_m, "Adrenaline", Color(0.95, 0.42, 0.78, 1)),
 	}
 
 

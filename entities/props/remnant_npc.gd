@@ -61,9 +61,10 @@ func _build_look() -> void:
 	if spr.texture == null:
 		spr.texture = ArtBank.illustrated("hero_SE")
 	if spr.texture:
-		ArtBank.fit_height(spr, 88.0, true)
+		ArtBank.fit_height(spr, 128.0, true)
 	spr.modulate = Color.WHITE
-	spr.position = Vector2(6, -8)
+	spr.position = Vector2(-10, 6)
+	spr.z_index = 2
 	add_child(spr)
 	var shape := CollisionShape2D.new()
 	var circle := CircleShape2D.new()
@@ -71,7 +72,7 @@ func _build_look() -> void:
 	shape.shape = circle
 	add_child(shape)
 	_prompt = Label.new()
-	_prompt.position = Vector2(-48, 34)
+	_prompt.position = Vector2(-48, 42)
 	_prompt.add_theme_font_size_override("font_size", 13)
 	_prompt.add_theme_color_override("font_color", Color(0.45, 0.92, 1.0))
 	_prompt.text = "E  listen"
@@ -81,39 +82,28 @@ func _build_look() -> void:
 
 
 func _build_stall() -> void:
-	var back := Sprite2D.new()
-	back.name = "StallBack"
-	back.centered = true
-	back.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
-	back.texture = ArtBank.illustrated("wall_slab_S")
-	if back.texture:
-		ArtBank.fit_height(back, 110.0, true)
-	back.position = Vector2(8, -18)
-	back.modulate = Color.WHITE
-	back.z_index = -2
-	add_child(back)
-	var counter := Sprite2D.new()
-	counter.name = "StallCounter"
-	counter.centered = true
-	counter.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
-	counter.texture = ArtBank.illustrated("prop_scrap")
-	if counter.texture == null:
-		counter.texture = ArtBank.illustrated("wall_slab_E")
-	if counter.texture:
-		ArtBank.fit_height(counter, 48.0, true)
-	counter.position = Vector2(-18, 18)
-	counter.modulate = Color.WHITE
-	counter.z_index = -1
-	add_child(counter)
+	var kiosk := Sprite2D.new()
+	kiosk.name = "StallKiosk"
+	kiosk.centered = true
+	kiosk.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+	kiosk.texture = ArtBank.illustrated("prop_pylon")
+	if kiosk.texture == null:
+		kiosk.texture = ArtBank.illustrated("wall_slab_S")
+	if kiosk.texture:
+		ArtBank.fit_height(kiosk, 148.0, true)
+	kiosk.position = Vector2(36, -4)
+	kiosk.modulate = Color.WHITE
+	kiosk.z_index = -1
+	add_child(kiosk)
 	var lamp := Sprite2D.new()
 	lamp.name = "StallLamp"
 	lamp.centered = true
 	lamp.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
 	lamp.texture = ArtBank.illustrated("prop_lamp")
 	if lamp.texture:
-		ArtBank.fit_height(lamp, 42.0, true)
-	lamp.position = Vector2(36, -28)
-	lamp.modulate = Color(0.85, 1.05, 1.1, 1)
+		ArtBank.fit_height(lamp, 96.0, true)
+	lamp.position = Vector2(-44, 8)
+	lamp.modulate = Color.WHITE
 	lamp.z_index = -1
 	add_child(lamp)
 

@@ -188,7 +188,7 @@ func get_hud_values(host: Node) -> Dictionary:
 	if hp_m > 0.0:
 		pressure = (1.0 - hp_v / hp_m) * 100.0
 	return {
-		"primary": _bar(pressure, 100.0, "Swarm Hunger  %d" % roundi(pressure), Color(0.48, 0.42, 0.22, 1)),
+		"primary": _bar(pressure, 100.0, "Swarm Hunger  %d" % roundi(pressure), Color(0.42, 0.92, 0.35, 1)),
 		"secondary": {},
 	}
 
