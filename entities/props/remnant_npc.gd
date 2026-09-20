@@ -31,6 +31,7 @@ var _plaque: PanelContainer
 var _body: Label
 var _prompt: Label
 var _near: bool = false
+var _listen_cool: float = 0.0
 
 
 func _ready() -> void:
@@ -40,6 +41,9 @@ func _ready() -> void:
 	monitorable = false
 	z_index = 8
 	_build_look()
+	set_process(true)
+	set_process_input(true)
+	set_process_unhandled_input(true)
 	body_entered.connect(_on_body_entered)
 	body_exited.connect(_on_body_exited)
 
@@ -60,7 +64,7 @@ func _build_look() -> void:
 	add_child(spr)
 	var shape := CollisionShape2D.new()
 	var circle := CircleShape2D.new()
-	circle.radius = 54.0
+	circle.radius = 88.0
 	shape.shape = circle
 	add_child(shape)
 	_plaque = PanelContainer.new()
@@ -127,14 +131,45 @@ func _build_stall() -> void:
 	add_child(lamp)
 
 
+func _process(delta: float) -> void:
+	_listen_cool = maxf(_listen_cool - delta, 0.0)
+	if _listen_cool > 0.0:
+		return
+	if not _player_in_range():
+		return
+	if Input.is_physical_key_pressed(KEY_E):
+		speak()
+		_listen_cool = 0.28
+
+
+func _input(event: InputEvent) -> void:
+	_try_listen(event)
+
+
 func _unhandled_input(event: InputEvent) -> void:
-	if event is InputEventKey and event.pressed and not event.echo:
-		var key := event as InputEventKey
-		if key.physical_keycode == KEY_E:
-			var player := get_tree().get_first_node_in_group("player") as Node2D
-			if player and player.global_position.distance_to(global_position) <= 90.0:
-				speak()
-				get_viewport().set_input_as_handled()
+	_try_listen(event)
+
+
+func _try_listen(event: InputEvent) -> void:
+	if event is not InputEventKey:
+		return
+	if not event.pressed or event.echo:
+		return
+	var key := event as InputEventKey
+	if key.physical_keycode != KEY_E and key.keycode != KEY_E:
+		return
+	if not _player_in_range():
+		return
+	speak()
+	_listen_cool = 0.28
+	get_viewport().set_input_as_handled()
+
+
+func _player_in_range() -> bool:
+	if _near:
+		return true
+	var player := get_tree().get_first_node_in_group("player") as Node2D
+	return player != null and player.global_position.distance_to(global_position) <= 110.0
 
 
 func _on_body_entered(body: Node2D) -> void:
